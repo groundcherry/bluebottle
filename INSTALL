@@ -1,0 +1,51 @@
+============
+DEPENDENCIES
+============
+
+Bluebottle requires a few external dependencies to run. They are:
+
+- CUDA 5.0 or 5.5
+- OpenMPI
+- CUSP C++ Templated Sparse Matrix Library (http://cusplibrary.github.com)
+- CGNS & HDF5
+
+=========
+CONFIGURE
+=========
+
+To tell Bluebottle where to find the required dependencies, edit the Makefile.
+Enter the full path to the installation location of each dependency (the
+path to directory containing /include and /lib directories) in the section
+entitled EDIT: DEPENDENCIES. Also, enter the path to your compiler binary in the
+section entitled EDIT: COMPILERS.
+
+=======
+COMPILE
+=======
+
+From this directory, compile Bluebottle using make. You have a few choices:
+
+$ make          -- Compile to run with verbose standard output.
+$ make batch    -- Compile to run with slightly less chatty output (for
+                   batch jobs).
+$ make clean    -- Delete the compiled object files and linked binary.
+
+When compiled, the binary will reside in the directory bluebottle/sim.
+
+==================
+RUNNING BLUEBOTTLE
+==================
+
+Launch Bluebottle from the command line by navigating to the bluebottle/sim
+directory and typing
+
+$ ./bluebottle
+
+This will read the required input files in bluebottle/sim/input and write
+the requested output files to bluebottle/sim/output. Some useful runtime
+information will be written to bluebottle/sim/record. There are a number of
+canonical input files distributed in the bluebottle/sim/input directory. To use
+one, simply rename it to flow.config.
+
+For a detailed discussion about the required input files, see the Bluebottle
+Wiki at http://lucan.me.jhu.edu//wiki/index.php/Configuration_files.

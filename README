@@ -1,0 +1,52 @@
+============
+INTRODUCTION
+============
+
+Bluebottle is a GPU-centric finite-difference incompressible Navier-Stokes flow
+solver coupled with the Physalis method for fully resolving spherical particles
+dispersed throughout the flow. It is a research code being developed by Adam
+Sierakowski (sierakowski@jhu.edu) under the supervision of Prof. Andrea
+Prosperetti at the Johns Hopkins University.
+
+Bluebottle is capable of simulating particle-laden fluid flows in configurations
+ranging from particles in Stokes flow to flows at moderate Reynolds number.
+Since particles are fully resolved within the flow solver, Bluebottle accurately
+captures the physical behavior of these fluid flows at arbitrary particle volume
+fraction. Bluebottle has been used to investigate particle behavior in channel
+flows, shear flows, sedimentation, and other canonical situations with up to
+8,000 particles in domains consisting of over 30-million degrees of freedom on a
+single GPU.
+
+Constructed with the primary goal of bringing to bear the power inherent in
+today's GPU hardware on particle flow physics simulations, Bluebottle has been
+shown to operate up to 100 times faster than a legacy CPU implementation.
+
+====================
+OBTAINING BLUEBOTTLE
+====================
+
+Bluebottle has been released under the Apache License, Version 2.0, and it is
+available for download at http://github.com/groundcherry/bluebottle.
+
+=====================
+INSTALLING BLUEBOTTLE
+=====================
+
+For installation instructions, see the accompanying INSTALL document.
+
+========================
+BLUEBOTTLE DOCUMENTATION
+========================
+
+The most recent documentation can be found on the Bluebottle Wiki at
+http://lucan.me.jhu.edu.
+
+=========================
+QUESTIONS AND BUG REPORTS
+=========================
+
+Bluebottle is an academic research code being actively developed. Should you
+have any questions about the code, please search the Bluebottle Wiki at
+http://lucan.me.jhu.edu first. If you cannot find an answer there, or you would
+like to submit a bug report, you may do so using the Bluebottle Github Issues 
+service at http://github.com/groundcherry/bluebottle/issues.
