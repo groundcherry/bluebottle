@@ -40,8 +40,7 @@ n = 1:1:length(tnum);
 i = find(tnum<ts | tnum>te);
 n(i) = [];
 tnum(i) = [];
-ts = tstr(n(1)).time;
-te = tstr(n(end)).time;
+ts = tstr{n(1)};
 
 % find the number of particles using the initial timestep
 [x, y, z] = cgns_read_part_vel(casename, ts);
@@ -57,7 +56,7 @@ wp = zeros(np, nt);
 
 % read particle position data
 for i = 1:nt
-  [up(:,i), vp(:,i), wp(:,i)] = cgns_read_part_acc(casename, tstr(n(i)).time);
+  [up(:,i), vp(:,i), wp(:,i)] = cgns_read_part_acc(casename, tstr{n(i)});
 end
 
 % plot

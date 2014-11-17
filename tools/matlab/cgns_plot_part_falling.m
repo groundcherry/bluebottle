@@ -42,8 +42,7 @@ i = find(tnum<ts | tnum>te);
 i(1) = []; % include the te value
 n(i) = [];
 tnum(i) = [];
-ts = tstr(n(1)).time;
-te = tstr(n(end)).time;
+ts = tstr{n(1)};
 
 % calculate the number of timesteps
 nt = length(n);
@@ -78,11 +77,11 @@ Lz = zeros(nt, np);
 % read time and particle position data
 T = tnum;
 for i = 1:nt
-  [X(i,:), Y(i,:), Z(i,:)] = cgns_read_part_position(casename, tstr(n(i)).time);
-  [U(i,:), V(i,:), W(i,:)] = cgns_read_part_vel(casename, tstr(n(i)).time);
-  [Fx(i,:), Fy(i,:), Fz(i,:)] = cgns_read_part_force_total(casename, tstr(n(i)).time);
-  [Ox(i,:), Oy(i,:), Oz(i,:)] = cgns_read_part_omega(casename, tstr(n(i)).time);
-  [Lx(i,:), Ly(i,:), Lz(i,:)] = cgns_read_part_moment(casename, tstr(n(i)).time);
+  [X(i,:), Y(i,:), Z(i,:)] = cgns_read_part_position(casename, tstr{n(i)});
+  [U(i,:), V(i,:), W(i,:)] = cgns_read_part_vel(casename, tstr{n(i)});
+  [Fx(i,:), Fy(i,:), Fz(i,:)] = cgns_read_part_force_total(casename, tstr{n(i)});
+  [Ox(i,:), Oy(i,:), Oz(i,:)] = cgns_read_part_omega(casename, tstr{n(i)});
+  [Lx(i,:), Ly(i,:), Lz(i,:)] = cgns_read_part_moment(casename, tstr{n(i)});
 end
 
 % plot

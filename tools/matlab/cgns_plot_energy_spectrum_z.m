@@ -68,7 +68,7 @@ ky = (0:Ny-1)';
 
 for i = 1:nt
   % get interpolated fields
-  [u v w] = cgns_read_flow_vel_plane_z(casename, tstr(n(i)).time, loc);
+  [u v w] = cgns_read_flow_vel_plane_z(casename, tstr{n(i)}, loc);
 
   % do FFT
   U = fft(u,Nx,2)/Nx;

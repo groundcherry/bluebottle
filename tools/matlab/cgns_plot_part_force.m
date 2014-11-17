@@ -44,8 +44,7 @@ n = 1:1:length(tnum);
 i = find(tnum<ts | tnum>te);
 n(i) = [];
 tnum(i) = [];
-ts = tstr(n(1)).time;
-te = tstr(n(1)).time;
+ts = tstr{n(1)};
 
 % calculate the number of timesteps
 nt = length(n);
@@ -68,9 +67,9 @@ FZh = zeros(np, nt);
 
 % read time and particle force data
 for i = 1:nt
-  [FX(:,i), FY(:,i), FZ(:,i)] = cgns_read_part_force_total(casename, tstr(n(i)).time);
-  [FXi(:,i), FYi(:,i), FZi(:,i)] = cgns_read_part_force_interaction(casename, tstr(n(i)).time);
-  [FXh(:,i), FYh(:,i), FZh(:,i)] = cgns_read_part_force_hydro(casename, tstr(n(i)).time);
+  [FX(:,i), FY(:,i), FZ(:,i)] = cgns_read_part_force_total(casename, tstr{n(i)});
+  [FXi(:,i), FYi(:,i), FZi(:,i)] = cgns_read_part_force_interaction(casename, tstr{n(i)});
+  [FXh(:,i), FYh(:,i), FZh(:,i)] = cgns_read_part_force_hydro(casename, (tstr{n(i)});
 end
 
 % plot

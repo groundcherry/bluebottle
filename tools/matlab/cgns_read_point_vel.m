@@ -42,8 +42,7 @@ i = find(tnum<ts | tnum>te);
 i(1) = []; % include the te value
 n(i) = [];
 tnum(i) = [];
-ts = tstr(n(1)).time;
-te = tstr(n(end)).time;
+ts = tstr{n(1)};
 
 % calculate the number of timesteps
 nt = length(n);
@@ -80,7 +79,7 @@ k = floor((z - zs)/dz + 0.5);
 
 % read particle position data
 for l = 1:nt
-  [U, V, W] = cgns_read_flow_vel(casename, tstr(n(l)).time);
+  [U, V, W] = cgns_read_flow_vel(casename, tstr{n(l)});
   % do interpolation
   if i == 0 % use one-sided extrapolation
     i = 1;

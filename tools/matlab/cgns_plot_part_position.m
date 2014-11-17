@@ -39,8 +39,7 @@ n = 1:1:length(tnum);
 i = find(tnum<ts | tnum>te);
 n(i) = [];
 tnum(i) = [];
-ts = tstr(n(1)).time;
-te = tstr(n(end)).time;
+ts = tstr{n(1)};
 
 
 % calculate the number of timesteps
@@ -59,8 +58,8 @@ R = zeros(np, nt);
 
 % read time and particle position data
 for i = 1:nt
-  [X(:,i), Y(:,i), Z(:,i)] = cgns_read_part_position(casename, tstr(n(i)).time);
-  R(:,i) = cgns_read_part_radius(casename, tstr(n(i)).time);
+  [X(:,i), Y(:,i), Z(:,i)] = cgns_read_part_position(casename, tstr{n(i)});
+  R(:,i) = cgns_read_part_radius(casename, tstr{n(i)});
 end
 
 % plot

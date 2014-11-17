@@ -45,7 +45,7 @@ n = 1:1:length(tnum);
 
 % find closest time to give time
 [c i] = min(abs(tnum - tdes));
-time = tstr(i).time;
+time = tstr{i};
 
 % read flow velocity
 [U, V, W] = cgns_read_flow_vel(casename, time);

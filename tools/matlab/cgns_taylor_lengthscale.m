@@ -76,7 +76,7 @@ ky = (0:Ny-1)';
 
 for i = 1:nt
   % get interpolated fields
-  [u v w] = cgns_read_flow_vel_plane_z(casename, tstr(n(i)).time, loc);
+  [u v w] = cgns_read_flow_vel_plane_z(casename, tstr{n(i)}, loc);
 
   %X(1,:) = -6+(12/64):12/64:6-(12/64);
   %u(1,:) = sin(4*2*pi*X/12);

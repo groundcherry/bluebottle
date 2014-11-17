@@ -1,64 +1,37 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% BLUEBOTTLE-1.0 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 
-%   Copyright 2012 - 2014 Adam Sierakowski, The Johns Hopkins University
-% 
-%   Licensed under the Apache License, Version 2.0 (the "License");
-%   you may not use this file except in compliance with the License.
-%   You may obtain a copy of the License at
-% 
-%       http://www.apache.org/licenses/LICENSE-2.0
-% 
-%   Unless required by applicable law or agreed to in writing, software
-%   distributed under the License is distributed on an "AS IS" BASIS,
-%   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-%   See the License for the specific language governing permissions and
-%   limitations under the License.
-% 
-%   Please contact the Johns Hopkins University to use Bluebottle for
-%   commercial and/or for-profit applications.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [t_flow_str t_flow] = cgns_read_flow_time(casename);
+function [t_file t_actual] = cgns_read_flow_time(casename)
 
 %% Reads the flow times of the cgns files given in the output
-% file, as specified by part-**.****.cgns etc (* is not
+% file, as specified by flow-**.****.cgns etc (* is not
 % indicative of sigfigs in this case, there can be more or less as
 % specified in the record.config file
 
-% t_flow_str - time written in cgns filename, i.e. flow-3.14159.cgns
-% t_flow - time written in cgns file, using h5read
+% t_file is the time written in the cgns file name, i.e. flow-12.31415.cgns
+% t_actual is the actual time written in the cgns file, found using h5read
 
+%% Get the path to the output directory, and find the cgns files
 path = [casename '/output'];
 od = cd(path);
-contents = dir;
-% Delete the . and .. directories from the contents
-contents(1) = [];
-contents(1) = [];
-% Sort the contents by date added and remove unnecessary info
-S = [contents(:).datenum];
-[S,S] = sort(S);
-contents = {contents(S).name};
+contents = dir('*cgns');
+names = {contents(:).name};
+flownames = names(strncmp(names, 'flow', 4));
 
-% initialize time struct
-t_flow_str = struct([]);
+%% Remove strings from flow file names and sort by number
+numstr = strrep(flownames, 'flow-', '');
+numstr = strrep(numstr, '.cgns', '');
+num = str2double(strrep(numstr, '.', ''));
+[dummy, index] = sort(num);
 
-% Initialize k which increments to the next spot in the struct
-j = 1;
+%% Reconstruct the time given in the file names in time-order
+t_file = numstr(index);
+flownames = flownames(index);
 
-% Look through directory contents and place flow times in the
-% correct structure
-for i = 1:length(contents)
-    if strncmp('flow', contents{i},4) == 1
-        time = sscanf(contents{i}, 'flow-%s');
-        time = strrep(time, '.cgns', '');
-        t_flow_str(j).time = time;
-        tsol = '/Base/Zone0/Etc/Time/ data';
-        t_path = [path '/' contents{i}];
-        t_flow(j) = h5read(t_path, tsol);
-        j = j+1;
-    end
+%% Read the cgns files and get the actual time
+t_actual = zeros(1, length(t_file));
+t_loc = '/Base/Zone0/Etc/Time/ data';
+
+for i = 1:length(t_file)
+  t_path = [path '/' partnames{i}];
+  t_actual(i) = h5read(t_path, t_loc);
 end
 
 cd(od);
