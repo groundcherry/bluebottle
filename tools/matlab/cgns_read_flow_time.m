@@ -30,7 +30,7 @@ t_actual = zeros(1, length(t_file));
 t_loc = '/Base/Zone0/Etc/Time/ data';
 
 for i = 1:length(t_file)
-  t_path = [path '/' partnames{i}];
+  t_path = [path '/' flownames{i}];
   t_actual(i) = h5read(t_path, t_loc);
 end
 
