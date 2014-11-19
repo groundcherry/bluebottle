@@ -268,12 +268,12 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   real ocrossr_x = oy*zp - oz*yp;
   real odotcrossr_x = oydot*zp - ozdot*yp;
   uu -= parts[part].u + ocrossr_x;
-  uu -= 1./6./nu *(rs2-a2) * odotcrossr_x;
+  uu -= 0.1/nu *(rs2-a2) * odotcrossr_x;
   uunode -= parts[part].u + ocrossr_x;
-  uunode -= 1./6./nu *(rs2-a2) * odotcrossr_x;
+  uunode -= 0.1/nu *(rs2-a2) * odotcrossr_x;
   uuwall -= parts[part].u + ocrossr_x;
   //uuwall -= 0.1 / nu / rs3 * (rs5 - r5) * odotcrossr_x;
-  uuwall -= 1./6./nu *(rs2-a2) * odotcrossr_x;
+  uuwall -= 0.1/nu *(rs2-a2) * odotcrossr_x;
   // set actual node value based on whether it is interfered with
   uu = (parts[part].nodes[node]==-1)*uu
     + (parts[part].nodes[node]!=part)*(parts[part].nodes[node]>-1)*uunode
@@ -311,11 +311,11 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   real ocrossr_y = -(ox*zp - oz*xp);
   real odotcrossr_y = -(oxdot*zp - ozdot*xp);
   vv -= parts[part].v + ocrossr_y;
-  vv -= 1./6./nu *(rs2-a2) * odotcrossr_y;
+  vv -= 0.1/nu *(rs2-a2) * odotcrossr_y;
   vvnode -= parts[part].v + ocrossr_y;
-  vvnode -= 1./6./nu *(rs2-a2) * odotcrossr_y;
+  vvnode -= 0.1/nu *(rs2-a2) * odotcrossr_y;
   vvwall -= parts[part].v + ocrossr_y;
-  vvwall -= 1./6./nu *(rs2-a2) * odotcrossr_y;
+  vvwall -= 0.1/nu *(rs2-a2) * odotcrossr_y;
   // set actual node value based on whether it is interfered with
   vv = (parts[part].nodes[node]==-1)*vv
     + (parts[part].nodes[node]!=part)*(parts[part].nodes[node]>-1)*vvnode
@@ -352,11 +352,11 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   real ocrossr_z = ox*yp - oy*xp;
   real odotcrossr_z = oxdot*yp - oydot*xp;
   ww -= parts[part].w + ocrossr_z;
-  ww -= 1./6./nu *(rs2-a2) * odotcrossr_z;
+  ww -= 0.1/nu *(rs2-a2) * odotcrossr_z;
   wwnode -= parts[part].w + ocrossr_z;
-  wwnode -= 1./6./nu *(rs2-a2) * odotcrossr_z;
+  wwnode -= 0.1/nu *(rs2-a2) * odotcrossr_z;
   wwwall -= parts[part].w + ocrossr_z;
-  wwwall -= 1./6./nu *(rs2-a2) * odotcrossr_z;
+  wwwall -= 0.1/nu *(rs2-a2) * odotcrossr_z;
   // set actual node value based on whether it is interfered with
   ww = (parts[part].nodes[node]==-1)*ww
     + (parts[part].nodes[node]!=part)*(parts[part].nodes[node]>-1)*wwnode

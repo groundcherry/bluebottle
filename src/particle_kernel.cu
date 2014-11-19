@@ -910,7 +910,7 @@ __global__ void part_BC_u(real *u, int *phase, int *flag_u,
       real ocrossr_x = oy*z - oz*y;
       real odotcrossr_x = oydot*z - ozdot*y;
       Ux += uu + ocrossr_x;
-      Ux -= 1./6./nu *(r*r-a*a) * odotcrossr_x;
+      Ux -= 0.1/nu *(r*r-a*a) * odotcrossr_x;
       // boolean check if this is an analytically-posed node
       int check = (flag_u[C] < 1) && (PP > -1);
       u[C] = check * Ux + (check - 1) * u[C];
@@ -1012,7 +1012,7 @@ __global__ void part_BC_v(real *v, int *phase, int *flag_v,
       real ocrossr_y = -(ox*z - oz*x);
       real odotcrossr_y = -(oxdot*z - ozdot*x);
       Uy += vv + ocrossr_y;
-      Uy -= 1./6./nu *(r*r-a*a) * odotcrossr_y;
+      Uy -= 0.1/nu *(r*r-a*a) * odotcrossr_y;
       // boolean check if this is an analytically-posed node
       int check = (flag_v[C] < 1) && (PP > -1);
       v[C] = check * Uy + (check - 1) * v[C];
@@ -1114,7 +1114,7 @@ __global__ void part_BC_w(real *w, int *phase, int *flag_w,
       real ocrossr_z = ox*y - oy*x;
       real odotcrossr_z = oxdot*y - oydot*x;
       Uz += ww + ocrossr_z;
-      Uz -= 1./6./nu *(r*r-a*a) * odotcrossr_z;
+      Uz -= 0.1/nu *(r*r-a*a) * odotcrossr_z;
       // boolean check if this is an analytically-posed node
       int check = (flag_w[C] < 1) && (PP > -1);
       w[C] = check * Uz + (check - 1) * w[C];
