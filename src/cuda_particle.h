@@ -773,9 +773,9 @@ __global__ void part_BC_w(real *w, int *phase, int *flag_w,
  *  part_BC_p<<<>>>()
  * USAGE
  */
-__global__ void part_BC_p(real *p, int *phase, int *phase_shell,
+__global__ void part_BC_p(real *p, real *p_rhs, int *phase, int *phase_shell,
   part_struct *parts, dom_struct *dom,
-  real mu, real nu, gradP_struct gradP, real rho_f, int stride,
+  real mu, real nu, real dt, gradP_struct gradP, real rho_f, int stride,
   real *pnm_re00, real *pnm_im00, real *phinm_re00, real *phinm_im00,
   real *chinm_re00, real *chinm_im00,
   real *pnm_re, real *pnm_im, real *phinm_re, real *phinm_im,
@@ -786,14 +786,15 @@ __global__ void part_BC_p(real *p, int *phase, int *phase_shell,
  *  Lamb's coefficients calculated previously to determine velocity boundary
  *  conditions on the particle.
  * ARGUMENTS
- *  * i -- the particle index on which to operate
  *  * p -- the device flow velocity field
+ *  * p_rhs -- the Poisson problem right-hand side
  *  * phase_shell -- the particle shell boundary flag on pressure
  *  * phase -- the particle boundary flag on pressure
  *  * parts -- the device particle array subdomain
  *  * dom -- the device subdomain
  *  * mu -- the fluid dynamic viscosity
  *  * nu -- the fluid kinematic viscosity
+ *  * dt -- time step size
  *  * gradP -- the body force
  *  * rho_f -- fluid density
  *  * stride -- stride length for Lamb's coefficient storage arrays

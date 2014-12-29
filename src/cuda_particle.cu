@@ -268,12 +268,11 @@ void cuda_part_pull(void)
   checkCudaErrors(cudaMemcpy(chinm_im00, _chinm_im00[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
 
-  // TODO REMOVE
   // copy for device cage setup testing
   checkCudaErrors(cudaMemcpy(phase, _phase[0], sizeof(int) * dom[0].Gcc.s3b,
     cudaMemcpyDeviceToHost));
 
-/*
+#ifdef DEBUG
   checkCudaErrors(cudaMemcpy(phase_shell, _phase_shell[0],
     sizeof(int) * dom[0].Gcc.s3b, cudaMemcpyDeviceToHost));
   checkCudaErrors(cudaMemcpy(flag_u, _flag_u[0], sizeof(int) * dom[0].Gfx.s3b,
@@ -282,7 +281,7 @@ void cuda_part_pull(void)
     cudaMemcpyDeviceToHost));
   checkCudaErrors(cudaMemcpy(flag_w, _flag_w[0], sizeof(int) * dom[0].Gfz.s3b,
     cudaMemcpyDeviceToHost));
-*/
+#endif
 }
 
 extern "C"
@@ -1569,9 +1568,9 @@ void cuda_part_BC_p(int dev)
   dim3 dimBlocks_c(threads_c, threads_c);
   dim3 numBlocks_c(blocks_y, blocks_z);
 
-  part_BC_p<<<numBlocks_c, dimBlocks_c>>>(_rhs_p[dev], _phase[dev],
+  part_BC_p<<<numBlocks_c, dimBlocks_c>>>(_p0[dev], _rhs_p[dev], _phase[dev],
     _phase_shell[dev], _parts[dev], _dom[dev],
-    mu, nu, gradP, rho_f, coeff_stride,
+    mu, nu, dt, gradP, rho_f, coeff_stride,
     _pnm_re00[dev], _pnm_im00[dev],
     _phinm_re00[dev], _phinm_im00[dev], _chinm_re00[dev], _chinm_im00[dev],
     _pnm_re[dev], _pnm_im[dev],

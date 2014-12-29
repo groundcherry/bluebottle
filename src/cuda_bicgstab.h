@@ -64,22 +64,71 @@ void cuda_PP_rhs(int dev);
  ******
  */
 
-/****f* cuda_bicgstab/cuda_PP_BC_dom()
+/****f* cuda_bicgstab/cuda_ustar_rhs()
  * NAME
- *  cuda_PP_BC_dom()
+ *  cuda_ustar_rhs()
  * USAGE
  */
 extern "C"
-void cuda_PP_BC_dom(int dev,
-  cusp::dia_matrix<int, real, cusp::device_memory> *_A_p);
+void cuda_ustar_rhs(int dev);
 /*
  * FUNCTION
- *  Apply the boundary conditions of the domain for the pressure-Poisson
- *  problem.  Note that this is called from cuda_PP_bicgstab, which is
- *  already OMP threaded.  Do not OMP thread this function.
+ *  Build the right-hand side of the u_star Helmholtz problem.  Note that
+ *  this is called from cuda_ustar_helmholtz, which is already OMP threaded.  Do
+ *  not OMP thread this function.
  * ARGUMENTS
- *  * dev -- the device on which to operate
- *  * _A_p -- the pressure-Poisson coefficient matrix
+ *  dev -- the device on which to operate
+ ******
+ */
+
+/****f* cuda_bicgstab/cuda_vstar_rhs()
+ * NAME
+ *  cuda_vstar_rhs()
+ * USAGE
+ */
+extern "C"
+void cuda_vstar_rhs(int dev);
+/*
+ * FUNCTION
+ *  Build the right-hand side of the v_star Helmholtz problem.  Note that
+ *  this is called from cuda_vstar_helmholtz, which is already OMP threaded.  Do
+ *  not OMP thread this function.
+ * ARGUMENTS
+ *  dev -- the device on which to operate
+ ******
+ */
+
+/****f* cuda_bicgstab/cuda_wstar_rhs()
+ * NAME
+ *  cuda_wstar_rhs()
+ * USAGE
+ */
+extern "C"
+void cuda_wstar_rhs(int dev);
+/*
+ * FUNCTION
+ *  Build the right-hand side of the w_star Helmholtz problem.  Note that
+ *  this is called from cuda_wstar_helmholtz, which is already OMP threaded.  Do
+ *  not OMP thread this function.
+ * ARGUMENTS
+ *  dev -- the device on which to operate
+ ******
+ */
+
+/****f* cuda_bicgstab/cuda_wstar_rhs()
+ * NAME
+ *  cuda_wstar_rhs()
+ * USAGE
+ */
+extern "C"
+void cuda_wstar_rhs(int dev);
+/*
+ * FUNCTION
+ *  Build the right-hand side of the w_star Helmholtz problem.  Note that
+ *  this is called from cuda_wstar_helmholtz, which is already OMP threaded.  Do
+ *  not OMP thread this function.
+ * ARGUMENTS
+ *  dev -- the device on which to operate
  ******
  */
 
@@ -130,8 +179,7 @@ __global__ void PP_rhs(real rho_f, real *u_star, real *v_star, real *w_star,
   real *rhs, dom_struct *dom, real dt);
 /*
  * FUNCTION
- *  Compute the right-hand side of the Crank-Nicolson problem for the u-
- *  component of velocity.
+ *  Compute the right-hand side of the pressure Poisson problem.
  * ARGUMENTS
  *  * rho_f -- fluid density
  *  * u_star -- device subdomain u-component intermediate velocity field
@@ -143,12 +191,150 @@ __global__ void PP_rhs(real rho_f, real *u_star, real *v_star, real *w_star,
  ******
  */
 
+/****f* cuda_bicgstab_kernel/ustar_rhs<<<>>>()
+ * NAME
+ *  ustar_rhs<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_rhs(real rho_f, real nu, real *u, real *v, real *w,
+  real *p, real *f, real *conv0, real *u_star, dom_struct *dom, real dt,
+  real dt0);
+/*
+ * FUNCTION
+ *  Compute the right-hand side of the u_star Helmholtz problem.
+ * ARGUMENTS
+ *  * rho_f -- fluid density
+ *  * nu -- fluid kinematic viscosity
+ *  * u -- device subdomain u-component velocity field
+ *  * v -- device subdomain v-component velocity field
+ *  * w -- device subdomain w-component velocity field
+ *  * p -- device subdomain pressure field
+ *  * f -- device subdomain body forcing field
+ *  * conv0 -- device subdomain previous time step stored convective term
+ *  * u_star -- device subdomain u-component intermediate velocity field
+ *  * dom -- the subdomain in which this device is operating
+ *  * dt -- the current timestep
+ *  * dt0 -- the previous timestep
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_rhs<<<>>>()
+ * NAME
+ *  vstar_rhs<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_rhs(real rho_f, real nu, real *u, real *v, real *w,
+  real *p, real *f, real *conv0, real *v_star, dom_struct *dom, real dt,
+  real dt0);
+/*
+ * FUNCTION
+ *  Compute the right-hand side of the v_star Helmholtz problem.
+ * ARGUMENTS
+ *  * rho_f -- fluid density
+ *  * nu -- fluid kinematic viscosity
+ *  * u -- device subdomain u-component velocity field
+ *  * v -- device subdomain v-component velocity field
+ *  * w -- device subdomain w-component velocity field
+ *  * p -- device subdomain pressure field
+ *  * f -- device subdomain body forcing field
+ *  * conv0 -- device subdomain previous time step stored convective term
+ *  * v_star -- device subdomain v-component intermediate velocity field
+ *  * dom -- the subdomain in which this device is operating
+ *  * dt -- the current timestep
+ *  * dt0 -- the previous timestep
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_rhs<<<>>>()
+ * NAME
+ *  wstar_rhs<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_rhs(real rho_f, real nu, real *u, real *v, real *w,
+  real *p, real *f, real *conv0, real *w_star, dom_struct *dom, real dt,
+  real dt0);
+/*
+ * FUNCTION
+ *  Compute the right-hand side of the w_star Helmholtz problem.
+ * ARGUMENTS
+ *  * rho_f -- fluid density
+ *  * nu -- fluid kinematic viscosity
+ *  * u -- device subdomain u-component velocity field
+ *  * v -- device subdomain v-component velocity field
+ *  * w -- device subdomain w-component velocity field
+ *  * p -- device subdomain pressure field
+ *  * f -- device subdomain body forcing field
+ *  * conv0 -- device subdomain previous time step stored convective term
+ *  * w_star -- device subdomain w-component intermediate velocity field
+ *  * dom -- the subdomain in which this device is operating
+ *  * dt -- the current timestep
+ *  * dt0 -- the previous timestep
+ ******
+ */
+
 /****f* cuda_bicgstab_kernel/coeffs_init<<<>>>()
  * NAME
  *  coeffs_init<<<>>>()
  * USAGE
  */
 __global__ void coeffs_init(dom_struct *dom, int pitch, real *values);
+/*
+ * FUNCTION
+ *  Initialize the coefficient matrix to zeros before calling coeffs<<<>>>().
+ * ARGUMENTS
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/ustar_coeffs_init<<<>>>()
+ * NAME
+ *  ustar_coeffs_init<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_coeffs_init(dom_struct *dom, int pitch, real *values);
+/*
+ * FUNCTION
+ *  Initialize the coefficient matrix to zeros before calling coeffs<<<>>>().
+ * ARGUMENTS
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_coeffs_init<<<>>>()
+ * NAME
+ *  vstar_coeffs_init<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_coeffs_init(dom_struct *dom, int pitch, real *values);
+/*
+ * FUNCTION
+ *  Initialize the coefficient matrix to zeros before calling coeffs<<<>>>().
+ * ARGUMENTS
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_coeffs_init<<<>>>()
+ * NAME
+ *  wstar_coeffs_init<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_coeffs_init(dom_struct *dom, int pitch, real *values);
 /*
  * FUNCTION
  *  Initialize the coefficient matrix to zeros before calling coeffs<<<>>>().
@@ -187,12 +373,79 @@ __global__ void coeffs(dom_struct *dom, int *flag_u, int *flag_v, int *flag_w,
  ******
  */
 
+/****f* cuda_bicgstab_kernel/ustar_coeffs<<<>>>()
+ * NAME
+ *  ustar_coeffs<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
+  real *values);
+/*
+ * FUNCTION
+ *  Set up the coefficient matrix for the u_star Helmholtz problem.
+ * ARGUMENTS
+ *  * nu -- fluid kinematic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_coeffs<<<>>>()
+ * NAME
+ *  vstar_coeffs<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
+  real *values);
+/*
+ * FUNCTION
+ *  Set up the coefficient matrix for the v_star Helmholtz problem.
+ * ARGUMENTS
+ *  * nu -- fluid kinematic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_coeffs<<<>>>()
+ * NAME
+ *  wstar_coeffs<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
+  real *values);
+/*
+ * FUNCTION
+ *  Set up the coefficient matrix for the w_star Helmholtz problem.
+ * ARGUMENTS
+ *  * nu -- fluid kinematic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
 /****f* cuda_bicgstab_kernel/coeffs_periodic_W<<<>>>()
  * NAME
  *  coeffs_periodic_W<<<>>>()
  * USAGE
  */
-__global__ void coeffs_periodic_W(dom_struct *dom, int pitch, real *values);
+__global__ void coeffs_periodic_W(dom_struct *dom, int pitch, real *values,
+  int *flag_u);
 /*
  * FUNCTION
  *  Set periodic boundary conditions for pressure for W face.
@@ -203,6 +456,7 @@ __global__ void coeffs_periodic_W(dom_struct *dom, int pitch, real *values);
  *  * values -- the device pointer to the device-allocated CUSP dia_matrix
  *    values data structure (access it via:
  *    thrust::raw_pointer_cast(&A->values.values[0]))
+ *  * flag_u -- subdomain device flag
  ******
  */
 
@@ -211,7 +465,8 @@ __global__ void coeffs_periodic_W(dom_struct *dom, int pitch, real *values);
  *  coeffs_periodic_E<<<>>>()
  * USAGE
  */
-__global__ void coeffs_periodic_E(dom_struct *dom, int pitch, real *values);
+__global__ void coeffs_periodic_E(dom_struct *dom, int pitch, real *values,
+  int *flag_u);
 /*
  * FUNCTION
  *  Set periodic boundary conditions for pressure for E face.
@@ -222,6 +477,7 @@ __global__ void coeffs_periodic_E(dom_struct *dom, int pitch, real *values);
  *  * values -- the device pointer to the device-allocated CUSP dia_matrix
  *    values data structure (access it via:
  *    thrust::raw_pointer_cast(&A->values.values[0]))
+ *  * flag_u -- subdomain device flag
  ******
  */
 
@@ -230,7 +486,8 @@ __global__ void coeffs_periodic_E(dom_struct *dom, int pitch, real *values);
  *  coeffs_periodic_S<<<>>>()
  * USAGE
  */
-__global__ void coeffs_periodic_S(dom_struct *dom, int pitch, real *values);
+__global__ void coeffs_periodic_S(dom_struct *dom, int pitch, real *values,
+  int *flag_v);
 /*
  * FUNCTION
  *  Set periodic boundary conditions for pressure for S face.
@@ -241,6 +498,7 @@ __global__ void coeffs_periodic_S(dom_struct *dom, int pitch, real *values);
  *  * values -- the device pointer to the device-allocated CUSP dia_matrix
  *    values data structure (access it via:
  *    thrust::raw_pointer_cast(&A->values.values[0]))
+ *  * flag_v -- subdomain device flag
  ******
  */
 
@@ -249,7 +507,8 @@ __global__ void coeffs_periodic_S(dom_struct *dom, int pitch, real *values);
  *  coeffs_periodic_N<<<>>>()
  * USAGE
  */
-__global__ void coeffs_periodic_N(dom_struct *dom, int pitch, real *values);
+__global__ void coeffs_periodic_N(dom_struct *dom, int pitch, real *values,
+  int *flag_v);
 /*
  * FUNCTION
  *  Set periodic boundary conditions for pressure for N face.
@@ -260,6 +519,7 @@ __global__ void coeffs_periodic_N(dom_struct *dom, int pitch, real *values);
  *  * values -- the device pointer to the device-allocated CUSP dia_matrix
  *    values data structure (access it via:
  *    thrust::raw_pointer_cast(&A->values.values[0]))
+ *  * flag_v -- subdomain device flag
  ******
  */
 
@@ -268,7 +528,8 @@ __global__ void coeffs_periodic_N(dom_struct *dom, int pitch, real *values);
  *  coeffs_periodic_B<<<>>>()
  * USAGE
  */
-__global__ void coeffs_periodic_B(dom_struct *dom, int pitch, real *values);
+__global__ void coeffs_periodic_B(dom_struct *dom, int pitch, real *values,
+  int *flag_w);
 /*
  * FUNCTION
  *  Set periodic boundary conditions for pressure for B face.
@@ -279,6 +540,7 @@ __global__ void coeffs_periodic_B(dom_struct *dom, int pitch, real *values);
  *  * values -- the device pointer to the device-allocated CUSP dia_matrix
  *    values data structure (access it via:
  *    thrust::raw_pointer_cast(&A->values.values[0]))
+ *  * flag_w -- subdomain device flag
  ******
  */
 
@@ -287,11 +549,409 @@ __global__ void coeffs_periodic_B(dom_struct *dom, int pitch, real *values);
  *  coeffs_periodic_T<<<>>>()
  * USAGE
  */
-__global__ void coeffs_periodic_T(dom_struct *dom, int pitch, real *values);
+__global__ void coeffs_periodic_T(dom_struct *dom, int pitch, real *values,
+  int *flag_w);
 /*
  * FUNCTION
  *  Set periodic boundary conditions for pressure for T face.
  * ARGUMENTS
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ *  * flag_w -- subdomain device flag
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/ustar_coeffs_periodic_W<<<>>>()
+ * NAME
+ *  ustar_coeffs_periodic_W<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_coeffs_periodic_W(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for u_star for W face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/ustar_coeffs_periodic_E<<<>>>()
+ * NAME
+ *  ustar_coeffs_periodic_E<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_coeffs_periodic_E(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for u_star for E face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/ustar_coeffs_periodic_S<<<>>>()
+ * NAME
+ *  ustar_coeffs_periodic_S<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_coeffs_periodic_S(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for u_star for S face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/ustar_coeffs_periodic_N<<<>>>()
+ * NAME
+ *  ustar_coeffs_periodic_N<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_coeffs_periodic_N(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for u_star for N face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/ustar_coeffs_periodic_B<<<>>>()
+ * NAME
+ *  ustar_coeffs_periodic_B<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_coeffs_periodic_B(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for u_star for B face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/ustar_coeffs_periodic_T<<<>>>()
+ * NAME
+ *  ustar_coeffs_periodic_T<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_coeffs_periodic_T(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for u_star for T face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_coeffs_periodic_W<<<>>>()
+ * NAME
+ *  vstar_coeffs_periodic_W<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_coeffs_periodic_W(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for v_star for W face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_coeffs_periodic_E<<<>>>()
+ * NAME
+ *  vstar_coeffs_periodic_E<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_coeffs_periodic_E(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for v_star for E face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_coeffs_periodic_S<<<>>>()
+ * NAME
+ *  vstar_coeffs_periodic_S<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_coeffs_periodic_S(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for v_star for S face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_coeffs_periodic_N<<<>>>()
+ * NAME
+ *  vstar_coeffs_periodic_N<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_coeffs_periodic_N(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for v_star for N face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_coeffs_periodic_B<<<>>>()
+ * NAME
+ *  vstar_coeffs_periodic_B<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_coeffs_periodic_B(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for v_star for B face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_coeffs_periodic_T<<<>>>()
+ * NAME
+ *  vstar_coeffs_periodic_T<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_coeffs_periodic_T(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for v_star for T face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_coeffs_periodic_W<<<>>>()
+ * NAME
+ *  wstar_coeffs_periodic_W<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_coeffs_periodic_W(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for w_star for W face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_coeffs_periodic_E<<<>>>()
+ * NAME
+ *  wstar_coeffs_periodic_E<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_coeffs_periodic_E(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for w_star for E face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_coeffs_periodic_S<<<>>>()
+ * NAME
+ *  wstar_coeffs_periodic_S<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_coeffs_periodic_S(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for w_star for S face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_coeffs_periodic_N<<<>>>()
+ * NAME
+ *  wstar_coeffs_periodic_N<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_coeffs_periodic_N(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for w_star for N face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_coeffs_periodic_B<<<>>>()
+ * NAME
+ *  wstar_coeffs_periodic_B<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_coeffs_periodic_B(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for w_star for B face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_coeffs_periodic_T<<<>>>()
+ * NAME
+ *  wstar_coeffs_periodic_T<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_coeffs_periodic_T(real nu, real dt, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set periodic boundary conditions for w_star for T face.
+ * ARGUMENTS
+ *  * nu -- kinemtic viscosity
+ *  * dt -- time step
  *  * dom -- the subdomain associated with this device
  *  * pitch -- the pitch associated with the CUSP dia_matrix values data
  *    structure

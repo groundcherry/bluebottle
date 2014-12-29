@@ -1419,6 +1419,41 @@ __global__ void project_w(real *w_star, real *p, real rho_f, real dt,
  ******
  */
 
+/****f* cuda_bluebottle_kernel/update_p_laplacian<<<>>>()
+ * NAME
+ *  update_p_laplacian<<<>>>()
+ * USAGE
+ */
+__global__ void update_p_laplacian(real *Lp, real *p, dom_struct *dom);
+/*
+ * FUNCTION
+ *  Update the pressure according to Brown, Cortez, and Minion (2000), eq. 74.
+ * ARGUMENTS
+ *  * Lp -- Laplacian of p
+ *  * p -- intermediate pressure given by solution of pressure-Poisson problem
+ *  * dom -- the subdomain on which to operate
+ ******
+ */
+
+/****f* cuda_bluebottle_kernel/update_p<<<>>>()
+ * NAME
+ *  update_p<<<>>>()
+ * USAGE
+ */
+__global__ void update_p(real *Lp, real *p0, real *p, dom_struct *dom,
+  real nu, real dt);
+/*
+ * FUNCTION
+ *  Update the pressure according to Brown, Cortez, and Minion (2000), eq. 74.
+ * ARGUMENTS
+ *  * Lp -- Laplacian of p
+ *  * p0 -- previous pressure
+ *  * p -- intermediate pressure given by solution of pressure-Poisson problem
+ *  * dom -- the subdomain on which to operate
+ *  * nu -- kinematic viscosity
+ ******
+ */
+
 /****f* cuda_bluebottle_kernel/copy_p_ghost<<<>>>()
  * NAME
  *  copy_p_ghost<<<>>>()
@@ -1453,6 +1488,23 @@ __global__ void copy_p_noghost(real *p_noghost, real *p_ghost, dom_struct *dom);
  ******
  */
 
+/****f* cuda_bluebottle_kernel/copy_u_ghost<<<>>>()
+ * NAME
+ *  copy_u_ghost<<<>>>()
+ * USAGE
+ */
+__global__ void copy_u_ghost(real *u_ghost, real *u_noghost, dom_struct *dom);
+/*
+ * FUNCTION
+ *  Copy the u-velocity field containing no ghost cells to a new array with
+ *  ghost cells.
+ * ARGUMENTS
+ *  u_ghost -- the destination data structure without ghost cells
+ *  u_noghost -- the source data structure with ghost cells
+ *  dom -- the subdomain on which to operate
+ ******
+ */
+
 /****f* cuda_bluebottle_kernel/copy_u_noghost<<<>>>()
  * NAME
  *  copy_u_noghost<<<>>>()
@@ -1470,6 +1522,23 @@ __global__ void copy_u_noghost(real *u_noghost, real *u_ghost, dom_struct *dom);
  ******
  */
 
+/****f* cuda_bluebottle_kernel/copy_v_ghost<<<>>>()
+ * NAME
+ *  copy_v_ghost<<<>>>()
+ * USAGE
+ */
+__global__ void copy_v_ghost(real *v_ghost, real *v_noghost, dom_struct *dom);
+/*
+ * FUNCTION
+ *  Copy the v-velocity field containing no ghost cells to a new array with
+ *  ghost cells.
+ * ARGUMENTS
+ *  v_ghost -- the destination data structure with ghost cells
+ *  v_noghost -- the source data structure without ghost cells
+ *  dom -- the subdomain on which to operate
+ ******
+ */
+
 /****f* cuda_bluebottle_kernel/copy_v_noghost<<<>>>()
  * NAME
  *  copy_v_noghost<<<>>>()
@@ -1483,6 +1552,23 @@ __global__ void copy_v_noghost(real *v_noghost, real *v_ghost, dom_struct *dom);
  * ARGUMENTS
  *  v_noghost -- the destination data structure without ghost cells
  *  v_ghost -- the source data structure with ghost cells
+ *  dom -- the subdomain on which to operate
+ ******
+ */
+
+/****f* cuda_bluebottle_kernel/copy_w_ghost<<<>>>()
+ * NAME
+ *  copy_w_ghost<<<>>>()
+ * USAGE
+ */
+__global__ void copy_w_ghost(real *w_ghost, real *w_noghost, dom_struct *dom);
+/*
+ * FUNCTION
+ *  Copy the w-velocity field containing no ghost cells to a new array with
+ *  ghost cells.
+ * ARGUMENTS
+ *  w_ghost -- the destination data structure with ghost cells
+ *  w_noghost -- the source data structure without ghost cells
  *  dom -- the subdomain on which to operate
  ******
  */
@@ -1516,7 +1602,7 @@ __global__ void copy_w_fluid(real *w_noghost, real *w_ghost, int *phase, dom_str
  * USAGE
  */
 __global__ void u_star_2(real rho_f, real nu,
-  real *u0, real *v0, real *w0, real *f,
+  real *u0, real *v0, real *w0, real *p, real *f,
   real *diff0, real *conv0, real *diff, real *conv, real *u_star,
   dom_struct *dom, real dt0, real dt);
 /*
@@ -1528,6 +1614,7 @@ __global__ void u_star_2(real rho_f, real nu,
  *  * u0 -- device subdomain u-component velocity field from previous timestep
  *  * v0 -- device subdomain v-component velocity field from previous timestep
  *  * w0 -- device subdomain w-component velocity field from previous timestep
+ *  * p0 -- device subdomain pressure field from previous timestep
  *  * f -- the forcing array
  *  * diff0 -- device subdomain previous diffusion term
  *  * conv0 -- device subdomain previous convection term
@@ -1544,7 +1631,7 @@ __global__ void u_star_2(real rho_f, real nu,
  * USAGE
  */
 __global__ void v_star_2(real rho_f, real nu,
-  real *u0, real *v0, real *w0, real *f,
+  real *u0, real *v0, real *w0, real *p, real *f,
   real *diff0, real *conv0, real *diff, real *conv, real *v_star,
   dom_struct *dom, real dt0, real dt);
 /*
@@ -1556,6 +1643,7 @@ __global__ void v_star_2(real rho_f, real nu,
  *  * u0 -- device subdomain u-component velocity field from previous timestep
  *  * v0 -- device subdomain v-component velocity field from previous timestep
  *  * w0 -- device subdomain w-component velocity field from previous timestep
+ *  * p0 -- device subdomain pressure field from previous timestep
  *  * f -- the forcing array
  *  * diff0 -- device subdomain previous diffusion term
  *  * conv0 -- device subdomain previous convection term
@@ -1572,7 +1660,7 @@ __global__ void v_star_2(real rho_f, real nu,
  * USAGE
  */
 __global__ void w_star_2(real rho_f, real nu,
-  real *u0, real *v0, real *w0, real *f,
+  real *u0, real *v0, real *w0, real *p, real *f,
   real *diff0, real *conv0, real *diff, real *conv, real *w_star,
   dom_struct *dom, real dt0, real dt);
 /*
@@ -1584,99 +1672,13 @@ __global__ void w_star_2(real rho_f, real nu,
  *  * u0 -- device subdomain u-component velocity field from previous timestep
  *  * v0 -- device subdomain v-component velocity field from previous timestep
  *  * w0 -- device subdomain w-component velocity field from previous timestep
+ *  * p0 -- device subdomain pressure field from previous timestep
  *  * f -- the forcing array
  *  * diff0 -- device subdomain previous diffusion term
  *  * conv0 -- device subdomain previous convection term
  *  * w_star -- the intermediate velocity field
  *  * dom -- the subdomain in which this device is operating
  *  * dt0 -- the previous timestep
- *  * dt -- the current timestep
- ******
- */
-
-/****f* cuda_bluebottle_kernel/u_star_2_init<<<>>>()
- * NAME
- *  u_star_2_init<<<>>>()
- * USAGE
- */
-__global__ void u_star_2_init(real rho_f, real nu,
-  real *u, real *v, real *w, real *f,
-  real *diff0, real *conv0, real *diff, real *conv, real *u_star,
-  dom_struct *dom, real dt);
-/*
- * FUNCTION
- *  Compute the intermediate velocity field u_star (2nd-order in time).
- *  This version uses the Euler method for initializing the Adams-Bashforth
- *  stepping.
- * ARGUMENTS
- *  * rho_f -- fluid density
- *  * nu -- fluid kinematic viscosity
- *  * u -- device subdomain u-component velocity field
- *  * v -- device subdomain v-component velocity field
- *  * w -- device subdomain w-component velocity field
- *  * f -- the forcing array
- *  * diff0 -- device subdomain previous diffusion term
- *  * conv0 -- device subdomain previous convection term
- *  * u_star -- the intermediate velocity field
- *  * dom -- the subdomain in which this device is operating
- *  * dt -- the current timestep
- ******
- */
-
-/****f* cuda_bluebottle_kernel/v_star_2_init<<<>>>()
- * NAME
- *  v_star_2_init<<<>>>()
- * USAGE
- */
-__global__ void v_star_2_init(real rho_f, real nu,
-  real *u, real *v, real *w, real *f,
-  real *diff0, real *conv0, real *diff, real *conv, real *v_star,
-  dom_struct *dom, real dt);
-/*
- * FUNCTION
- *  Compute the intermediate velocity field v_star (2nd-order in time).
- *  This version uses the Euler method for initializing the Adams-Bashforth
- *  stepping.
- * ARGUMENTS
- *  * rho_f -- fluid density
- *  * nu -- fluid kinematic viscosity
- *  * u -- device subdomain u-component velocity field
- *  * v -- device subdomain v-component velocity field
- *  * w -- device subdomain w-component velocity field
- *  * f -- the forcing array
- *  * diff0 -- device subdomain previous diffusion term
- *  * conv0 -- device subdomain previous convection term
- *  * v_star -- the intermediate velocity field
- *  * dom -- the subdomain in which this device is operating
- *  * dt -- the current timestep
- ******
- */
-
-/****f* cuda_bluebottle_kernel/w_star_2_init<<<>>>()
- * NAME
- *  w_star_2_init<<<>>>()
- * USAGE
- */
-__global__ void w_star_2_init(real rho_f, real nu,
-  real *u, real *v, real *w, real *f,
-  real *diff0, real *conv0, real *diff, real *conv, real *w_star,
-  dom_struct *dom, real dt);
-/*
- * FUNCTION
- *  Compute the intermediate velocity field w_star (2nd-order in time).
- *  This version uses the Euler method for initializing the Adams-Bashforth
- *  stepping.
- * ARGUMENTS
- *  * rho_f -- fluid density
- *  * nu -- fluid kinematic viscosity
- *  * u -- device subdomain u-component velocity field
- *  * v -- device subdomain v-component velocity field
- *  * w -- device subdomain w-component velocity field
- *  * f -- the forcing array
- *  * diff0 -- device subdomain diffusion term
- *  * conv0 -- device subdomain convection term
- *  * w_star -- the intermediate velocity field
- *  * dom -- the subdomain in which this device is operating
  *  * dt -- the current timestep
  ******
  */

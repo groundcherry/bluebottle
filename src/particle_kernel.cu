@@ -664,11 +664,14 @@ __global__ void cage_flag_u_2(int p, int *flag_u, int *flag_v, int *flag_w,
         if(flag_v[S] < 1 || flag_v[N] < 1 || flag_w[B] < 1 || flag_w[T] < 1) {
           // find location of this node to be flagged
           xx = (i-DOM_BUF)*dom->dx + dom->xs;
-          if(xx < X - 0.5*dom->dx) flag_u[W] = -1;//0;//;
-          else if(xx < X + 0.5*dom->dx) {
-            flag_u[W] = -1;//0;//;
-            flag_u[E] = -1;//0;//;
-          } else flag_u[E] = -1;//0;//
+          if(xx < X - 0.5*dom->dx) {
+            if(flag_u[W] > 0) flag_u[W] = -1;
+          } else if(xx < X + 0.5*dom->dx) {
+            if(flag_u[W] > 0) flag_u[W] = -1;
+            if(flag_u[E] > 0) flag_u[E] = -1;
+          } else {
+            if(flag_u[E] > 0) flag_u[E] = -1;
+          }
         }
       }
     }
@@ -686,11 +689,14 @@ __global__ void cage_flag_u_2(int p, int *flag_u, int *flag_v, int *flag_w,
         if(flag_v[S] < 1 || flag_v[N] < 1 || flag_w[B] < 1 || flag_w[T] < 1) {
           // find location of this node to be flagged
           xx = (i-DOM_BUF)*dom->dx + dom->xs;
-          if(xx < X - 0.5*dom->dx) flag_u[W] = -1;//0;//
-          else if(xx < X + 0.5*dom->dx) {
-            flag_u[W] = -1;//0;//
-            flag_u[E] = -1;//0;//
-          } else flag_u[E] = -1;//0;//
+          if(xx < X - 0.5*dom->dx) {
+            if(flag_u[W] > 0) flag_u[W] = -1;
+          } else if(xx < X + 0.5*dom->dx) {
+            if(flag_u[W] > 0) flag_u[W] = -1;
+            if(flag_u[E] > 0) flag_u[E] = -1;
+          } else {
+            if(flag_u[E] > 0) flag_u[E] = -1;
+          }
         }
       }
     }
@@ -724,11 +730,14 @@ __global__ void cage_flag_v_2(int p, int *flag_u, int *flag_v, int *flag_w,
         if(flag_u[W] < 1 || flag_u[E] < 1 || flag_w[B] < 1 || flag_w[T] < 1) {
           // find location of this node to be flagged
           yy = (j-DOM_BUF)*dom->dy + dom->ys;
-          if(yy < Y - 0.5*dom->dy) flag_v[S] = -1;//0;//
-          else if(yy < Y + 0.5*dom->dy) {
-            flag_v[S] = -1;//0;//
-            flag_v[N] = -1;//0;//
-          } else flag_v[N] = -1;//0;//
+          if(yy < Y - 0.5*dom->dy) {
+            if(flag_v[S] > 0) flag_v[S] = -1;
+          } else if(yy < Y + 0.5*dom->dy) {
+            if(flag_v[S] > 0) flag_v[S] = -1;
+            if(flag_v[N] > 0) flag_v[N] = -1;
+          } else {
+            if(flag_v[N] > 0)flag_v[N] = -1;
+          }
         }
       }
     }
@@ -746,11 +755,14 @@ __global__ void cage_flag_v_2(int p, int *flag_u, int *flag_v, int *flag_w,
         if(flag_u[W] < 1 || flag_u[E] < 1 || flag_w[B] < 1 || flag_w[T] < 1) {
           // find location of this node to be flagged
           yy = (j-DOM_BUF)*dom->dy + dom->ys;
-          if(yy < Y - 0.5*dom->dy) flag_v[S] = -1;//0;//
-          else if(yy < Y + 0.5*dom->dy) {
-            flag_v[S] = -1;//0;//
-            flag_v[N] = -1;//0;//
-          } else flag_v[N] = -1;//0;//
+          if(yy < Y - 0.5*dom->dy) {
+            if(flag_v[S] > 0) flag_v[S] = -1;
+          } else if(yy < Y + 0.5*dom->dy) {
+            if(flag_v[S] > 0) flag_v[S] = -1;
+            if(flag_v[N] > 0) flag_v[N] = -1;
+          } else {
+            if(flag_v[N] > 0) flag_v[N] = -1;
+          }
         }
       }
     }
@@ -784,11 +796,14 @@ __global__ void cage_flag_w_2(int p, int *flag_u, int *flag_v, int *flag_w,
         if(flag_u[W] < 1 || flag_u[E] < 1 || flag_v[S] < 1 || flag_v[N] < 1) {
           // find location of this node to be flagged
           zz = (k-DOM_BUF)*dom->dz + dom->zs;
-          if(zz < Z - 0.5*dom->dz) flag_w[B] = -1;//0;//
-          else if(zz < Z + 0.5*dom->dz) {
-            flag_w[B] = -1;//0;//
-            flag_w[T] = -1;//0;//
-          } else flag_w[T] = -1;//0;//
+          if(zz < Z - 0.5*dom->dz) {
+            if(flag_w[B] > 0) flag_w[B] = -1;
+          } else if(zz < Z + 0.5*dom->dz) {
+            if(flag_w[B] > 0) flag_w[B] = -1;
+            if(flag_w[T] > 0) flag_w[T] = -1;
+          } else {
+            if(flag_w[T] > 0) flag_w[T] = -1;
+          }
         }
       }
     }
@@ -806,11 +821,14 @@ __global__ void cage_flag_w_2(int p, int *flag_u, int *flag_v, int *flag_w,
         if(flag_u[W] < 1 || flag_u[E] < 1 || flag_v[S] < 1 || flag_v[N] < 1) {
           // find location of this node to be flagged
           zz = (k-DOM_BUF)*dom->dz + dom->zs;
-          if(zz < Z - 0.5*dom->dz) flag_w[B] = -1;//0;//
-          else if(zz < Z + 0.5*dom->dz) {
-            flag_w[B] = -1;//0;//
-            flag_w[T] = -1;//0;//
-          } else flag_w[T] = -1;//0;//
+          if(zz < Z - 0.5*dom->dz) {
+            if(flag_w[B] > 0) flag_w[B] = -1;
+          } else if(zz < Z + 0.5*dom->dz) {
+            if(flag_w[B] > 0) flag_w[B] = -1;
+            if(flag_w[T] > 0) flag_w[T] = -1;
+          } else {
+            if(flag_w[T] > 0) flag_w[T] = -1;
+          }
         }
       }
     }
@@ -1123,9 +1141,9 @@ __global__ void part_BC_w(real *w, int *phase, int *flag_w,
   }
 }
 
-__global__ void part_BC_p(real *p, int *phase, int *phase_shell,
+__global__ void part_BC_p(real *p, real *p_rhs, int *phase, int *phase_shell,
   part_struct *parts, dom_struct *dom,
-  real mu, real nu, gradP_struct gradP, real rho_f, int stride,
+  real mu, real nu, real dt, gradP_struct gradP, real rho_f, int stride,
   real *pnm_re00, real *pnm_im00, real *phinm_re00, real *phinm_im00,
   real *chinm_re00, real *chinm_im00,
   real *pnm_re, real *pnm_im, real *phinm_re, real *phinm_im,
@@ -1189,7 +1207,7 @@ __global__ void part_BC_p(real *p, int *phase, int *phase_shell,
 
       // calculate analytic solution
 #ifdef STEPS
-      p[C] = phase_shell[CC] * p[C];
+      p_rhs[C] = phase_shell[CC] * p_rhs[C];
 #else
       real ar = a / r;
       real ra = r / a;
@@ -1216,8 +1234,9 @@ __global__ void part_BC_p(real *p, int *phase, int *phase_shell,
       pp_tmp += 0.5 * rho_f * ocrossr2 + rho_f * accdotr;
       pp_tmp00 += 0.5 * rho_f * ocrossr2 + rho_f * accdotr;
       // write BC if flagged, otherwise leave alone
-      p[C] = (real) phase_shell[CC] * p[C]
-        + (real) (1 - phase_shell[CC]) * 0.5 * (pp_tmp + pp_tmp00);
+      p_rhs[C] = (real) phase_shell[CC] * p_rhs[C]
+        + (real) (1 - phase_shell[CC]) * ((0.5*(pp_tmp + pp_tmp00)-p[CC])
+        + 0.5*nu*dt*p_rhs[C]);
 #endif
     }
   }

@@ -444,9 +444,11 @@ void cgns_flow_field(real dtout)
     for(int j = Dom.Gfx.js; j < Dom.Gfx.je; j++) {
       for(int i = Dom.Gfx.is; i < Dom.Gfx.ie-1; i++) {
         int C = (i-DOM_BUF) + (j-DOM_BUF)*Dom.Gcc.s1 + (k-DOM_BUF)*Dom.Gcc.s2;
-        int CC0 = i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
-        int CC1 = (i+1) + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
-        uout[C] = 0.5*(u[CC1] + u[CC0]);
+        int CC0 = (i-1) + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
+        int CC1 = i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
+        int CC2 = (i+1) + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
+        int CC3 = (i+2) + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
+        uout[C] = -0.0625*u[CC0] + 0.5625*u[CC1] + 0.5625*u[CC2] - 0.0625*u[CC3];
       }
     }
   }
@@ -458,9 +460,11 @@ void cgns_flow_field(real dtout)
     for(int j = Dom.Gfy.js; j < Dom.Gfy.je-1; j++) {
       for(int i = Dom.Gfy.is; i < Dom.Gfy.ie; i++) {
         int C = (i-DOM_BUF) + (j-DOM_BUF)*Dom.Gcc.s1 + (k-DOM_BUF)*Dom.Gcc.s2;
-        int CC0 = i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
-        int CC1 = i + (j+1)*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
-        vout[C] = 0.5*(v[CC1] + v[CC0]);
+        int CC0 = i + (j-1)*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
+        int CC1 = i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
+        int CC2 = i + (j+1)*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
+        int CC3 = i + (j+2)*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
+        vout[C] = -0.0625*v[CC0] + 0.5625*v[CC1] + 0.5625*v[CC2] - 0.0625*v[CC3];
       }
     }
   }
@@ -472,9 +476,11 @@ void cgns_flow_field(real dtout)
     for(int j = Dom.Gfz.js; j < Dom.Gfz.je; j++) {
       for(int i = Dom.Gfz.is; i < Dom.Gfz.ie; i++) {
         int C = (i-DOM_BUF) + (j-DOM_BUF)*Dom.Gcc.s1 + (k-DOM_BUF)*Dom.Gcc.s2;
-        int CC0 = i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b;
-        int CC1 = i + j*Dom.Gfz.s1b + (k+1)*Dom.Gfz.s2b;
-        wout[C] = 0.5*(w[CC1] + w[CC0]);
+        int CC0 = i + j*Dom.Gfz.s1b + (k-1)*Dom.Gfz.s2b;
+        int CC1 = i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b;
+        int CC2 = i + j*Dom.Gfz.s1b + (k+1)*Dom.Gfz.s2b;
+        int CC3 = i + j*Dom.Gfz.s1b + (k+2)*Dom.Gfz.s2b;
+        wout[C] = -0.0625*w[CC0] + 0.5625*w[CC1] + 0.5625*w[CC2] - 0.0625*w[CC3];
       }
     }
   }

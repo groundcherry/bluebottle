@@ -191,7 +191,7 @@ __global__ void BC_u_W_P(real *u, dom_struct *dom)
 
   if((tj < dom->Gfx._jnb) && (tk < dom->Gfx._knb)) {
     u[dom->Gfx._isb + tj*s1b + tk*s2b] = u[(dom->Gfx._ie-2) + tj*s1b + tk*s2b];
-    //u[dom->Gfx._is + tj*s1b + tk*s2b] = u[(dom->Gfx._ie-1) + tj*s1b + tk*s2b];
+    u[dom->Gfx._is + tj*s1b + tk*s2b] = u[(dom->Gfx._ie-1) + tj*s1b + tk*s2b];
   }
 }
 
@@ -205,7 +205,7 @@ __global__ void BC_u_W_D(real *u, dom_struct *dom, real bc)
   int s2b = dom->Gfx._s2b;
 
   if((tj < dom->Gfx._jnb) && (tk < dom->Gfx._knb)) {
-    u[dom->Gfx._isb + tj*s1b + tk*s2b] = 2 * bc
+    u[dom->Gfx._isb + tj*s1b + tk*s2b] = 2. * bc
       - u[(dom->Gfx._is+1) + tj*s1b + tk*s2b];
     u[dom->Gfx._is + tj*s1b + tk*s2b] = bc;
   }
@@ -234,7 +234,7 @@ __global__ void BC_u_W_T(real *u, dom_struct *dom, real* bc)
   int s2b = dom->Gfx._s2b;
 
   if((tj < dom->Gfx._jnb) && (tk < dom->Gfx._knb)) {
-    u[dom->Gfx._isb + tj*s1b + tk*s2b] = 2 * bc[tj + tk*dom->Gfx.jnb]
+    u[dom->Gfx._isb + tj*s1b + tk*s2b] = 2. * bc[tj + tk*dom->Gfx.jnb]
       - u[(dom->Gfx._is+1) + tj*s1b + tk*s2b];
     u[dom->Gfx._is + tj*s1b + tk*s2b] = bc[tj + tk*dom->Gfx.jnb];
   }
@@ -251,7 +251,7 @@ __global__ void BC_u_E_P(real *u, dom_struct *dom)
 
   if((tj < dom->Gfx._jnb) && (tk < dom->Gfx._knb)) {
     u[(dom->Gfx._ieb-1) + tj*s1b + tk*s2b] = u[(dom->Gfx._is+1) + tj*s1b + tk*s2b];
-    //u[(dom->Gfx._ie-1) + tj*s1b + tk*s2b] = u[dom->Gfx._is + tj*s1b + tk*s2b];
+    u[(dom->Gfx._ie-1) + tj*s1b + tk*s2b] = u[dom->Gfx._is + tj*s1b + tk*s2b];
   }
 }
 
@@ -265,7 +265,7 @@ __global__ void BC_u_E_D(real *u, dom_struct *dom, real bc)
   int s2b = dom->Gfx._s2b;
 
   if((tj < dom->Gfx._jnb) && (tk < dom->Gfx._knb)) {
-    u[(dom->Gfx._ieb-1) + tj*s1b + tk*s2b] = 2 * bc - u[(dom->Gfx._ie-2)
+    u[(dom->Gfx._ieb-1) + tj*s1b + tk*s2b] = 2. * bc - u[(dom->Gfx._ie-2)
       + tj*s1b + tk*s2b];
     u[(dom->Gfx._ie-1) + tj*s1b + tk*s2b] = bc;
   }
@@ -295,7 +295,7 @@ __global__ void BC_u_E_T(real *u, dom_struct *dom, real* bc)
   int s2b = dom->Gfx._s2b;
 
   if((tj < dom->Gfx._jnb) && (tk < dom->Gfx._knb)) {
-    u[(dom->Gfx._ieb-1) + tj*s1b + tk*s2b] = 2 * bc[tj + tk*dom->Gfx.jnb]
+    u[(dom->Gfx._ieb-1) + tj*s1b + tk*s2b] = 2. * bc[tj + tk*dom->Gfx.jnb]
       - u[(dom->Gfx._ie-2) + tj*s1b + tk*s2b];
     u[(dom->Gfx._ie-1) + tj*s1b + tk*s2b] = bc[tj + tk*dom->Gfx.jnb];
   }
@@ -324,9 +324,11 @@ __global__ void BC_u_S_D(real *u, dom_struct *dom, real bc)
   int s1b = dom->Gfx._s1b;
   int s2b = dom->Gfx._s2b;
 
-  if((ti < dom->Gfx._inb) && (tk < dom->Gfx._knb))
-    u[ti + dom->Gfx._jsb*s1b + tk*s2b] = 2 * bc
-      - u[ti + dom->Gfx._js*s1b + tk*s2b];
+  if((ti < dom->Gfx._inb) && (tk < dom->Gfx._knb)) {
+    u[ti + dom->Gfx._jsb*s1b + tk*s2b] = 8./3. * bc
+      - 2. * u[ti + dom->Gfx._js*s1b + tk*s2b]
+      + 1./3. * u[ti + (dom->Gfx._js+1)*s1b + tk*s2b];
+  }
 }
 
 // u-velocity; south; Neumann
@@ -352,7 +354,7 @@ __global__ void BC_u_S_T(real *u, dom_struct *dom, real* bc)
   int s2b = dom->Gfx._s2b;
 
   if((ti < dom->Gfx._inb) && (tk < dom->Gfx._knb)) {
-    u[ti + dom->Gfx._jsb*s1b + tk*s2b] = 2 * bc[tk + ti*dom->Gfx.knb]
+    u[ti + dom->Gfx._jsb*s1b + tk*s2b] = 2. * bc[tk + ti*dom->Gfx.knb]
       - u[ti + dom->Gfx._js*s1b + tk*s2b];
   }
 }
@@ -380,9 +382,11 @@ __global__ void BC_u_N_D(real *u, dom_struct *dom, real bc)
   int s1b = dom->Gfx._s1b;
   int s2b = dom->Gfx._s2b;
 
-  if((ti < dom->Gfx._inb) && (tk < dom->Gfx._knb))
-    u[ti + (dom->Gfx._jeb-1)*s1b + tk*s2b] = 2 * bc - u[ti
-      + (dom->Gfx._je-1)*s1b + tk*s2b];
+  if((ti < dom->Gfx._inb) && (tk < dom->Gfx._knb)) {
+    u[ti + (dom->Gfx._jeb-1)*s1b + tk*s2b] = 8./3. * bc
+      - 2. * u[ti + (dom->Gfx._je-1)*s1b + tk*s2b]
+      + 1./3. * u[ti + (dom->Gfx._je-2)*s1b + tk*s2b];
+  }
 }
 
 // u-velocity; north; Neumann
@@ -409,7 +413,7 @@ __global__ void BC_u_N_T(real *u, dom_struct *dom, real* bc)
   int s2b = dom->Gfx._s2b;
 
   if((ti < dom->Gfx._inb) && (tk < dom->Gfx._knb)) {
-    u[ti + (dom->Gfx._jeb-1)*s1b + tk*s2b] = 2 * bc[tk + ti*dom->Gfx.knb]
+    u[ti + (dom->Gfx._jeb-1)*s1b + tk*s2b] = 2. * bc[tk + ti*dom->Gfx.knb]
       - u[ti + (dom->Gfx._je-1)*s1b + tk*s2b];
   }
 }
@@ -437,8 +441,9 @@ __global__ void BC_u_B_D(real *u, dom_struct *dom, real bc)
   int s2b = dom->Gfx._s2b;
 
   if((ti < dom->Gfx._inb) && (tj < dom->Gfx._jnb))
-    u[ti + tj*s1b + dom->Gfx._ksb*s2b] = 2 * bc
-      - u[ti + tj*s1b + dom->Gfx._ks*s2b];
+    u[ti + tj*s1b + dom->Gfx._ksb*s2b] = 8./3. * bc
+      - 2. * u[ti + tj*s1b + dom->Gfx._ks*s2b]
+      + 1./3. * u[ti + tj*s1b + (dom->Gfx._ks+1)*s2b];
 }
 
 // u-velocity; bottom; Neumann
@@ -464,7 +469,7 @@ __global__ void BC_u_B_T(real *u, dom_struct *dom, real* bc)
   int s2b = dom->Gfx._s2b;
 
   if((ti < dom->Gfx._inb) && (tj < dom->Gfx._jnb)) {
-    u[ti + tj*s1b + dom->Gfx._ksb*s2b] = 2 * bc[ti + tj*dom->Gfx.inb]
+    u[ti + tj*s1b + dom->Gfx._ksb*s2b] = 2. * bc[ti + tj*dom->Gfx.inb]
       - u[ti + tj*s1b + dom->Gfx._ks*s2b];
   }
 }
@@ -493,8 +498,9 @@ __global__ void BC_u_T_D(real *u, dom_struct *dom, real bc)
   int s2b = dom->Gfx._s2b;
 
   if((ti < dom->Gfx._inb) && (tj < dom->Gfx._jnb))
-    u[ti + tj*s1b + (dom->Gfx._keb-1)*s2b] = 2 * bc - u[ti + tj*s1b +
-      (dom->Gfx._ke-1)*s2b];
+    u[ti + tj*s1b + (dom->Gfx._keb-1)*s2b] = 8./3. * bc
+      - 2. * u[ti + tj*s1b + (dom->Gfx._ke-1)*s2b]
+      + 1./3. * u[ti + tj*s1b + (dom->Gfx._ke-2)*s2b];
 }
 
 // u-velocity; top; Neumann
@@ -521,7 +527,7 @@ __global__ void BC_u_T_T(real *u, dom_struct *dom, real* bc)
   int s2b = dom->Gfx._s2b;
 
   if((ti < dom->Gfx._inb) && (tj < dom->Gfx._jnb)) {
-    u[ti + tj*s1b + (dom->Gfx._keb-1)*s2b] = 2 * bc[ti + tj*dom->Gfx.inb]
+    u[ti + tj*s1b + (dom->Gfx._keb-1)*s2b] = 2. * bc[ti + tj*dom->Gfx.inb]
       - u[ti + tj*s1b + (dom->Gfx._ke-1)*s2b];
   }
 }
@@ -548,9 +554,11 @@ __global__ void BC_v_W_D(real *v, dom_struct *dom, real bc)
   int s1b = dom->Gfy._s1b;
   int s2b = dom->Gfy._s2b;
 
-  if((tj < dom->Gfy._jnb) && (tk < dom->Gfy._knb))
-    v[dom->Gfy._isb + tj*s1b + tk*s2b] = 2 * bc
-      - v[dom->Gfy._is + tj*s1b + tk*s2b];
+  if((tj < dom->Gfy._jnb) && (tk < dom->Gfy._knb)) {
+    v[dom->Gfy._isb + tj*s1b + tk*s2b] = 8./3. * bc
+      - 2. * v[dom->Gfy._is + tj*s1b + tk*s2b]
+      + 1./3. * v[(dom->Gfy._is+1) + tj*s1b + tk*s2b];
+  }
 }
 
 // v-velocity; west; Neumann
@@ -576,7 +584,7 @@ __global__ void BC_v_W_T(real *v, dom_struct *dom, real* bc)
   int s2b = dom->Gfy._s2b;
 
   if((tj < dom->Gfy._jnb) && (tk < dom->Gfy._knb)) {
-    v[dom->Gfy._isb + tj*s1b + tk*s2b] = 2 * bc[tj + tk*dom->Gfy.jnb]
+    v[dom->Gfy._isb + tj*s1b + tk*s2b] = 2. * bc[tj + tk*dom->Gfy.jnb]
       - v[(dom->Gfy._is) + tj*s1b + tk*s2b];
   }
 }
@@ -604,9 +612,11 @@ __global__ void BC_v_E_D(real *v, dom_struct *dom, real bc)
   int s1b = dom->Gfy._s1b;
   int s2b = dom->Gfy._s2b;
 
-  if((tj < dom->Gfy._jnb) && (tk < dom->Gfy._knb))
-    v[(dom->Gfy._ieb-1) + tj*s1b + tk*s2b] = 2 * bc - v[(dom->Gfy._ie-1)
-      + tj*s1b + tk*s2b];
+  if((tj < dom->Gfy._jnb) && (tk < dom->Gfy._knb)) {
+    v[(dom->Gfy._ieb-1) + tj*s1b + tk*s2b] = 8./3. * bc
+      - 2. * v[(dom->Gfy._ie-1) + tj*s1b + tk*s2b]
+      + 1./3. * v[(dom->Gfy._ie-2) + tj*s1b + tk*s2b];
+  }
 }
 
 // v-velocity; east; Neumann
@@ -633,7 +643,7 @@ __global__ void BC_v_E_T(real *v, dom_struct *dom, real* bc)
   int s2b = dom->Gfy._s2b;
 
   if((tj < dom->Gfy._jnb) && (tk < dom->Gfy._knb)) {
-    v[(dom->Gfy._ieb-1) + tj*s1b + tk*s2b] = 2 * bc[tj + tk*dom->Gfy.jnb]
+    v[(dom->Gfy._ieb-1) + tj*s1b + tk*s2b] = 2. * bc[tj + tk*dom->Gfy.jnb]
       - v[(dom->Gfy._ie-1) + tj*s1b + tk*s2b];
   }
 }
@@ -649,7 +659,7 @@ __global__ void BC_v_S_P(real *v, dom_struct *dom)
 
   if((ti < dom->Gfy._inb) && (tk < dom->Gfy._knb)) {
     v[ti + dom->Gfy._jsb*s1b + tk*s2b] = v[ti + (dom->Gfy._je-2)*s1b + tk*s2b];
-    //v[ti + dom->Gfy._js*s1b + tk*s2b] = v[ti + (dom->Gfy._je-1)*s1b + tk*s2b];
+    v[ti + dom->Gfy._js*s1b + tk*s2b] = v[ti + (dom->Gfy._je-1)*s1b + tk*s2b];
   }
 }
 
@@ -663,7 +673,7 @@ __global__ void BC_v_S_D(real *v, dom_struct *dom, real bc)
   int s2b = dom->Gfy._s2b;
 
   if((ti < dom->Gfy._inb) && (tk < dom->Gfy._knb)) {
-    v[ti + dom->Gfy._jsb*s1b + tk*s2b] = 2 * bc - v[ti
+    v[ti + dom->Gfy._jsb*s1b + tk*s2b] = 2. * bc - v[ti
       + (dom->Gfy._js+1)*s1b + tk*s2b];
     v[ti + dom->Gfy._js*s1b + tk*s2b] = bc;
   }
@@ -692,7 +702,7 @@ __global__ void BC_v_S_T(real *v, dom_struct *dom, real* bc)
   int s2b = dom->Gfy._s2b;
 
   if((ti < dom->Gfy._inb) && (tk < dom->Gfy._knb)) {
-    v[ti + dom->Gfy._jsb*s1b + tk*s2b] = 2 * bc[tk + ti*dom->Gfy.knb]
+    v[ti + dom->Gfy._jsb*s1b + tk*s2b] = 2. * bc[tk + ti*dom->Gfy.knb]
       - v[ti + (dom->Gfy._js+1)*s1b + tk*s2b];
     v[ti + dom->Gfy._js*s1b + tk*s2b] = bc[tk + ti*dom->Gfy.knb];
   }
@@ -710,8 +720,8 @@ __global__ void BC_v_N_P(real *v, dom_struct *dom)
   if((ti < dom->Gfy._inb) && (tk < dom->Gfy._knb)) {
     v[ti + (dom->Gfy._jeb-1)*s1b + tk*s2b] = v[ti
       + (dom->Gfy._js+1)*s1b + tk*s2b];
-    //v[ti + (dom->Gfy._je-1)*s1b + tk*s2b] = v[ti
-      //+ dom->Gfy._js*s1b + tk*s2b];
+    v[ti + (dom->Gfy._je-1)*s1b + tk*s2b] = v[ti
+      + dom->Gfy._js*s1b + tk*s2b];
   }
 }
 
@@ -725,7 +735,7 @@ __global__ void BC_v_N_D(real *v, dom_struct *dom, real bc)
   int s2b = dom->Gfy._s2b;
 
   if((ti < dom->Gfy._inb) && (tk < dom->Gfy._knb)) {
-    v[ti + (dom->Gfy._jeb-1)*s1b + tk*s2b] = 2 * bc - v[ti +
+    v[ti + (dom->Gfy._jeb-1)*s1b + tk*s2b] = 2. * bc - v[ti +
       (dom->Gfy._je-2)*s1b + tk*s2b];
     v[ti + (dom->Gfy._je-1)*s1b + tk*s2b] = bc;
   }
@@ -755,7 +765,7 @@ __global__ void BC_v_N_T(real *v, dom_struct *dom, real* bc)
   int s2b = dom->Gfy._s2b;
 
   if((ti < dom->Gfy._inb) && (tk < dom->Gfy._knb)) {
-    v[ti + (dom->Gfy._jeb-1)*s1b + tk*s2b] = 2 * bc[tk + ti*dom->Gfy.knb]
+    v[ti + (dom->Gfy._jeb-1)*s1b + tk*s2b] = 2. * bc[tk + ti*dom->Gfy.knb]
       - v[ti + (dom->Gfy._je-2)*s1b + tk*s2b];
     v[ti + (dom->Gfy._je-1)*s1b + tk*s2b] = bc[tk + ti*dom->Gfy.knb];
   }
@@ -785,8 +795,9 @@ __global__ void BC_v_B_D(real *v, dom_struct *dom, real bc)
   int s2b = dom->Gfy._s2b;
 
   if((ti < dom->Gfy._inb) && (tj < dom->Gfy._jnb))
-    v[ti + tj*s1b + dom->Gfy._ksb*s2b] = 2 * bc
-      - v[ti + tj*s1b + dom->Gfy._ks*s2b];
+    v[ti + tj*s1b + dom->Gfy._ksb*s2b] = 8./3. * bc
+      - 2. * v[ti + tj*s1b + dom->Gfy._ks*s2b]
+      + 1./3. * v[ti + tj*s1b + (dom->Gfy._ks+1)*s2b];
 }
 
 // v-velocity; bottom; Neumann
@@ -812,7 +823,7 @@ __global__ void BC_v_B_T(real *v, dom_struct *dom, real* bc)
   int s2b = dom->Gfy._s2b;
 
   if((ti < dom->Gfy._inb) && (tj < dom->Gfy._jnb)) {
-    v[ti + tj*s1b + dom->Gfy._ksb*s2b] = 2 * bc[ti + tj*dom->Gfy.inb]
+    v[ti + tj*s1b + dom->Gfy._ksb*s2b] = 2. * bc[ti + tj*dom->Gfy.inb]
       - v[ti + tj*s1b + dom->Gfy._ks*s2b];
   }
 }
@@ -841,8 +852,9 @@ __global__ void BC_v_T_D(real *v, dom_struct *dom, real bc)
   int s2b = dom->Gfy._s2b;
 
   if((ti < dom->Gfy._inb) && (tj < dom->Gfy._jnb))
-    v[ti + tj*s1b + (dom->Gfy._keb-1)*s2b] = 2 * bc - v[ti + tj*s1b +
-      (dom->Gfy._ke-1)*s2b];
+    v[ti + tj*s1b + (dom->Gfy._keb-1)*s2b] = 8./3. * bc
+      - 2. * v[ti + tj*s1b + (dom->Gfy._ke-1)*s2b]
+      + 1./3. * v[ti + tj*s1b + (dom->Gfy._ke-2)*s2b];
 }
 
 // v-velocity; top; Neumann
@@ -869,7 +881,7 @@ __global__ void BC_v_T_T(real *v, dom_struct *dom, real* bc)
   int s2b = dom->Gfy._s2b;
 
   if((ti < dom->Gfy._inb) && (tj < dom->Gfy._jnb)) {
-    v[ti + tj*s1b + (dom->Gfy._keb-1)*s2b] = 2 * bc[ti + tj*dom->Gfy.inb]
+    v[ti + tj*s1b + (dom->Gfy._keb-1)*s2b] = 2. * bc[ti + tj*dom->Gfy.inb]
       - v[ti + tj*s1b + (dom->Gfy._ke-1)*s2b];
   }
 }
@@ -897,8 +909,9 @@ __global__ void BC_w_W_D(real *w, dom_struct *dom, real bc)
   int s2b = dom->Gfz._s2b;
 
   if((tj < dom->Gfz._jnb) && (tk < dom->Gfz._knb))
-    w[dom->Gfz._isb + tj*s1b + tk*s2b] = 2 * bc
-      - w[dom->Gfz._is + tj*s1b + tk*s2b];
+    w[dom->Gfz._isb + tj*s1b + tk*s2b] = 8./3. * bc
+      - 2. * w[dom->Gfz._is + tj*s1b + tk*s2b]
+      + 1./3. * w[(dom->Gfz._is+1) + tj*s1b + tk*s2b];
 }
 
 // w-velocity; west; Neumann
@@ -924,7 +937,7 @@ __global__ void BC_w_W_T(real *w, dom_struct *dom, real* bc)
   int s2b = dom->Gfz._s2b;
 
   if((tj < dom->Gfz._jnb) && (tk < dom->Gfz._knb)) {
-    w[dom->Gfz._isb + tj*s1b + tk*s2b] = 2 * bc[tj + tk*dom->Gfz.jnb]
+    w[dom->Gfz._isb + tj*s1b + tk*s2b] = 2. * bc[tj + tk*dom->Gfz.jnb]
       - w[(dom->Gfz._is) + tj*s1b + tk*s2b];
   }
 }
@@ -953,8 +966,9 @@ __global__ void BC_w_E_D(real *w, dom_struct *dom, real bc)
   int s2b = dom->Gfz._s2b;
 
   if((tj < dom->Gfz._jnb) && (tk < dom->Gfz._knb))
-    w[(dom->Gfz._ieb-1) + tj*s1b + tk*s2b] = 2 * bc - w[(dom->Gfz._ie-1)
-      + tj*s1b + tk*s2b];
+    w[(dom->Gfz._ieb-1) + tj*s1b + tk*s2b] = 8./3. * bc
+      - 2. * w[(dom->Gfz._ie-1) + tj*s1b + tk*s2b]
+      + 1./3. * w[(dom->Gfz._ie-2) + tj*s1b + tk*s2b];
 }
 
 // w-velocity; east; Neumann
@@ -981,7 +995,7 @@ __global__ void BC_w_E_T(real *w, dom_struct *dom, real* bc)
   int s2b = dom->Gfz._s2b;
 
   if((tj < dom->Gfz._jnb) && (tk < dom->Gfz._knb)) {
-    w[(dom->Gfz._ieb-1) + tj*s1b + tk*s2b] = 2 * bc[tj + tk*dom->Gfz.jnb]
+    w[(dom->Gfz._ieb-1) + tj*s1b + tk*s2b] = 2. * bc[tj + tk*dom->Gfz.jnb]
       - w[(dom->Gfz._ie-1) + tj*s1b + tk*s2b];
   }
 }
@@ -1010,8 +1024,9 @@ __global__ void BC_w_S_D(real *w, dom_struct *dom, real bc)
   int s2b = dom->Gfz._s2b;
 
   if((ti < dom->Gfz._inb) && (tk < dom->Gfz._knb))
-    w[ti + dom->Gfz._jsb*s1b + tk*s2b] = 2 * bc
-      - w[ti + dom->Gfz._js*s1b + tk*s2b];
+    w[ti + dom->Gfz._jsb*s1b + tk*s2b] = 8./3. * bc
+      - 2. * w[ti + dom->Gfz._js*s1b + tk*s2b]
+      + 1./3. * w[ti + (dom->Gfz._js+1)*s1b + tk*s2b];
 }
 
 // w-velocity; south; Neumann
@@ -1037,7 +1052,7 @@ __global__ void BC_w_S_T(real *w, dom_struct *dom, real* bc)
   int s2b = dom->Gfz._s2b;
 
   if((ti < dom->Gfz._inb) && (tk < dom->Gfz._knb)) {
-    w[ti + dom->Gfz._jsb*s1b + tk*s2b] = 2 * bc[tk + ti*dom->Gfz.knb]
+    w[ti + dom->Gfz._jsb*s1b + tk*s2b] = 2. * bc[tk + ti*dom->Gfz.knb]
       - w[ti + dom->Gfz._js*s1b + tk*s2b];
   }
 }
@@ -1066,8 +1081,9 @@ __global__ void BC_w_N_D(real *w, dom_struct *dom, real bc)
   int s2b = dom->Gfz._s2b;
 
   if((ti < dom->Gfz._inb) && (tk < dom->Gfz._knb))
-    w[ti + (dom->Gfz._jeb-1)*s1b + tk*s2b] = 2 * bc - w[ti +
-      (dom->Gfz._je-1)*s1b + tk*s2b];
+    w[ti + (dom->Gfz._jeb-1)*s1b + tk*s2b] = 8./3. * bc
+      - 2. * w[ti + (dom->Gfz._je-1)*s1b + tk*s2b]
+      + 1./3. * w[ti + (dom->Gfz._je-2)*s1b + tk*s2b];
 }
 
 // w-velocity; north; Neumann
@@ -1094,7 +1110,7 @@ __global__ void BC_w_N_T(real *w, dom_struct *dom, real* bc)
   int s2b = dom->Gfz._s2b;
 
   if((ti < dom->Gfz._inb) && (tk < dom->Gfz._knb)) {
-    w[ti + (dom->Gfz._jeb-1)*s1b + tk*s2b] = 2 * bc[tk + ti*dom->Gfz.knb]
+    w[ti + (dom->Gfz._jeb-1)*s1b + tk*s2b] = 2. * bc[tk + ti*dom->Gfz.knb]
       - w[ti + (dom->Gfz._je-1)*s1b + tk*s2b];
   }
 }
@@ -1110,7 +1126,7 @@ __global__ void BC_w_B_P(real *w, dom_struct *dom)
 
   if((ti < dom->Gfz._inb) && (tj < dom->Gfz._jnb)) {
     w[ti + tj*s1b + dom->Gfz._ksb*s2b] = w[ti + tj*s1b + (dom->Gfz._ke-2)*s2b];
-    //w[ti + tj*s1b + dom->Gfz._ks*s2b] = w[ti + tj*s1b + (dom->Gfz._ke-1)*s2b];
+    w[ti + tj*s1b + dom->Gfz._ks*s2b] = w[ti + tj*s1b + (dom->Gfz._ke-1)*s2b];
   }
 }
 
@@ -1124,7 +1140,7 @@ __global__ void BC_w_B_D(real *w, dom_struct *dom, real bc)
   int s2b = dom->Gfz._s2b;
 
   if((ti < dom->Gfz._inb) && (tj < dom->Gfz._jnb)) {
-    w[ti + tj*s1b + dom->Gfz._ksb*s2b] = 2 * bc - w[ti
+    w[ti + tj*s1b + dom->Gfz._ksb*s2b] = 2. * bc - w[ti
       + tj*s1b + (dom->Gfz._ks+1)*s2b];
     w[ti + tj*s1b + dom->Gfz._ks*s2b] = bc;
   }
@@ -1153,7 +1169,7 @@ __global__ void BC_w_B_T(real *w, dom_struct *dom, real* bc)
   int s2b = dom->Gfz._s2b;
 
   if((ti < dom->Gfz._inb) && (tj < dom->Gfz._jnb)) {
-    w[ti + tj*s1b + dom->Gfz._ksb*s2b] = 2 * bc[ti + tj*dom->Gfz.inb]
+    w[ti + tj*s1b + dom->Gfz._ksb*s2b] = 2. * bc[ti + tj*dom->Gfz.inb]
       - w[ti + tj*s1b + (dom->Gfz._ks+1)*s2b];
     w[ti + tj*s1b + dom->Gfz._ks*s2b] = bc[ti + tj*dom->Gfz.inb];
   }
@@ -1171,8 +1187,8 @@ __global__ void BC_w_T_P(real *w, dom_struct *dom)
   if((ti < dom->Gfz._inb) && (tj < dom->Gfz._jnb)) {
     w[ti + tj*s1b + (dom->Gfz._keb-1)*s2b] = w[ti
       + tj*s1b + (dom->Gfz._ks+1)*s2b];
-    //w[ti + tj*s1b + (dom->Gfz._ke-1)*s2b] = w[ti
-      //+ tj*s1b + dom->Gfz._ks*s2b];
+    w[ti + tj*s1b + (dom->Gfz._ke-1)*s2b] = w[ti
+      + tj*s1b + dom->Gfz._ks*s2b];
   }
 }
 
@@ -1186,7 +1202,7 @@ __global__ void BC_w_T_D(real *w, dom_struct *dom, real bc)
   int s2b = dom->Gfz._s2b;
 
   if((ti < dom->Gfz._inb) && (tj < dom->Gfz._jnb)) {
-    w[ti + tj*s1b + (dom->Gfz._keb-1)*s2b] = 2 * bc - w[ti + tj*s1b +
+    w[ti + tj*s1b + (dom->Gfz._keb-1)*s2b] = 2. * bc - w[ti + tj*s1b +
       (dom->Gfz._ke-2)*s2b];
     w[ti + tj*s1b + (dom->Gfz._ke-1)*s2b] = bc;
   }
@@ -1216,7 +1232,7 @@ __global__ void BC_w_T_T(real *w, dom_struct *dom, real* bc)
   int s2b = dom->Gfz._s2b;
 
   if((ti < dom->Gfz._inb) && (tj < dom->Gfz._jnb)) {
-    w[ti + tj*s1b + (dom->Gfz._keb-1)*s2b] = 2 * bc[ti + tj*dom->Gfz.inb]
+    w[ti + tj*s1b + (dom->Gfz._keb-1)*s2b] = 2. * bc[ti + tj*dom->Gfz.inb]
       - w[ti + tj*s1b + (dom->Gfz._ke-2)*s2b];
     w[ti + tj*s1b + (dom->Gfz._ke-1)*s2b] = bc[ti + tj*dom->Gfz.inb];
   }
@@ -1276,6 +1292,42 @@ __global__ void project_w(real *w_star, real *p, real rho_f, real dt,
   }
 }
 
+__global__ void update_p_laplacian(real *Lp, real *p, dom_struct *dom)
+{
+  int tj = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+
+  if(tj < dom->Gcc._je && tk < dom->Gcc._ke) {
+    for(int i = dom->Gcc._is; i < dom->Gcc._ie; i++) {
+      int C = i + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b;
+      int W = (i-1) + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b;
+      int E = (i+1) + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b;
+      int S = i + (tj-1)*dom->Gcc._s1b + tk*dom->Gcc._s2b;
+      int N = i + (tj+1)*dom->Gcc._s1b + tk*dom->Gcc._s2b;
+      int B = i + tj*dom->Gcc._s1b + (tk-1)*dom->Gcc._s2b;
+      int T = i + tj*dom->Gcc._s1b + (tk+1)*dom->Gcc._s2b;
+      real ddpdxx = (p[E]-2.*p[C]+p[W])/dom->dx/dom->dx;
+      real ddpdyy = (p[N]-2.*p[C]+p[S])/dom->dy/dom->dy;
+      real ddpdzz = (p[T]-2.*p[C]+p[B])/dom->dz/dom->dz;
+      Lp[C] = ddpdxx+ddpdyy+ddpdzz;
+    }
+  }
+}
+
+__global__ void update_p(real *Lp, real *p0, real *p, dom_struct *dom,
+  real nu, real dt)
+{
+  int tj = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+
+  if(tj < dom->Gcc._je && tk < dom->Gcc._ke) {
+    for(int i = dom->Gcc._is; i < dom->Gcc._ie; i++) {
+      int C = i + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b;
+      p[C] = p0[C] + p[C] - 0.5*nu*dt*Lp[C];
+    }
+  }
+}
+
 __global__ void copy_p_ghost(real *p, real *p_tmp, dom_struct *dom)
 {
   int tj = blockIdx.x * blockDim.x + threadIdx.x;
@@ -1304,6 +1356,20 @@ __global__ void copy_p_noghost(real *p_noghost, real *p_ghost, dom_struct *dom)
   }
 }
 
+__global__ void copy_u_ghost(real *u_ghost, real *u_noghost, dom_struct *dom)
+{
+  int tj = blockIdx.x * blockDim.x + threadIdx.x;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if(tj < dom->Gfx.je-DOM_BUF && tk < dom->Gfx.ke-DOM_BUF) {
+    for(int i = dom->Gfx.is-DOM_BUF; i < dom->Gfx.ie-DOM_BUF; i++) {
+      u_ghost[(i+DOM_BUF) + (tj+DOM_BUF)*dom->Gfx._s1b
+        + (tk+DOM_BUF)*dom->Gfx._s2b] = u_noghost[i + tj*dom->Gfx._s1
+        + tk*dom->Gfx._s2];
+    }
+  }
+}
+
 __global__ void copy_u_noghost(real *u_noghost, real *u_ghost, dom_struct *dom)
 {
   int tj = blockIdx.x * blockDim.x + threadIdx.x;
@@ -1318,6 +1384,20 @@ __global__ void copy_u_noghost(real *u_noghost, real *u_ghost, dom_struct *dom)
   }
 }
 
+__global__ void copy_v_ghost(real *v_ghost, real *v_noghost, dom_struct *dom)
+{
+  int tk = blockIdx.x * blockDim.x + threadIdx.x;
+  int ti = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if(tk < dom->Gfy.ke-DOM_BUF && ti < dom->Gfy.ie-DOM_BUF) {
+    for(int j = dom->Gfy.js-DOM_BUF; j < dom->Gfy.je-DOM_BUF; j++) {
+      v_ghost[(ti+DOM_BUF) + (j+DOM_BUF)*dom->Gfy._s1b
+        + (tk+DOM_BUF)*dom->Gfy._s2b] = v_noghost[ti + j*dom->Gfy._s1
+        + tk*dom->Gfy._s2];
+    }
+  }
+}
+
 __global__ void copy_v_noghost(real *v_noghost, real *v_ghost, dom_struct *dom)
 {
   int tk = blockIdx.x * blockDim.x + threadIdx.x;
@@ -1328,6 +1408,20 @@ __global__ void copy_v_noghost(real *v_noghost, real *v_ghost, dom_struct *dom)
       v_noghost[ti + j*dom->Gfy._s1 + tk*dom->Gfy._s2]
         = v_ghost[(ti+DOM_BUF) + (j+DOM_BUF)*dom->Gfy._s1b
         + (tk+DOM_BUF)*dom->Gfy._s2b];
+    }
+  }
+}
+
+__global__ void copy_w_ghost(real *w_ghost, real *w_noghost, dom_struct *dom)
+{
+  int ti = blockIdx.x * blockDim.x + threadIdx.x;
+  int tj = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if(ti < dom->Gfz.ie-DOM_BUF && tj < dom->Gfz.je-DOM_BUF) {
+    for(int k = dom->Gfz.ks-DOM_BUF; k < dom->Gfz.ke-DOM_BUF; k++) {
+      w_ghost[(ti+DOM_BUF) + (tj+DOM_BUF)*dom->Gfz._s1b
+        + (k+DOM_BUF)*dom->Gfz._s2b] = w_noghost[ti + tj*dom->Gfz._s1
+        + k*dom->Gfz._s2];
     }
   }
 }
@@ -1398,7 +1492,7 @@ __global__ void copy_w_fluid(real *w_noghost, real *w_ghost, int *phase, dom_str
 }
 
 __global__ void u_star_2(real rho_f, real nu,
-  real *u0, real *v0, real *w0, real *f,
+  real *u0, real *v0, real *w0, real *p, real *f,
   real *diff0, real *conv0, real *diff, real *conv, real *u_star,
   dom_struct *dom, real dt0, real dt)
 {
@@ -1412,16 +1506,13 @@ __global__ void u_star_2(real rho_f, real nu,
   __shared__ real s_v12[MAX_THREADS_DIM * MAX_THREADS_DIM];     // v forward
   __shared__ real s_w01[MAX_THREADS_DIM * MAX_THREADS_DIM];     // w back
   __shared__ real s_w12[MAX_THREADS_DIM * MAX_THREADS_DIM];     // w forward
-  __shared__ real s_d0[MAX_THREADS_DIM * MAX_THREADS_DIM];      // diff0
   __shared__ real s_d[MAX_THREADS_DIM * MAX_THREADS_DIM];       // diff
-  __shared__ real s_c0[MAX_THREADS_DIM * MAX_THREADS_DIM];      // conv0
   __shared__ real s_c[MAX_THREADS_DIM * MAX_THREADS_DIM];       // conv
   __shared__ real s_u_star[MAX_THREADS_DIM * MAX_THREADS_DIM];  // solution
-  __shared__ real s_f[MAX_THREADS_DIM * MAX_THREADS_DIM];       // x-force
 
   // working constants
-  real ab0 = 0.5 * dt / dt0;  // for Adams-Bashforth stepping
-  real ab = 1 + ab0;          // for Adams-Bashforth stepping
+  real ab0 = 0.5 * dt / dt0;   // for Adams-Bashforth stepping
+  real ab = 1. + ab0;          // for Adams-Bashforth stepping
   real ddx = 1. / dom->dx;     // to limit the number of divisions needed
   real ddy = 1. / dom->dy;     // to limit the number of divisions needed
   real ddz = 1. / dom->dz;     // to limit the number of divisions needed
@@ -1445,12 +1536,9 @@ __global__ void u_star_2(real rho_f, real nu,
     // HOST TO DEVICE
     if((k >= dom->Gfx._ksb && k < dom->Gfx._keb)
       && (j >= dom->Gfx._jsb && j < dom->Gfx._jeb)) {
-      s_d0[tj + tk*blockDim.x] = diff0[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
-      s_c0[tj + tk*blockDim.x] = conv0[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
       s_u0[tj + tk*blockDim.x] = u0[(i-1) + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
       s_u1[tj + tk*blockDim.x] = u0[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
       s_u2[tj + tk*blockDim.x] = u0[(i+1) + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
-      s_f[tj + tk*blockDim.x] = f[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
     }
     if((k >= dom->Gfy._ksb && k < dom->Gfy._keb)
       && (j >= dom->Gfy._jsb && j < dom->Gfy._jeb)) {
@@ -1470,7 +1558,14 @@ __global__ void u_star_2(real rho_f, real nu,
 
     // compute right-hand side
     // if off the shared memory block boundary
-    if((tj > 0 && tj < blockDim.x-1) && (tk > 0 && tk < blockDim.y-1)) {
+    if((tj > 0 && tj < blockDim.x-1) && (tk > 0 && tk < blockDim.y-1)
+      && j < dom->Gfx.jeb && k < dom->Gfx.keb) {
+      // pressure gradient
+      s_u_star[tj + tk*blockDim.x] =
+        (p[(i-1) + j*dom->Gcc._s1b + k*dom->Gcc._s2b]
+        - p[i + j*dom->Gcc._s1b + k*dom->Gcc._s2b]) * ddx / rho_f;
+
+      // grab the required data points for calculations
       real u011 = s_u0[tj + tk*blockDim.x];
       real u111 = s_u1[tj + tk*blockDim.x];
       real u211 = s_u2[tj + tk*blockDim.x];
@@ -1502,8 +1597,11 @@ __global__ void u_star_2(real rho_f, real nu,
       s_c[tj + tk*blockDim.x] = duudx + duvdy + duwdz;
 
       // convection term sums into right-hand side
-      s_u_star[tj + tk*blockDim.x] = - ab * s_c[tj + tk*blockDim.x]
-        + ab0 * s_c0[tj + tk*blockDim.x];
+      if(dt0 > 0) // Adams-Bashforth
+        s_u_star[tj + tk*blockDim.x] += (-ab * s_c[tj + tk*blockDim.x]
+          + ab0 * conv0[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b]);
+      else        // forward Euler
+        s_u_star[tj + tk*blockDim.x] += -s_c[tj + tk*blockDim.x];
 
       // compute diffusion term (Adams-Bashforth stepping)
       real dud1 = (u211 - u111) * ddx;
@@ -1521,11 +1619,11 @@ __global__ void u_star_2(real rho_f, real nu,
       s_d[tj + tk*blockDim.x] = nu * (ddudxx + ddudyy + ddudzz);
 
       // diffusive term sums into right-hand side
-      s_u_star[tj + tk*blockDim.x] += ab * s_d[tj + tk*blockDim.x]
-        - ab0 * s_d0[tj + tk*blockDim.x];
+      s_u_star[tj + tk*blockDim.x] += (ab * s_d[tj + tk*blockDim.x]
+        - ab0 * diff0[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b]);
 
       // add on imposed pressure gradient
-      s_u_star[tj + tk*blockDim.x] += s_f[tj + tk*blockDim.x];
+      s_u_star[tj + tk*blockDim.x] += f[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
 
       // multiply by dt
       s_u_star[tj + tk*blockDim.x] *= dt;
@@ -1544,464 +1642,14 @@ __global__ void u_star_2(real rho_f, real nu,
       && (tk > 0 && tk < (blockDim.y-1))) {
       u_star[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b]
         = s_u_star[tj + tk*blockDim.x];
-      conv[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b] = s_c[tj + tk*blockDim.x];
-      diff[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b] = s_d[tj + tk*blockDim.x];
     }
   }
 }
 
 __global__ void v_star_2(real rho_f, real nu,
-  real *u0, real *v0, real *w0, real *f,
+  real *u0, real *v0, real *w0, real *p, real *f,
   real *diff0, real *conv0, real *diff, real *conv, real *v_star,
   dom_struct *dom, real dt0, real dt)
-{
-  // create shared memory
-  // no reason to load pressure into shared memory, but leaving it in global
-  // will require additional if statements, so keep it in shared
-  __shared__ real s_v0[MAX_THREADS_DIM * MAX_THREADS_DIM];      // v back
-  __shared__ real s_v1[MAX_THREADS_DIM * MAX_THREADS_DIM];      // v center
-  __shared__ real s_v2[MAX_THREADS_DIM * MAX_THREADS_DIM];      // v forward
-  __shared__ real s_w01[MAX_THREADS_DIM * MAX_THREADS_DIM];     // w back
-  __shared__ real s_w12[MAX_THREADS_DIM * MAX_THREADS_DIM];     // w forward
-  __shared__ real s_u01[MAX_THREADS_DIM * MAX_THREADS_DIM];     // u back
-  __shared__ real s_u12[MAX_THREADS_DIM * MAX_THREADS_DIM];     // u forward
-  __shared__ real s_d0[MAX_THREADS_DIM * MAX_THREADS_DIM];      // diff0
-  __shared__ real s_d[MAX_THREADS_DIM * MAX_THREADS_DIM];       // diff
-  __shared__ real s_c0[MAX_THREADS_DIM * MAX_THREADS_DIM];      // conv0
-  __shared__ real s_c[MAX_THREADS_DIM * MAX_THREADS_DIM];       // conv
-  __shared__ real s_v_star[MAX_THREADS_DIM * MAX_THREADS_DIM];  // solution
-  __shared__ real s_f[MAX_THREADS_DIM * MAX_THREADS_DIM];       // y-force
-
-  // working constants
-  real ab0 = 0.5 * dt / dt0;  // for Adams-Bashforth stepping
-  real ab = 1 + ab0;          // for Adams-Bashforth stepping
-  real ddx = 1. / dom->dx;     // to limit the number of divisions needed
-  real ddy = 1. / dom->dy;     // to limit the number of divisions needed
-  real ddz = 1. / dom->dz;     // to limit the number of divisions needed
-
-  // loop over u-planes
-  for(int j = dom->Gfy._js; j < dom->Gfy._je; j++) {
-    // subdomain indices
-    // the extra 2*blockIdx.X terms implement the necessary overlapping of
-    // shared memory blocks in the subdomain
-    int k = blockIdx.x*blockDim.x + threadIdx.x - 2*blockIdx.x;
-    int i = blockIdx.y*blockDim.y + threadIdx.y - 2*blockIdx.y;
-    // shared memory indices
-    int tk = threadIdx.x;
-    int ti = threadIdx.y;
-
-    // load shared memory
-    // TODO: look into the effect of removing these if statements and simply
-    // allowing memory overruns for threads that don't matter for particular
-    // discretizations
-    if((i >= dom->Gfy._isb && i < dom->Gfy._ieb)
-      && (k >= dom->Gfy._ksb && k < dom->Gfy._keb)) {
-      s_d0[tk + ti*blockDim.x] = diff0[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b];
-      s_c0[tk + ti*blockDim.x] = conv0[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b];
-      s_v0[tk + ti*blockDim.x] = v0[i + (j-1)*dom->Gfy._s1b + k*dom->Gfy._s2b];
-      s_v1[tk + ti*blockDim.x] = v0[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b];
-      s_v2[tk + ti*blockDim.x] = v0[i + (j+1)*dom->Gfy._s1b + k*dom->Gfy._s2b];
-      s_f[tk + ti*blockDim.x] = f[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b];
-    }
-    if((i >= dom->Gfz._isb && i < dom->Gfz._ieb)
-      && (k >= dom->Gfz._ksb && k < dom->Gfz._keb)) {
-      s_w01[tk + ti*blockDim.x] = w0[i + (j-1)*dom->Gfz._s1b + k*dom->Gfz._s2b];
-      s_w12[tk + ti*blockDim.x] = w0[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b];
-    }
-    if((i >= dom->Gfx._isb && i < dom->Gfx._ieb)
-      && (k >= dom->Gfx._ksb && k < dom->Gfx._keb)) {
-      s_u01[tk + ti*blockDim.x] = u0[i + (j-1)*dom->Gfx._s1b + k*dom->Gfx._s2b];
-      s_u12[tk + ti*blockDim.x] = u0[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
-    }
-
-    s_v_star[tk + ti*blockDim.x] = 0.0;
-
-    // make sure all threads complete shared memory copy
-    __syncthreads();
-
-    // compute right-hand side
-    // if off the shared memory block boundary
-    if((tk > 0 && tk < blockDim.x-1) && (ti > 0 && ti < blockDim.y-1)) {
-      // grab the required data points for calculations
-      real v101 = s_v0[tk + ti*blockDim.x];
-      real v111 = s_v1[tk + ti*blockDim.x];
-      real v121 = s_v2[tk + ti*blockDim.x];
-
-      real v110 = s_v1[(tk-1) + ti*blockDim.x];
-      real v112 = s_v1[(tk+1) + ti*blockDim.x];
-      real w101 = s_w01[tk + ti*blockDim.x];
-      real w111 = s_w12[tk + ti*blockDim.x];
-      real w102 = s_w01[(tk+1) + ti*blockDim.x];
-      real w112 = s_w12[(tk+1) + ti*blockDim.x];
-
-      real v011 = s_v1[tk + (ti-1)*blockDim.x];
-      real v211 = s_v1[tk + (ti+1)*blockDim.x];
-      real u101 = s_u01[tk + ti*blockDim.x];
-      real u111 = s_u12[tk + ti*blockDim.x];
-      real u201 = s_u01[tk + (ti+1)*blockDim.x];
-      real u211 = s_u12[tk + (ti+1)*blockDim.x];
-
-      // compute convection term (Adams-Bashforth stepping)
-      real dvudx = (v211 + v111)*(u211 + u201) - (v111 + v011)*(u111 + u101);
-      dvudx *= 0.25 * ddx;
-
-      real dvvdy = (v121 + v111)*(v121 + v111) - (v111 + v101)*(v111 + v101);
-      dvvdy *= 0.25 * ddy;
-
-      real dvwdz = (v112 + v111)*(w112 + w102) - (v111 + v110)*(w111 + w101);
-      dvwdz *= 0.25 * ddz;
-
-      s_c[tk + ti*blockDim.x] = dvudx + dvvdy + dvwdz;
-
-      // convection term sums into right-hand side
-      s_v_star[tk + ti*blockDim.x] = - ab * s_c[tk + ti*blockDim.x]
-        + ab0 * s_c0[tk + ti*blockDim.x];
-
-      // compute diffusive term
-      real dvd1 = (v211 - v111) * ddx;
-      real dvd0 = (v111 - v011) * ddx;
-      real ddvdxx = (dvd1 - dvd0) * ddx;
-
-      dvd1 = (v121 - v111) * ddy;
-      dvd0 = (v111 - v101) * ddy;
-      real ddvdyy = (dvd1 - dvd0) * ddy;
-
-      dvd1 = (v112 - v111) * ddz;
-      dvd0 = (v111 - v110) * ddz;
-      real ddvdzz = (dvd1 - dvd0) * ddz;
-
-      s_d[tk + ti*blockDim.x] = nu * (ddvdxx + ddvdyy + ddvdzz);
-
-      // diffusive term sums into right-hand side
-      s_v_star[tk + ti*blockDim.x] += ab * s_d[tk + ti*blockDim.x]
-        - ab0 * s_d0[tk + ti*blockDim.x];
-
-      // add on imposed pressure gradient
-      s_v_star[tk + ti*blockDim.x] += s_f[tk + ti*blockDim.x];
-
-      // multiply by dt
-      s_v_star[tk + ti*blockDim.x] *= dt;
-
-      // velocity term sums into right-hand side
-      s_v_star[tk + ti*blockDim.x] += v111;
-    }
-
-    // make sure all threads complete computations
-    __syncthreads();
-
-    // copy shared memory back to global
-    if((i >= dom->Gfy._is && i < dom->Gfy._ie)
-      && (k >= dom->Gfy._ks && k < dom->Gfy._ke)
-      && (tk > 0 && tk < (blockDim.x-1))
-      && (ti > 0 && ti < (blockDim.y-1))) {
-      v_star[i+ j*dom->Gfy._s1b + k*dom->Gfy._s2b]
-        = s_v_star[tk + ti*blockDim.x];
-      diff[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b] = s_d[tk + ti*blockDim.x];
-      conv[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b] = s_c[tk + ti*blockDim.x];
-    }
-  }
-}
-
-__global__ void w_star_2(real rho_f, real nu,
-  real *u0, real *v0, real *w0, real *f,
-  real *diff0, real *conv0, real *diff, real *conv, real *w_star,
-  dom_struct *dom, real dt0, real dt)
-{
-  // create shared memory
-  // no reason to load pressure into shared memory, but leaving it in global
-  // will require additional if statements, so keep it in shared
-  __shared__ real s_w0[MAX_THREADS_DIM * MAX_THREADS_DIM];      // w back
-  __shared__ real s_w1[MAX_THREADS_DIM * MAX_THREADS_DIM];      // w center
-  __shared__ real s_w2[MAX_THREADS_DIM * MAX_THREADS_DIM];      // w forward
-  __shared__ real s_u01[MAX_THREADS_DIM * MAX_THREADS_DIM];     // u back
-  __shared__ real s_u12[MAX_THREADS_DIM * MAX_THREADS_DIM];     // u forward
-  __shared__ real s_v01[MAX_THREADS_DIM * MAX_THREADS_DIM];     // v back
-  __shared__ real s_v12[MAX_THREADS_DIM * MAX_THREADS_DIM];     // v forward
-  __shared__ real s_d0[MAX_THREADS_DIM * MAX_THREADS_DIM];      // diff0
-  __shared__ real s_d[MAX_THREADS_DIM * MAX_THREADS_DIM];       // diff0
-  __shared__ real s_c0[MAX_THREADS_DIM * MAX_THREADS_DIM];      // conv0
-  __shared__ real s_c[MAX_THREADS_DIM * MAX_THREADS_DIM];       // conv0
-  __shared__ real s_w_star[MAX_THREADS_DIM * MAX_THREADS_DIM];  // solution
-  __shared__ real s_f[MAX_THREADS_DIM * MAX_THREADS_DIM];  // solution
-
-  // working constants
-  real ab0 = 0.5 * dt / dt0;  // for Adams-Bashforth stepping
-  real ab = 1 + ab0;          // for Adams-Bashforth stepping
-  real ddx = 1. / dom->dx;     // to limit the number of divisions needed
-  real ddy = 1. / dom->dy;     // to limit the number of divisions needed
-  real ddz = 1. / dom->dz;     // to limit the number of divisions needed
-
-  // loop over w-planes
-  for(int k = dom->Gfz._ks; k < dom->Gfz._ke; k++) {
-    // subdomain indices
-    // the extra 2*blockIdx.X terms implement the necessary overlapping of
-    // shared memory blocks in the subdomain
-    int i = blockIdx.x*blockDim.x + threadIdx.x - 2*blockIdx.x;
-    int j = blockIdx.y*blockDim.y + threadIdx.y - 2*blockIdx.y;
-    // shared memory indices
-    int ti = threadIdx.x;
-    int tj = threadIdx.y;
-
-    // load shared memory
-    // TODO: look into the effect of removing these if statements and simply
-    // allowing memory overruns for threads that don't matter for particular
-    // discretizations
-    if((j >= dom->Gfz._jsb && j < dom->Gfz._jeb)
-      && (i >= dom->Gfz._isb && i < dom->Gfz._ieb)) {
-      s_d0[ti + tj*blockDim.x] = diff0[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b];
-      s_c0[ti + tj*blockDim.x] = conv0[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b];
-      s_w0[ti + tj*blockDim.x] = w0[i + j*dom->Gfz._s1b + (k-1)*dom->Gfz._s2b];
-      s_w1[ti + tj*blockDim.x] = w0[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b];
-      s_w2[ti + tj*blockDim.x] = w0[i + j*dom->Gfz._s1b + (k+1)*dom->Gfz._s2b];
-      s_f[ti + tj*blockDim.x] = f[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b];
-    }
-    if((j >= dom->Gfx._jsb && j < dom->Gfx._jeb)
-      && (i >= dom->Gfx._isb && i < dom->Gfx._ieb)) {
-      s_u01[ti + tj*blockDim.x] = u0[i + j*dom->Gfx._s1b + (k-1)*dom->Gfx._s2b];
-      s_u12[ti + tj*blockDim.x] = u0[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
-    }
-    if((j >= dom->Gfy._jsb && j < dom->Gfy._jeb)
-      && (i >= dom->Gfy._isb && i < dom->Gfy._ieb)) {
-      s_v01[ti + tj*blockDim.x] = v0[i + j*dom->Gfy._s1b + (k-1)*dom->Gfy._s2b];
-      s_v12[ti + tj*blockDim.x] = v0[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b];
-    }
-
-    s_w_star[ti + tj*blockDim.x] = 0.0;
-
-    // make sure all threads complete shared memory copy
-    __syncthreads();
-
-    // compute right-hand side
-    // if off the shared memory block boundary
-    if((ti > 0 && ti < blockDim.x-1) && (tj > 0 && tj < blockDim.y-1)) {
-      // grab the required data points for calculations
-      real w110 = s_w0[ti + tj*blockDim.x];
-      real w111 = s_w1[ti + tj*blockDim.x];
-      real w112 = s_w2[ti + tj*blockDim.x];
-
-      real w011 = s_w1[(ti-1) + tj*blockDim.x];
-      real w211 = s_w1[(ti+1) + tj*blockDim.x];
-      real u110 = s_u01[ti + tj*blockDim.x];
-      real u111 = s_u12[ti + tj*blockDim.x];
-      real u210 = s_u01[(ti+1) + tj*blockDim.x];
-      real u211 = s_u12[(ti+1) + tj*blockDim.x];
-
-      real w101 = s_w1[ti + (tj-1)*blockDim.x];
-      real w121 = s_w1[ti + (tj+1)*blockDim.x];
-      real v110 = s_v01[ti + tj*blockDim.x];
-      real v111 = s_v12[ti + tj*blockDim.x];
-      real v120 = s_v01[ti + (tj+1)*blockDim.x];
-      real v121 = s_v12[ti + (tj+1)*blockDim.x];
-
-      // compute convection term (Adams-Bashforth stepping)
-      real dwudx = (w211 + w111)*(u211 + u210) - (w111 + w011)*(u111 + u110);
-      dwudx *= 0.25 * ddx;
-
-      real dwvdy = (w121 + w111)*(v121 + v120) - (w111 + w101)*(v111 + v110);
-      dwvdy *= 0.25 * ddy;
-
-      real dwwdz = (w112 + w111)*(w112 + w111) - (w111 + w110)*(w111 + w110);
-      dwwdz *= 0.25 * ddz;
-
-      s_c[ti + tj*blockDim.x] = dwudx + dwvdy + dwwdz;
-
-      // convection term sums into right-hand side
-      s_w_star[ti + tj*blockDim.x] = - ab * s_c[ti + tj*blockDim.x]
-        + ab0 * s_c0[ti + tj*blockDim.x];
-
-      // compute diffusive term
-      real dwd1 = (w211 - w111) * ddx;
-      real dwd0 = (w111 - w011) * ddx;
-      real ddwdxx = (dwd1 - dwd0) * ddx;
-
-      dwd1 = (w121 - w111) * ddy;
-      dwd0 = (w111 - w101) * ddy;
-      real ddwdyy = (dwd1 - dwd0) * ddy;
-
-      dwd1 = (w112 - w111) * ddz;
-      dwd0 = (w111 - w110) * ddz;
-      real ddwdzz = (dwd1 - dwd0) * ddz;
-
-      s_d[ti + tj*blockDim.x] = nu * (ddwdxx + ddwdyy + ddwdzz);
-
-      // diffusive term sums into right-hand side
-      s_w_star[ti + tj*blockDim.x] += ab * s_d[ti + tj*blockDim.x]
-        - ab0 * s_d0[ti + tj*blockDim.x];
-
-      // add on imposed pressure gradient
-      s_w_star[ti + tj*blockDim.x] += s_f[ti + tj*blockDim.x];
-
-      // multiply by dt
-      s_w_star[ti + tj*blockDim.x] *= dt;
-
-      // velocity term sums into right-hand side
-      s_w_star[ti + tj*blockDim.x] += w111;
-    }
-
-    // make sure all threads complete computations
-    __syncthreads();
-
-    // copy shared memory back to global
-    if((j >= dom->Gfz._js && j < dom->Gfz._je)
-      && (i >= dom->Gfz._is && i < dom->Gfz._ie)
-      && (ti > 0 && ti < (blockDim.x-1))
-      && (tj > 0 && tj < (blockDim.y-1))) {
-      w_star[i+ j*dom->Gfz._s1b + k*dom->Gfz._s2b]
-        = s_w_star[ti + tj*blockDim.x];
-      diff[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b] = s_d[ti + tj*blockDim.x];
-      conv[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b] = s_c[ti + tj*blockDim.x];
-    }
-  }
-}
-
-__global__ void u_star_2_init(real rho_f, real nu,
-  real *u, real *v, real *w, real *f,
-  real *diff0, real *conv0, real *diff, real *conv, real *u_star,
-  dom_struct *dom, real dt)
-{
-  // create shared memory
-  // no reason to load pressure into shared memory, but leaving it in global
-  // will require additional if statements, so keep it in shared
-  __shared__ real s_u0[MAX_THREADS_DIM * MAX_THREADS_DIM];      // u back
-  __shared__ real s_u1[MAX_THREADS_DIM * MAX_THREADS_DIM];      // u center
-  __shared__ real s_u2[MAX_THREADS_DIM * MAX_THREADS_DIM];      // u forward
-  __shared__ real s_v01[MAX_THREADS_DIM * MAX_THREADS_DIM];     // v back
-  __shared__ real s_v12[MAX_THREADS_DIM * MAX_THREADS_DIM];     // v forward
-  __shared__ real s_w01[MAX_THREADS_DIM * MAX_THREADS_DIM];     // w back
-  __shared__ real s_w12[MAX_THREADS_DIM * MAX_THREADS_DIM];     // w forward
-  __shared__ real s_d[MAX_THREADS_DIM * MAX_THREADS_DIM];       // diff
-  __shared__ real s_c[MAX_THREADS_DIM * MAX_THREADS_DIM];       // conv
-  __shared__ real s_u_star[MAX_THREADS_DIM * MAX_THREADS_DIM];  // solution
-  __shared__ real s_f[MAX_THREADS_DIM * MAX_THREADS_DIM];       // x-force
-
-  // working constants
-  real ddx = 1. / dom->dx;     // to limit the number of divisions needed
-  real ddy = 1. / dom->dy;     // to limit the number of divisions needed
-  real ddz = 1. / dom->dz;     // to limit the number of divisions needed
-
-  // loop over u-planes
-  for(int i = dom->Gfx._is; i < dom->Gfx._ie; i++) {
-    // subdomain indices
-    // the extra 2*blockIdx.X terms implement the necessary overlapping of
-    // shared memory blocks in the subdomain
-    int j = blockIdx.x*blockDim.x + threadIdx.x - 2*blockIdx.x;
-    int k = blockIdx.y*blockDim.y + threadIdx.y - 2*blockIdx.y;
-    // shared memory indices
-    int tj = threadIdx.x;
-    int tk = threadIdx.y;
-
-    // load shared memory
-    // TODO: look into the effect of removing these if statements and simply
-    // allowing memory overruns for threads that don't matter for particular
-    // discretizations
-    if((k >= dom->Gfx._ksb && k < dom->Gfx._keb)
-      && (j >= dom->Gfx._jsb && j < dom->Gfx._jeb)) {
-      s_u0[tj + tk*blockDim.x] = u[(i-1) + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
-      s_u1[tj + tk*blockDim.x] = u[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
-      s_u2[tj + tk*blockDim.x] = u[(i+1) + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
-      s_f[tj + tk*blockDim.x] = f[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
-    }
-    if((k >= dom->Gfy._ksb && k < dom->Gfy._keb)
-      && (j >= dom->Gfy._jsb && j < dom->Gfy._jeb)) {
-      s_v01[tj + tk*blockDim.x] = v[(i-1) + j*dom->Gfy._s1b + k*dom->Gfy._s2b];
-      s_v12[tj + tk*blockDim.x] = v[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b];
-    }
-    if((k >= dom->Gfz._ksb && k < dom->Gfz._keb)
-      && (j >= dom->Gfz._jsb && j < dom->Gfz._jeb)) {
-      s_w01[tj + tk*blockDim.x] = w[(i-1) + j*dom->Gfz._s1b + k*dom->Gfz._s2b];
-      s_w12[tj + tk*blockDim.x] = w[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b];
-    }
-
-    s_u_star[tj + tk*blockDim.x] = 0.0;
-
-    // make sure all threads complete shared memory copy
-    __syncthreads();
-
-    // compute right-hand side
-    // if off the shared memory block boundary
-    if((tj > 0 && tj < blockDim.x-1) && (tk > 0 && tk < blockDim.y-1)) {
-      // grab the required data points for calculations
-      real u011 = s_u0[tj + tk*blockDim.x];
-      real u111 = s_u1[tj + tk*blockDim.x];
-      real u211 = s_u2[tj + tk*blockDim.x];
-
-      real u101 = s_u1[(tj-1) + tk*blockDim.x];
-      real u121 = s_u1[(tj+1) + tk*blockDim.x];
-      real v011 = s_v01[tj + tk*blockDim.x];
-      real v111 = s_v12[tj + tk*blockDim.x];
-      real v021 = s_v01[(tj+1) + tk*blockDim.x];
-      real v121 = s_v12[(tj+1) + tk*blockDim.x];
-
-      real u110 = s_u1[tj + (tk-1)*blockDim.x];
-      real u112 = s_u1[tj + (tk+1)*blockDim.x];
-      real w011 = s_w01[tj + tk*blockDim.x];
-      real w111 = s_w12[tj + tk*blockDim.x];
-      real w012 = s_w01[tj + (tk+1)*blockDim.x];
-      real w112 = s_w12[tj + (tk+1)*blockDim.x];
-
-      // compute convection term (Euler stepping)
-      real duudx = (u211 + u111)*(u211 + u111) - (u111 + u011)*(u111 + u011);
-      duudx *= 0.25 * ddx;
-
-      real duvdy = (u121 + u111)*(v121 + v021) - (u111 + u101)*(v111 + v011);
-      duvdy *= 0.25 * ddy;
-
-      real duwdz = (u112 + u111)*(w112 + w012) - (u111 + u110)*(w111 + w011);
-      duwdz *= 0.25 * ddz;
-
-      s_c[tj + tk*blockDim.x] = duudx + duvdy + duwdz;
-
-      // convection term sums into right-hand side
-      s_u_star[tj + tk*blockDim.x] = - s_c[tj + tk*blockDim.x];
-
-      // compute diffusive term
-      real dud1 = (u211 - u111) * ddx;
-      real dud0 = (u111 - u011) * ddx;
-      real ddudxx = (dud1 - dud0) * ddx;
-
-      dud1 = (u121 - u111) * ddy;
-      dud0 = (u111 - u101) * ddy;
-      real ddudyy = (dud1 - dud0) * ddy;
-
-      dud1 = (u112 - u111) * ddz;
-      dud0 = (u111 - u110) * ddz;
-      real ddudzz = (dud1 - dud0) * ddz;
-
-      s_d[tj + tk*blockDim.x] = nu * (ddudxx + ddudyy + ddudzz);
-
-      // diffusive term sums into right-hand side
-      s_u_star[tj + tk*blockDim.x] += s_d[tj + tk*blockDim.x];
-
-      // add on imposed pressure gradient
-      s_u_star[tj + tk*blockDim.x] += s_f[tj + tk*blockDim.x];
-
-      // multiply by dt
-      s_u_star[tj + tk*blockDim.x] *= dt;
-
-      // velocity term sums into right-hand side
-      s_u_star[tj + tk*blockDim.x] += u111;
-    }
-
-    // make sure all threads complete computations
-    __syncthreads();
-
-    // copy shared memory back to global
-    if((k >= dom->Gfx._ks && k < dom->Gfx._ke)
-      && (j >= dom->Gfx._js && j < dom->Gfx._je)
-      && (tj > 0 && tj < (blockDim.x-1))
-      && (tk > 0 && tk < (blockDim.y-1))) {
-      u_star[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b]
-        = s_u_star[tj + tk*blockDim.x];
-      diff[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b] = s_d[tj + tk*blockDim.x];
-      conv[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b] = s_c[tj + tk*blockDim.x];
-    }
-  }
-}
-
-__global__ void v_star_2_init(real rho_f, real nu,
-  real *u, real *v, real *w, real *f,
-  real *diff0, real *conv0, real *diff, real *conv, real *v_star,
-  dom_struct *dom, real dt)
 {
   // create shared memory
   // no reason to load pressure into shared memory, but leaving it in global
@@ -2016,9 +1664,10 @@ __global__ void v_star_2_init(real rho_f, real nu,
   __shared__ real s_d[MAX_THREADS_DIM * MAX_THREADS_DIM];       // diff
   __shared__ real s_c[MAX_THREADS_DIM * MAX_THREADS_DIM];       // conv
   __shared__ real s_v_star[MAX_THREADS_DIM * MAX_THREADS_DIM];  // solution
-  __shared__ real s_f[MAX_THREADS_DIM * MAX_THREADS_DIM];       // y-force
 
   // working constants
+  real ab0 = 0.5 * dt / dt0;   // for Adams-Bashforth stepping
+  real ab = 1. + ab0;          // for Adams-Bashforth stepping
   real ddx = 1. / dom->dx;     // to limit the number of divisions needed
   real ddy = 1. / dom->dy;     // to limit the number of divisions needed
   real ddz = 1. / dom->dz;     // to limit the number of divisions needed
@@ -2040,20 +1689,19 @@ __global__ void v_star_2_init(real rho_f, real nu,
     // discretizations
     if((i >= dom->Gfy._isb && i < dom->Gfy._ieb)
       && (k >= dom->Gfy._ksb && k < dom->Gfy._keb)) {
-      s_v0[tk + ti*blockDim.x] = v[i + (j-1)*dom->Gfy._s1b + k*dom->Gfy._s2b];
-      s_v1[tk + ti*blockDim.x] = v[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b];
-      s_v2[tk + ti*blockDim.x] = v[i + (j+1)*dom->Gfy._s1b + k*dom->Gfy._s2b];
-      s_f[tk + ti*blockDim.x] = f[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b];
+      s_v0[tk + ti*blockDim.x] = v0[i + (j-1)*dom->Gfy._s1b + k*dom->Gfy._s2b];
+      s_v1[tk + ti*blockDim.x] = v0[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b];
+      s_v2[tk + ti*blockDim.x] = v0[i + (j+1)*dom->Gfy._s1b + k*dom->Gfy._s2b];
     }
     if((i >= dom->Gfz._isb && i < dom->Gfz._ieb)
       && (k >= dom->Gfz._ksb && k < dom->Gfz._keb)) {
-      s_w01[tk + ti*blockDim.x] = w[i + (j-1)*dom->Gfz._s1b + k*dom->Gfz._s2b];
-      s_w12[tk + ti*blockDim.x] = w[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b];
+      s_w01[tk + ti*blockDim.x] = w0[i + (j-1)*dom->Gfz._s1b + k*dom->Gfz._s2b];
+      s_w12[tk + ti*blockDim.x] = w0[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b];
     }
     if((i >= dom->Gfx._isb && i < dom->Gfx._ieb)
       && (k >= dom->Gfx._ksb && k < dom->Gfx._keb)) {
-      s_u01[tk + ti*blockDim.x] = u[i + (j-1)*dom->Gfx._s1b + k*dom->Gfx._s2b];
-      s_u12[tk + ti*blockDim.x] = u[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
+      s_u01[tk + ti*blockDim.x] = u0[i + (j-1)*dom->Gfx._s1b + k*dom->Gfx._s2b];
+      s_u12[tk + ti*blockDim.x] = u0[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
     }
 
     s_v_star[tk + ti*blockDim.x] = 0.0;
@@ -2063,7 +1711,13 @@ __global__ void v_star_2_init(real rho_f, real nu,
 
     // compute right-hand side
     // if off the shared memory block boundary
-    if((tk > 0 && tk < blockDim.x-1) && (ti > 0 && ti < blockDim.y-1)) {
+    if((tk > 0 && tk < blockDim.x-1) && (ti > 0 && ti < blockDim.y-1)
+      && k < dom->Gfy.keb && i < dom->Gfy.ieb) {
+      // pressure gradient
+      s_v_star[tk + ti*blockDim.x] =
+        (p[i + (j-1)*dom->Gcc._s1b + k*dom->Gcc._s2b]
+        - p[i + j*dom->Gcc._s1b + k*dom->Gcc._s2b]) * ddy / rho_f;
+
       // grab the required data points for calculations
       real v101 = s_v0[tk + ti*blockDim.x];
       real v111 = s_v1[tk + ti*blockDim.x];
@@ -2083,7 +1737,7 @@ __global__ void v_star_2_init(real rho_f, real nu,
       real u201 = s_u01[tk + (ti+1)*blockDim.x];
       real u211 = s_u12[tk + (ti+1)*blockDim.x];
 
-      // compute convection term (Euler stepping)
+      // compute convection term (Adams-Bashforth stepping)
       real dvudx = (v211 + v111)*(u211 + u201) - (v111 + v011)*(u111 + u101);
       dvudx *= 0.25 * ddx;
 
@@ -2096,7 +1750,11 @@ __global__ void v_star_2_init(real rho_f, real nu,
       s_c[tk + ti*blockDim.x] = dvudx + dvvdy + dvwdz;
 
       // convection term sums into right-hand side
-      s_v_star[tk + ti*blockDim.x] = - s_c[tk + ti*blockDim.x];
+      if(dt0 > 0) // Adams-Bashforth
+        s_v_star[tk + ti*blockDim.x] += (-ab * s_c[tk + ti*blockDim.x]
+          + ab0 * conv0[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b]);
+      else
+        s_v_star[tk + ti*blockDim.x] += -s_c[tk + ti*blockDim.x];
 
       // compute diffusive term
       real dvd1 = (v211 - v111) * ddx;
@@ -2114,10 +1772,11 @@ __global__ void v_star_2_init(real rho_f, real nu,
       s_d[tk + ti*blockDim.x] = nu * (ddvdxx + ddvdyy + ddvdzz);
 
       // diffusive term sums into right-hand side
-      s_v_star[tk + ti*blockDim.x] += s_d[tk + ti*blockDim.x];
+      s_v_star[tk + ti*blockDim.x] += (ab * s_d[tk + ti*blockDim.x]
+        - ab0 * diff0[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b]);
 
       // add on imposed pressure gradient
-      s_v_star[tk + ti*blockDim.x] += s_f[tk + ti*blockDim.x];
+      s_v_star[tk + ti*blockDim.x] += f[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b];
 
       // multiply by dt
       s_v_star[tk + ti*blockDim.x] *= dt;
@@ -2134,18 +1793,16 @@ __global__ void v_star_2_init(real rho_f, real nu,
       && (k >= dom->Gfy._ks && k < dom->Gfy._ke)
       && (tk > 0 && tk < (blockDim.x-1))
       && (ti > 0 && ti < (blockDim.y-1))) {
-      v_star[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b]
+      v_star[i+ j*dom->Gfy._s1b + k*dom->Gfy._s2b]
         = s_v_star[tk + ti*blockDim.x];
-      diff[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b] = s_d[tk + ti*blockDim.x];
-      conv[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b] = s_c[tk + ti*blockDim.x];
     }
   }
 }
 
-__global__ void w_star_2_init(real rho_f, real nu,
-  real *u, real *v, real *w, real *f,
+__global__ void w_star_2(real rho_f, real nu,
+  real *u0, real *v0, real *w0, real *p, real *f,
   real *diff0, real *conv0, real *diff, real *conv, real *w_star,
-  dom_struct *dom, real dt)
+  dom_struct *dom, real dt0, real dt)
 {
   // create shared memory
   // no reason to load pressure into shared memory, but leaving it in global
@@ -2157,12 +1814,13 @@ __global__ void w_star_2_init(real rho_f, real nu,
   __shared__ real s_u12[MAX_THREADS_DIM * MAX_THREADS_DIM];     // u forward
   __shared__ real s_v01[MAX_THREADS_DIM * MAX_THREADS_DIM];     // v back
   __shared__ real s_v12[MAX_THREADS_DIM * MAX_THREADS_DIM];     // v forward
-  __shared__ real s_d[MAX_THREADS_DIM * MAX_THREADS_DIM];       // diff
-  __shared__ real s_c[MAX_THREADS_DIM * MAX_THREADS_DIM];       // conv
+  __shared__ real s_d[MAX_THREADS_DIM * MAX_THREADS_DIM];       // diff0
+  __shared__ real s_c[MAX_THREADS_DIM * MAX_THREADS_DIM];       // conv0
   __shared__ real s_w_star[MAX_THREADS_DIM * MAX_THREADS_DIM];  // solution
-  __shared__ real s_f[MAX_THREADS_DIM * MAX_THREADS_DIM];       // z-force
 
   // working constants
+  real ab0 = 0.5 * dt / dt0;   // for Adams-Bashforth stepping
+  real ab = 1. + ab0;          // for Adams-Bashforth stepping
   real ddx = 1. / dom->dx;     // to limit the number of divisions needed
   real ddy = 1. / dom->dy;     // to limit the number of divisions needed
   real ddz = 1. / dom->dz;     // to limit the number of divisions needed
@@ -2184,20 +1842,19 @@ __global__ void w_star_2_init(real rho_f, real nu,
     // discretizations
     if((j >= dom->Gfz._jsb && j < dom->Gfz._jeb)
       && (i >= dom->Gfz._isb && i < dom->Gfz._ieb)) {
-      s_w0[ti + tj*blockDim.x] = w[i + j*dom->Gfz._s1b + (k-1)*dom->Gfz._s2b];
-      s_w1[ti + tj*blockDim.x] = w[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b];
-      s_w2[ti + tj*blockDim.x] = w[i + j*dom->Gfz._s1b + (k+1)*dom->Gfz._s2b];
-      s_f[ti + tj*blockDim.x] = f[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b];
+      s_w0[ti + tj*blockDim.x] = w0[i + j*dom->Gfz._s1b + (k-1)*dom->Gfz._s2b];
+      s_w1[ti + tj*blockDim.x] = w0[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b];
+      s_w2[ti + tj*blockDim.x] = w0[i + j*dom->Gfz._s1b + (k+1)*dom->Gfz._s2b];
     }
     if((j >= dom->Gfx._jsb && j < dom->Gfx._jeb)
       && (i >= dom->Gfx._isb && i < dom->Gfx._ieb)) {
-      s_u01[ti + tj*blockDim.x] = u[i + j*dom->Gfx._s1b + (k-1)*dom->Gfx._s2b];
-      s_u12[ti + tj*blockDim.x] = u[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
+      s_u01[ti + tj*blockDim.x] = u0[i + j*dom->Gfx._s1b + (k-1)*dom->Gfx._s2b];
+      s_u12[ti + tj*blockDim.x] = u0[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
     }
     if((j >= dom->Gfy._jsb && j < dom->Gfy._jeb)
       && (i >= dom->Gfy._isb && i < dom->Gfy._ieb)) {
-      s_v01[ti + tj*blockDim.x] = v[i + j*dom->Gfy._s1b + (k-1)*dom->Gfy._s2b];
-      s_v12[ti + tj*blockDim.x] = v[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b];
+      s_v01[ti + tj*blockDim.x] = v0[i + j*dom->Gfy._s1b + (k-1)*dom->Gfy._s2b];
+      s_v12[ti + tj*blockDim.x] = v0[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b];
     }
 
     s_w_star[ti + tj*blockDim.x] = 0.0;
@@ -2207,7 +1864,13 @@ __global__ void w_star_2_init(real rho_f, real nu,
 
     // compute right-hand side
     // if off the shared memory block boundary
-    if((ti > 0 && ti < blockDim.x-1) && (tj > 0 && tj < blockDim.y-1)) {
+    if((ti > 0 && ti < blockDim.x-1) && (tj > 0 && tj < blockDim.y-1)
+      && i < dom->Gfz.ieb && j < dom->Gfz.jeb) {
+      // pressure gradient
+      s_w_star[ti + tj*blockDim.x] =
+        (p[i + j*dom->Gcc._s1b + (k-1)*dom->Gcc._s2b]
+        - p[i + j*dom->Gcc._s1b + k*dom->Gcc._s2b]) * ddz / rho_f;
+
       // grab the required data points for calculations
       real w110 = s_w0[ti + tj*blockDim.x];
       real w111 = s_w1[ti + tj*blockDim.x];
@@ -2227,7 +1890,7 @@ __global__ void w_star_2_init(real rho_f, real nu,
       real v120 = s_v01[ti + (tj+1)*blockDim.x];
       real v121 = s_v12[ti + (tj+1)*blockDim.x];
 
-      // compute convection term (Euler stepping)
+      // compute convection term (Adams-Bashforth stepping)
       real dwudx = (w211 + w111)*(u211 + u210) - (w111 + w011)*(u111 + u110);
       dwudx *= 0.25 * ddx;
 
@@ -2240,7 +1903,11 @@ __global__ void w_star_2_init(real rho_f, real nu,
       s_c[ti + tj*blockDim.x] = dwudx + dwvdy + dwwdz;
 
       // convection term sums into right-hand side
-      s_w_star[ti + tj*blockDim.x] = - s_c[ti + tj*blockDim.x];
+      if(dt0 > 0) // Adams-Bashforth
+        s_w_star[ti + tj*blockDim.x] += (-ab * s_c[ti + tj*blockDim.x]
+          + ab0 * conv0[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b]);
+      else        // forward Euler
+        s_w_star[ti + tj*blockDim.x] += -s_c[ti + tj*blockDim.x];
 
       // compute diffusive term
       real dwd1 = (w211 - w111) * ddx;
@@ -2258,10 +1925,11 @@ __global__ void w_star_2_init(real rho_f, real nu,
       s_d[ti + tj*blockDim.x] = nu * (ddwdxx + ddwdyy + ddwdzz);
 
       // diffusive term sums into right-hand side
-      s_w_star[ti + tj*blockDim.x] += s_d[ti + tj*blockDim.x];
+      s_w_star[ti + tj*blockDim.x] += (ab * s_d[ti + tj*blockDim.x]
+        - ab0 * diff0[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b]);
 
       // add on imposed pressure gradient
-      s_w_star[ti + tj*blockDim.x] += s_f[ti + tj*blockDim.x];
+      s_w_star[ti + tj*blockDim.x] += f[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b];
 
       // multiply by dt
       s_w_star[ti + tj*blockDim.x] *= dt;
@@ -2278,10 +1946,8 @@ __global__ void w_star_2_init(real rho_f, real nu,
       && (i >= dom->Gfz._is && i < dom->Gfz._ie)
       && (ti > 0 && ti < (blockDim.x-1))
       && (tj > 0 && tj < (blockDim.y-1))) {
-      w_star[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b]
+      w_star[i+ j*dom->Gfz._s1b + k*dom->Gfz._s2b]
         = s_w_star[ti + tj*blockDim.x];
-      diff[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b] = s_d[ti + tj*blockDim.x];
-      conv[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b] = s_c[ti + tj*blockDim.x];
     }
   }
 }

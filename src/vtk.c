@@ -631,7 +631,7 @@ void out_VTK_ghost(void)
 
   sprintf(fname_pvd, "%sout_ghost.pvd", OUTPUT_DIR);
   sprintf(fname_pvtr, "out_ghost_%d.pvtr", rec_paraview_stepnum_out);
-  sprintf(fname_vtp, "out_ghost_%d.vtp", rec_paraview_stepnum_out);
+  sprintf(fname_vtp, "out_%d.vtp", rec_paraview_stepnum_out);
 
   FILE *pvdfile= fopen(fname_pvd, "r+");
   // moves back 2 lines from the end of the file (above the footer)

@@ -313,6 +313,8 @@ int main(int argc, char *argv[]) {
       if(runrestart != 1) {
         // start BICGSTAB recorder
         recorder_bicgstab_init("solver_flow.rec");
+        // start Helmholtz recorder
+        //recorder_bicgstab_init("solver_helmholtz_flow.rec");
         // start Lamb's coefficient recorder
         recorder_lamb_init("lamb.rec");
       }
@@ -426,6 +428,9 @@ int main(int argc, char *argv[]) {
         printf("=================================");
         printf("======================================\n");
         fflush(stdout);
+        dt = 1.;
+        dt0 = -1.;
+        cuda_compute_forcing(&pid_int, &pid_back, Kp, Ki, Kd);
         rec_flow_field_stepnum_out = -1;
         rec_paraview_stepnum_out = -1;
         rec_particle_stepnum_out = -1;
@@ -434,10 +439,10 @@ int main(int argc, char *argv[]) {
         cuda_part_pull();
         //cuda_BC_test();
         //cuda_U_star_test_exp();
-        //cuda_U_star_test_cos();
+        cuda_U_star_test_cos();
         //cuda_project_test();
         //cuda_quad_interp_test();
-        cuda_lamb_test();
+        //cuda_lamb_test();
         printf("========================================");
         printf("========================================\n\n");
         fflush(stdout);
@@ -459,10 +464,10 @@ int main(int argc, char *argv[]) {
         expd_update_BC(np, status);
 
         // apply boundary conditions to field variables
-        cuda_dom_BC();
         if(nparts > 0) {
           cuda_part_BC();
         }
+        cuda_dom_BC();
 
         // write initial fields
         if(runrestart != 1) {
@@ -470,7 +475,13 @@ int main(int argc, char *argv[]) {
           cuda_part_pull();
 
         #ifdef DEBUG
-          out_VTK_ghost();
+            printf("Writing ParaView file %d (t = %e)...",
+            rec_paraview_stepnum_out, ttime);
+            fflush(stdout);
+            out_VTK_ghost();
+            rec_paraview_stepnum_out++;
+            printf("done.               \n");
+            fflush(stdout);
         #else
           if(rec_flow_field_dt > 0) {
             printf("Writing flow field file t = %e...", ttime);
@@ -534,6 +545,11 @@ int main(int argc, char *argv[]) {
 
             // solve for U_star
             cuda_U_star_2();
+/*          IMPLICIT FORMULATION (only PERIODIC BC implemented)
+            cuda_ustar_helmholtz(rank);
+            cuda_vstar_helmholtz(rank);
+            cuda_wstar_helmholtz(rank);
+*/
             // apply boundary conditions to U_star
             if(nparts > 0) {
               cuda_part_BC_star();
@@ -555,6 +571,9 @@ int main(int argc, char *argv[]) {
               cuda_part_BC();
             }
             cuda_dom_BC();
+            // update pressure
+            cuda_update_p();
+            cuda_dom_BC_p();
 
             // update Lamb's coefficients
             cuda_move_parts_sub();
@@ -919,6 +938,9 @@ int main(int argc, char *argv[]) {
       cuda_project();
       // apply boundary conditions to field variables
       cuda_dom_BC();
+      // update pressure
+      cuda_update_p();
+      cuda_dom_BC_p();
 
       cuda_store_u();
 

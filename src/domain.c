@@ -1927,6 +1927,7 @@ int domain_init(void)
     conv0_u[i] = 0.;
     conv_u[i] = 0.;
     f_x[i] = 0.;
+    u_star[i] = 0.;
   }
   for(i = 0; i < Dom.Gfy.s3b; i++) {
     v[i] = 0.;
@@ -1936,6 +1937,7 @@ int domain_init(void)
     conv0_v[i] = 0.;
     conv_v[i] = 0.;
     f_y[i] = 0.;
+    v_star[i] = 0.;
   }
   for(i = 0; i < Dom.Gfz.s3b; i++) {
     w[i] = 0.;
@@ -1945,7 +1947,69 @@ int domain_init(void)
     conv0_w[i] = 0.;
     conv_w[i] = 0.;
     f_z[i] = 0.;
+    w_star[i] = 0.;
   }
+
+  // initialize TAYLOR_GREEN vortex
+/*
+  for(k = Dom.Gfx.ksb; k < Dom.Gfx.keb; k++) {
+    for(j = Dom.Gfx.jsb; j < Dom.Gfx.jeb; j++) {
+      for(i = Dom.Gfx.isb; i < Dom.Gfx.ieb; i++) {
+        real x = (i-1.0) * Dom.dx + Dom.xs;
+        real y = (j-0.5) * Dom.dy + Dom.ys;
+        real z = (k-0.5) * Dom.dz + Dom.zs;
+        int C = i+j*Dom.Gfx.s1b+k*Dom.Gfx.s2b;
+        u[C] = cos(2.*PI*x)*sin(2.*PI*y);
+        u0[C] = u[C] * exp(16.*PI*PI*1.0e-6);
+        conv0_u[C] = -4.*PI*sin(2.*PI*x)*cos(2.*PI*x)*sin(2.*PI*y)*sin(2.*PI*y)
+          + 2.*PI*sin(2.*PI*x)*cos(2.*PI*x)
+          *(sin(2.*PI*y)*sin(2.*PI*y)-cos(2.*PI*y)*cos(2.*PI*y));
+        conv0_u[C] *= exp(16.*PI*PI*1.0e-6);
+        diff0_u[C] = -8.*PI*PI*nu*cos(2.*PI*x)*sin(2.*PI*y);
+        diff0_u[C] *= exp(16.*PI*PI*1.0e-6);
+      }
+    }
+  }
+  for(k = Dom.Gfy.ksb; k < Dom.Gfy.keb; k++) {
+    for(j = Dom.Gfy.jsb; j < Dom.Gfy.jeb; j++) {
+      for(i = Dom.Gfy.isb; i < Dom.Gfy.ieb; i++) {
+        real x = (i-0.5) * Dom.dx + Dom.xs;
+        real y = (j-1.0) * Dom.dy + Dom.ys;
+        real z = (k-0.5) * Dom.dz + Dom.zs;
+        int C = i+j*Dom.Gfy.s1b+k*Dom.Gfy.s2b;
+        v[C] = -sin(2.*PI*x)*cos(2.*PI*y);
+        v0[C] = v[C] * exp(16.*PI*PI*1.0e-6);
+        conv0_v[C] = -4.*PI*sin(2.*PI*x)*sin(2.*PI*x)*sin(2.*PI*y)*cos(2.*PI*y)
+          + 2.*PI*sin(2.*PI*y)*cos(2.*PI*y)
+          *(sin(2.*PI*x)*sin(2.*PI*x)-cos(2.*PI*x)*cos(2.*PI*x));
+        conv0_v[C] *= exp(16.*PI*PI*1.0e-6);
+        diff0_v[C] = 8.*PI*PI*nu*sin(2.*PI*x)*cos(2.*PI*y);
+        diff0_v[C] *= exp(16.*PI*PI*1.0e-6);
+      }
+    }
+  }
+  for(k = Dom.Gfz.ksb; k < Dom.Gfz.keb; k++) {
+    for(j = Dom.Gfz.jsb; j < Dom.Gfz.jeb; j++) {
+      for(i = Dom.Gfz.isb; i < Dom.Gfz.ieb; i++) {
+        int C = i+j*Dom.Gfz.s1b+k*Dom.Gfz.s2b;
+        w[C] = 0;
+        w0[C] = w[C];
+      }
+    }
+  }
+  for(k = Dom.Gcc.ksb; k < Dom.Gcc.keb; k++) {
+    for(j = Dom.Gcc.jsb; j < Dom.Gcc.jeb; j++) {
+      for(i = Dom.Gcc.isb; i < Dom.Gcc.ieb; i++) {
+        real x = (i-0.5) * Dom.dx + Dom.xs;
+        real y = (j-0.5) * Dom.dy + Dom.ys;
+        real z = (k-0.5) * Dom.dz + Dom.zs;
+        int C = i+j*Dom.Gcc.s1b+k*Dom.Gcc.s2b;
+        p0[C] = -0.25*rho_f*(cos(2.*2.*PI*x)+cos(2.*2.*PI*y))*exp(16.*PI*PI*0.0e-6);
+        p[C] = -0.25*rho_f*(cos(2.*2.*PI*x)+cos(2.*2.*PI*y))*exp(16.*PI*PI*0.0e-6);
+      }
+    }
+  }
+*/
 
   // initialize SHEAR flow
   if(init_cond == SHEAR) {

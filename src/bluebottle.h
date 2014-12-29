@@ -2391,6 +2391,54 @@ void cuda_U_star_test_cos(void);
  ******
  */
 
+/****f* bluebottle/cuda_ustar_helmholtz
+ * NAME
+ *  cuda_ustar_helmholtz()
+ * USAGE
+ */
+void cuda_ustar_helmholtz(int rank);
+/*
+ * FUNCTION
+ *  Entry point for the CUSP BiCGSTAB and required computations for the
+ *  u_star Helmholtz problem.
+ * ARGUMENTS
+ *  * rank -- The MPI rank of the process to differentiate between flow and
+ *    precursor domains.
+ ******
+ */
+
+/****f* bluebottle/cuda_vstar_helmholtz
+ * NAME
+ *  cuda_vstar_helmholtz()
+ * USAGE
+ */
+void cuda_vstar_helmholtz(int rank);
+/*
+ * FUNCTION
+ *  Entry point for the CUSP BiCGSTAB and required computations for the
+ *  v_star Helmholtz problem.
+ * ARGUMENTS
+ *  * rank -- The MPI rank of the process to differentiate between flow and
+ *    precursor domains.
+ ******
+ */
+
+/****f* bluebottle/cuda_wstar_helmholtz
+ * NAME
+ *  cuda_wstar_helmholtz()
+ * USAGE
+ */
+void cuda_wstar_helmholtz(int rank);
+/*
+ * FUNCTION
+ *  Entry point for the CUSP BiCGSTAB and required computations for the
+ *  w_star Helmholtz problem.
+ * ARGUMENTS
+ *  * rank -- The MPI rank of the process to differentiate between flow and
+ *    precursor domains.
+ ******
+ */
+
 /****f* bluebottle/cuda_PP_bicgstab()
  * NAME
  *  cuda_PP_bicgstab()
@@ -2531,6 +2579,18 @@ void cuda_store_u(void);
 /*
  * FUNCTION
  *  Store the previous u, v, w components for use in the next timestep.
+ ******
+ */
+
+/****f* bluebottle/cuda_update_p()
+ * NAME
+ *  cuda_update_p()
+ * USAGE
+ */
+void cuda_update_p(void);
+/*
+ * FUNCTION
+ *  Update the pressure.
  ******
  */
 

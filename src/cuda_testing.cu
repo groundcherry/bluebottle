@@ -268,20 +268,38 @@ void cuda_U_star_test_cos(void)
   real w_err_max = FLT_MIN;
 
   printf("Intermediate velocity calculation validation:\n\n");
-  printf("  u = cos(x), v = cos(y), w = cos(z)\n\n");
+  printf("  u = cos(y), v = cos(z), w = cos(x)\n\n");
 
+dt = 1;
+//dt0 = dt;
+printf("dt = %f, dt0 = %f\n", dt, dt0);
   // set up expected solution
   for(k = Dom.Gfx.ksb; k < Dom.Gfx.keb; k++) {
     for(j = Dom.Gfx.jsb; j < Dom.Gfx.jeb; j++) {
       for(i = Dom.Gfx.isb; i < Dom.Gfx.ieb; i++) {
         C = i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
-        u_a[C] = - nu * cos((i-1.5)*Dom.dx);
-        u_a[C] += 2 * sin((i-1.5)*Dom.dx) * cos((i-1.5)*Dom.dx);
-        u_a[C] += cos((i-1.5)*Dom.dx) * sin((j-1.0)*Dom.dy);
-        u_a[C] += cos((i-1.5)*Dom.dx) * sin((k-1.0)*Dom.dz);
-        u_a[C] *= dt;
-        u_a[C] += cos((i-1.5)*Dom.dx);
+/*
+        u_a[C] = nu * sin((j-1.0)*Dom.dy);
+        u_a[C] += cos((j-1.0)*Dom.dy) * sin((k-1.0)*Dom.dz);
+        u_a[C] *= -dt;
+        u_a[C] += sin((j-1.0)*Dom.dy);
+*/
+        real x = 2.*PI*(i-1.0)*Dom.dx;
+        real y = 2.*PI*(j-0.5)*Dom.dy;
+        real z = 2.*PI*(k-0.5)*Dom.dz;
+        //u_a[C] = -4.*PI*sin(x)*cos(x)*sin(y)*sin(y);
+        //u_a[C] += 2.*PI*sin(x)*cos(x)*(sin(y)*sin(y)-cos(y)*cos(y));
+        u_a[C] = 8.*PI*PI*nu*cos(x)*sin(y);
+        //u_a[C] += PI*sin(2.*x);
+        u_a[C] *= -dt;
+        //u_a[C] = cos(x)*sin(y) * exp(-16.*PI*PI*1.0*dt);
         u[C] = u_a[C];
+        conv0_u[C] = -4.*PI*sin(x)*cos(x)*sin(y)*sin(y)
+          + 2.*PI*sin(x)*cos(x)
+          *(sin(y)*sin(y)-cos(y)*cos(y));
+        conv0_u[C] *= exp(16.*PI*PI*1.0*dt);
+        diff0_u[C] = -8.*PI*PI*nu*cos(x)*sin(y);
+        diff0_u[C] *= exp(16.*PI*PI*1.0*dt);
       }
     }
   }
@@ -289,13 +307,28 @@ void cuda_U_star_test_cos(void)
     for(j = Dom.Gfy.jsb; j < Dom.Gfy.jeb; j++) {
       for(i = Dom.Gfy.isb; i < Dom.Gfy.ieb; i++) {
         C = i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
-        v_a[C] = - nu * cos((j-1.5)*Dom.dy);
-        v_a[C] += 2 * sin((j-1.5)*Dom.dy) * cos((j-1.5)*Dom.dy);
-        v_a[C] += cos((j-1.5)*Dom.dy) * sin((k-1.0)*Dom.dz);
-        v_a[C] += cos((j-1.5)*Dom.dy) * sin((i-1.0)*Dom.dx);
-        v_a[C] *= dt;
-        v_a[C] += cos((j-1.5)*Dom.dy);
+/*
+        v_a[C] = nu * sin((k-1.0)*Dom.dz);
+        v_a[C] += cos((k-1.0)*Dom.dz) * sin((i-1.0)*Dom.dx);
+        v_a[C] *= -dt;
+        v_a[C] += sin((k-1.0)*Dom.dz);
+*/
+        real x = 2.*PI*(i-0.5)*Dom.dx;
+        real y = 2.*PI*(j-1.0)*Dom.dy;
+        real z = 2.*PI*(k-0.5)*Dom.dz;
+        //v_a[C] = 2.*PI*cos(y)*sin(y)*(sin(x)*sin(x)-cos(x)*cos(x));
+        //v_a[C] += -4.*PI*sin(x)*sin(x)*cos(y)*sin(y);
+        v_a[C] = -8.*PI*PI*nu*sin(x)*cos(y);
+//        v_a[C] += PI*sin(2.*y);
+        v_a[C] *= -dt;
+        //v_a[C] = -sin(x)*cos(y) * exp(-16.*PI*PI*1.0*dt);
         v[C] = v_a[C];
+        conv0_v[C] = -4.*PI*sin(x)*sin(x)*sin(y)*cos(y)
+          + 2.*PI*sin(y)*cos(y)
+          *(sin(x)*sin(x)-cos(x)*cos(x));
+        conv0_v[C] *= exp(16.*PI*PI*1.0*dt);
+        diff0_v[C] = 8.*PI*PI*nu*sin(x)*cos(y);
+        diff0_v[C] *= exp(16.*PI*PI*1.0*dt);
       }
     }
   }
@@ -303,12 +336,11 @@ void cuda_U_star_test_cos(void)
     for(j = Dom.Gfz.jsb; j < Dom.Gfz.jeb; j++) {
       for(i = Dom.Gfz.isb; i < Dom.Gfz.ieb; i++) {
         C = i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b;
-        w_a[C] = - nu * cos((k-1.5)*Dom.dz);
-        w_a[C] += 2 * sin((k-1.5)*Dom.dz) * cos((k-1.5)*Dom.dz);
-        w_a[C] += cos((k-1.5)*Dom.dz) * sin((i-1.0)*Dom.dx);
-        w_a[C] += cos((k-1.5)*Dom.dz) * sin((j-1.0)*Dom.dy);
-        w_a[C] *= dt;
-        w_a[C] += cos((k-1.5)*Dom.dz);
+        w_a[C] = nu * sin((i-1.0)*Dom.dx);
+        w_a[C] += cos((i-1.0)*Dom.dx) * sin((j-1.0)*Dom.dy);
+        w_a[C] *= -dt;
+        w_a[C] += sin((i-1.0)*Dom.dx);
+        w_a[C] = 0;
         w[C] = w_a[C];
       }
     }
@@ -325,7 +357,11 @@ void cuda_U_star_test_cos(void)
     for(j = Dom.Gfx.jsb; j < Dom.Gfx.jeb; j++) {
       for(i = Dom.Gfx.isb; i < Dom.Gfx.ieb; i++) {
         C = i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
-        u[C] = cos((i-1.5)*Dom.dx);
+        real x = 2.*PI*(i-1.0)*Dom.dx;
+        real y = 2.*PI*(j-0.5)*Dom.dy;
+        real z = 2.*PI*(k-0.5)*Dom.dz;
+        //u[C] = sin((j-1.0)*Dom.dy);
+        u[C] = cos(x)*sin(y);
       }
     }
   }
@@ -333,7 +369,11 @@ void cuda_U_star_test_cos(void)
     for(j = Dom.Gfy.jsb; j < Dom.Gfy.jeb; j++) {
       for(i = Dom.Gfy.isb; i < Dom.Gfy.ieb; i++) {
         C = i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
-        v[C] = cos((j-1.5)*Dom.dy);
+        real x = 2.*PI*(i-0.5)*Dom.dx;
+        real y = 2.*PI*(j-1.0)*Dom.dy;
+        real z = 2.*PI*(k-0.5)*Dom.dz;
+        //v[C] = sin((k-1.0)*Dom.dz);
+        v[C] = -sin(x)*cos(y);
       }
     }
   }
@@ -341,7 +381,20 @@ void cuda_U_star_test_cos(void)
     for(j = Dom.Gfz.jsb; j < Dom.Gfz.jeb; j++) {
       for(i = Dom.Gfz.isb; i < Dom.Gfz.ieb; i++) {
         C = i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b;
-        w[C] = cos((k-1.5)*Dom.dz);
+        //w[C] = sin((i-1.0)*Dom.dx);
+        w[C] = 0;
+      }
+    }
+  }
+  for(k = Dom.Gcc.ksb; k < Dom.Gcc.keb; k++) {
+    for(j = Dom.Gcc.jsb; j < Dom.Gcc.jeb; j++) {
+      for(i = Dom.Gcc.isb; i < Dom.Gcc.ieb; i++) {
+        C = i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b;
+        real x = 2.*PI*(i-0.5)*Dom.dx;
+        real y = 2.*PI*(j-0.5)*Dom.dy;
+        real z = 2.*PI*(k-0.5)*Dom.dz;
+        p[C] = -0.25*rho_f*(cos(2.*x)+cos(2.*y));
+        p0[C] = -0.25*rho_f*(cos(2.*x)+cos(2.*y));
       }
     }
   }
@@ -358,7 +411,7 @@ void cuda_U_star_test_cos(void)
   printf("done.\n");
 
   // call code to test
-  printf("  Running cuda_CN_rhs()...");
+  printf("  Running cuda_U_star_2()...");
   cuda_U_star_2();
   printf("done.\n");
 
@@ -374,25 +427,29 @@ void cuda_U_star_test_cos(void)
   printf("done.\n");
 
   // copy results and compute error
+u_err_max = 0;
   for(k = Dom.Gfx.ks; k < Dom.Gfx.ke; k++) {
     for(j = Dom.Gfx.js; j < Dom.Gfx.je; j++) {
       for(i = Dom.Gfx.is; i < Dom.Gfx.ie; i++) {
         C = i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
-        u_c[C] = u[C];
+        u_c[C] = u_star[C];
         u_e[C] = (u_c[C] - u_a[C]);// / u_a[C];
-        if(fabs(u_e[C]) > u_err_max) u_err_max = fabs(u_e[C]);
+        u_err_max += fabs(u_e[C]);
+        //if(fabs(u_e[C]) > u_err_max) u_err_max = fabs(u_e[C]);
         if(fabs(u_e[C]) < u_err_min) u_err_min = fabs(u_e[C]);
         u[C] = u_e[C];
       }
     }
   }
+v_err_max = 0;
   for(k = Dom.Gfy.ks; k < Dom.Gfy.ke; k++) {
     for(j = Dom.Gfy.js; j < Dom.Gfy.je; j++) {
       for(i = Dom.Gfy.is; i < Dom.Gfy.ie; i++) {
         C = i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
-        v_c[C] = v[C];
+        v_c[C] = v_star[C];
         v_e[C] = (v_c[C] - v_a[C]);// / v_a[C];
-        if(fabs(v_e[C]) > v_err_max) v_err_max = fabs(v_e[C]);
+        v_err_max += fabs(v_e[C]);
+        //if(fabs(v_e[C]) > v_err_max) v_err_max = fabs(v_e[C]);
         if(fabs(v_e[C]) < v_err_min) v_err_min = fabs(v_e[C]);
         v[C] = v_e[C];
       }
@@ -402,7 +459,7 @@ void cuda_U_star_test_cos(void)
     for(j = Dom.Gfz.js; j < Dom.Gfz.je; j++) {
       for(i = Dom.Gfz.is; i < Dom.Gfz.ie; i++) {
         C = i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b;
-        w_c[C] = w[C];
+        w_c[C] = w_star[C];
         w_e[C] = (w_c[C] - w_a[C]);// / w_a[C];
         if(fabs(w_e[C]) > w_err_max) w_err_max = fabs(w_e[C]);
         if(fabs(w_e[C]) < w_err_min) w_err_min = fabs(w_e[C]);
