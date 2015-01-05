@@ -286,7 +286,7 @@ printf("dt = %f, dt0 = %f\n", dt, dt0);
 */
         real x = 2.*PI*(i-1.0)*Dom.dx;
         real y = 2.*PI*(j-0.5)*Dom.dy;
-        real z = 2.*PI*(k-0.5)*Dom.dz;
+        //real z = 2.*PI*(k-0.5)*Dom.dz;
         //u_a[C] = -4.*PI*sin(x)*cos(x)*sin(y)*sin(y);
         //u_a[C] += 2.*PI*sin(x)*cos(x)*(sin(y)*sin(y)-cos(y)*cos(y));
         u_a[C] = 8.*PI*PI*nu*cos(x)*sin(y);
@@ -315,7 +315,7 @@ printf("dt = %f, dt0 = %f\n", dt, dt0);
 */
         real x = 2.*PI*(i-0.5)*Dom.dx;
         real y = 2.*PI*(j-1.0)*Dom.dy;
-        real z = 2.*PI*(k-0.5)*Dom.dz;
+        //real z = 2.*PI*(k-0.5)*Dom.dz;
         //v_a[C] = 2.*PI*cos(y)*sin(y)*(sin(x)*sin(x)-cos(x)*cos(x));
         //v_a[C] += -4.*PI*sin(x)*sin(x)*cos(y)*sin(y);
         v_a[C] = -8.*PI*PI*nu*sin(x)*cos(y);
@@ -359,7 +359,7 @@ printf("dt = %f, dt0 = %f\n", dt, dt0);
         C = i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
         real x = 2.*PI*(i-1.0)*Dom.dx;
         real y = 2.*PI*(j-0.5)*Dom.dy;
-        real z = 2.*PI*(k-0.5)*Dom.dz;
+        //real z = 2.*PI*(k-0.5)*Dom.dz;
         //u[C] = sin((j-1.0)*Dom.dy);
         u[C] = cos(x)*sin(y);
       }
@@ -371,7 +371,7 @@ printf("dt = %f, dt0 = %f\n", dt, dt0);
         C = i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
         real x = 2.*PI*(i-0.5)*Dom.dx;
         real y = 2.*PI*(j-1.0)*Dom.dy;
-        real z = 2.*PI*(k-0.5)*Dom.dz;
+        //real z = 2.*PI*(k-0.5)*Dom.dz;
         //v[C] = sin((k-1.0)*Dom.dz);
         v[C] = -sin(x)*cos(y);
       }
@@ -392,7 +392,7 @@ printf("dt = %f, dt0 = %f\n", dt, dt0);
         C = i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b;
         real x = 2.*PI*(i-0.5)*Dom.dx;
         real y = 2.*PI*(j-0.5)*Dom.dy;
-        real z = 2.*PI*(k-0.5)*Dom.dz;
+        //real z = 2.*PI*(k-0.5)*Dom.dz;
         p[C] = -0.25*rho_f*(cos(2.*x)+cos(2.*y));
         p0[C] = -0.25*rho_f*(cos(2.*x)+cos(2.*y));
       }

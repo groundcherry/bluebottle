@@ -165,6 +165,7 @@ int main(int argc, char *argv[]) {
 
   int np = 0;     // number of MPI processes
   int rank = 0;   // number assigned to this MPI process
+  int restart_stop = 0; // boolean to determine when to stop restart loop
 
   // set up MPI
   MPI_Init(&argc, &argv);
@@ -404,6 +405,10 @@ int main(int argc, char *argv[]) {
         cuda_part_push();
         printf("done.\n");
         fflush(stdout);
+        if(ttime >= duration) {
+          printf("\n...simulation completed.\n");
+          restart_stop = 1;
+        }
       }
 
       #ifdef DEBUG
@@ -695,7 +700,6 @@ int main(int argc, char *argv[]) {
           diffwalltime = difftime(timestepwalltime, startwalltime);
           if(rec_restart_dt > 0) {
             if((real)diffwalltime/60. > rec_restart_dt) {
-            //if(rec_restart_ttime_out >= rec_restart_dt) {
               printf("  Writing restart file (t = %e)...", ttime);
               fflush(stdout);
               cuda_dom_pull();
@@ -715,6 +719,18 @@ int main(int argc, char *argv[]) {
             printf("The solution has diverged.  Ending simulation.              \n");
             return EXIT_FAILURE;
           }
+        }
+
+        if(rec_restart_dt > 0 && ttime >= duration && !restart_stop) {
+          printf("  Writing final restart file (t = %e)...", ttime);
+          fflush(stdout);
+          cuda_dom_pull();
+          cuda_part_pull();
+          out_restart();
+          printf("done.               \n");
+          fflush(stdout);
+          rec_restart_ttime_out = rec_restart_ttime_out - rec_restart_dt;
+          startwalltime = time(NULL);
         }
 
         printf("========================================");
@@ -1004,5 +1020,6 @@ int main(int argc, char *argv[]) {
   // finalize MPI
   MPI_Finalize();
 
-  return EXIT_SUCCESS;
+  if(restart_stop) return EXIT_FAILURE;
+  else return EXIT_SUCCESS;
 }
