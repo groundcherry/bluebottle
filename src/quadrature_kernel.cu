@@ -195,7 +195,6 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   real dpdz = 0.5 * (pt - pb) * ddz;
 */
 
-/*
   real pc = p[C];
   real pw = p[C-1];
   real pe = p[C+1];
@@ -206,8 +205,8 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   real dpdx = 0.5 * (pe - pw) * ddx;
   real dpdy = 0.5 * (pn - ps) * ddy;
   real dpdz = 0.5 * (pt - pb) * ddz;
-*/
 
+/* WITH NEW FLOW SOLVER, PARTICLES SEEM TO NOT LIKE THIS
   real a = dt0/dt;
   a = (a + 2.)/(a + 1.);
   real pc = p[C]*a + p0[C]*(1.-a);
@@ -220,6 +219,7 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   real dpdx = 0.5 * (pe - pw) * ddx;
   real dpdy = 0.5 * (pn - ps) * ddy;
   real dpdz = 0.5 * (pt - pb) * ddz;
+*/
 
   pp[node+nnodes*part] = pc + dpdx*(x-xx) + dpdy*(y-yy) + dpdz*(z-zz);
   // switch to particle rest frame
