@@ -271,6 +271,8 @@ void cuda_part_pull(void)
   // copy for device cage setup testing
   checkCudaErrors(cudaMemcpy(phase, _phase[0], sizeof(int) * dom[0].Gcc.s3b,
     cudaMemcpyDeviceToHost));
+  checkCudaErrors(cudaMemcpy(phase_shell, _phase_shell[0], sizeof(int) * dom[0].Gcc.s3b,
+    cudaMemcpyDeviceToHost));
 
 #ifdef DEBUG
   checkCudaErrors(cudaMemcpy(phase_shell, _phase_shell[0],

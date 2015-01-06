@@ -1638,12 +1638,13 @@ __global__ void predict_coeffs(real dt0, real dt,
   int ti = stride*part + coeff;
   real a = dt/dt0;
   // store last result
-  pnm_re0[ti] = pnm_re[ti];
+  /*pnm_re0[ti] = pnm_re[ti];
   pnm_im0[ti] = pnm_im[ti];
   phinm_re0[ti] = phinm_re[ti];
   phinm_im0[ti] = phinm_im[ti];
   chinm_re0[ti] = chinm_re[ti];
   chinm_im0[ti] = chinm_im[ti];
+*/
   // predict starting point for iterations at the next timestep
   pnm_re[ti] = pnm_re[ti]*(1. + a) - pnm_re00[ti]*a;
   pnm_im[ti] = pnm_im[ti]*(1. + a) - pnm_im00[ti]*a;

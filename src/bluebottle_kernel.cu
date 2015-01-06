@@ -1642,6 +1642,8 @@ __global__ void u_star_2(real rho_f, real nu,
       && (tk > 0 && tk < (blockDim.y-1))) {
       u_star[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b]
         = s_u_star[tj + tk*blockDim.x];
+      conv[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b] = s_c[tj + tk*blockDim.x];
+      diff[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b] = s_d[tj + tk*blockDim.x];
     }
   }
 }
@@ -1795,6 +1797,8 @@ __global__ void v_star_2(real rho_f, real nu,
       && (ti > 0 && ti < (blockDim.y-1))) {
       v_star[i+ j*dom->Gfy._s1b + k*dom->Gfy._s2b]
         = s_v_star[tk + ti*blockDim.x];
+      conv[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b] = s_c[tk + ti*blockDim.x];
+      diff[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b] = s_d[tk + ti*blockDim.x];
     }
   }
 }
@@ -1948,6 +1952,8 @@ __global__ void w_star_2(real rho_f, real nu,
       && (tj > 0 && tj < (blockDim.y-1))) {
       w_star[i+ j*dom->Gfz._s1b + k*dom->Gfz._s2b]
         = s_w_star[ti + tj*blockDim.x];
+      conv[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b] = s_c[ti + tj*blockDim.x];
+      diff[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b] = s_d[ti + tj*blockDim.x];
     }
   }
 }

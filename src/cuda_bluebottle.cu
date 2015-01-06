@@ -728,7 +728,6 @@ void cuda_dom_pull(void)
     // cpumem += dom[dev].Gfy.s3b * sizeof(real);
     real *ww0 = (real*) malloc(dom[dev].Gfz.s3b * sizeof(real));
     // cpumem += dom[dev].Gfz.s3b * sizeof(real);
-/*
     real *diffuu0 = (real*) malloc(dom[dev].Gfx.s3b * sizeof(real));
     // cpumem += dom[dev].Gfx.s3b * sizeof(real);
     real *diffvv0 = (real*) malloc(dom[dev].Gfy.s3b * sizeof(real));
@@ -752,7 +751,6 @@ void cuda_dom_pull(void)
     real *convvv = (real*) malloc(dom[dev].Gfy.s3b * sizeof(real));
     // cpumem += dom[dev].Gfy.s3b * sizeof(real);
     real *convww = (real*) malloc(dom[dev].Gfz.s3b * sizeof(real));
-*/
 
     // copy from device to host
     checkCudaErrors(cudaMemcpy(pp0, _p0[dev], sizeof(real) * dom[dev].Gcc.s3b,
@@ -773,7 +771,6 @@ void cuda_dom_pull(void)
       cudaMemcpyDeviceToHost)); 
     checkCudaErrors(cudaMemcpy(ww0, _w0[dev], sizeof(real) * dom[dev].Gfz.s3b,
       cudaMemcpyDeviceToHost)); 
-/*
     checkCudaErrors(cudaMemcpy(diffuu0, _diff0_u[dev],
       sizeof(real) * dom[dev].Gfx.s3b, cudaMemcpyDeviceToHost));
     checkCudaErrors(cudaMemcpy(diffvv0, _diff0_v[dev],
@@ -798,7 +795,6 @@ void cuda_dom_pull(void)
       sizeof(real) * dom[dev].Gfy.s3b, cudaMemcpyDeviceToHost));
     checkCudaErrors(cudaMemcpy(convww, _conv_w[dev],
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyDeviceToHost));
-*/
 
 #ifdef DEBUG // run test code
     real *uu_star = (real*) malloc(dom[dev].Gfx.s3b * sizeof(real));
@@ -926,7 +922,7 @@ void cuda_dom_pull(void)
           kk = k - dom[dev].Gcc.ksb;
           C = i + j * Dom.Gcc.s1b + k * Dom.Gcc.s2b;
           CC = ii + jj * dom[dev].Gcc.s1b + kk * dom[dev].Gcc.s2b;
-          //p0[C] = pp0[CC];
+          p0[C] = pp0[CC];
           p[C] = pp[CC];
           //divU[C] = pdivU[CC];
         }
@@ -942,7 +938,7 @@ void cuda_dom_pull(void)
           C = i + j * Dom.Gfx.s1b + k * Dom.Gfx.s2b;
           CC = ii + jj * dom[dev].Gfx.s1b + kk * dom[dev].Gfx.s2b;
           u[C] = uu[CC];
-          //u0[C] = uu0[CC];
+          u0[C] = uu0[CC];
         }
       }
     }
@@ -956,7 +952,7 @@ void cuda_dom_pull(void)
           C = i + j * Dom.Gfy.s1b + k * Dom.Gfy.s2b;
           CC = ii + jj * dom[dev].Gfy.s1b + kk * dom[dev].Gfy.s2b;
           v[C] = vv[CC];
-          //v0[C] = vv0[CC];
+          v0[C] = vv0[CC];
         }
       }
     }
@@ -970,11 +966,10 @@ void cuda_dom_pull(void)
           C = i + j * Dom.Gfz.s1b + k * Dom.Gfz.s2b;
           CC = ii + jj * dom[dev].Gfz.s1b + kk * dom[dev].Gfz.s2b;
           w[C] = ww[CC];
-          //w0[C] = ww0[CC];
+          w0[C] = ww0[CC];
         }
       }
     }
-/*
     // conv_u
     for(k = dom[dev].Gfx.ksb; k < dom[dev].Gfx.keb; k++) {
       for(j = dom[dev].Gfx.jsb; j < dom[dev].Gfx.jeb; j++) {
@@ -1023,7 +1018,6 @@ void cuda_dom_pull(void)
         }
       }
     }
-*/
 
 #endif
 
@@ -1037,7 +1031,6 @@ void cuda_dom_pull(void)
     free(uu0);
     free(vv0);
     free(ww0);
-/*
     free(diffuu0);
     free(diffvv0);
     free(diffww0);
@@ -1050,7 +1043,6 @@ void cuda_dom_pull(void)
     free(convuu);
     free(convvv);
     free(convww);
-*/
   }
 }
 

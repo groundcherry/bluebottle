@@ -2970,13 +2970,14 @@ void out_restart(void)
   for(k = Dom.Gfx.ksb; k < Dom.Gfx.keb; k++) {
     for(j = Dom.Gfx.jsb; j < Dom.Gfx.jeb; j++) {
       for(i = Dom.Gfx.isb; i < Dom.Gfx.ieb; i++) {
-        fprintf(rest, "%e %e %e %e %e %e ",
+        fprintf(rest, "%e %e %e %e %e %e %e ",
           u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           u0[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           diff0_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           conv0_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           diff_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
-          conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+          conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          u_star[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
       }
     }
   }
@@ -2985,13 +2986,14 @@ void out_restart(void)
   for(k = Dom.Gfy.ksb; k < Dom.Gfy.keb; k++) {
     for(j = Dom.Gfy.jsb; j < Dom.Gfy.jeb; j++) {
       for(i = Dom.Gfy.isb; i < Dom.Gfy.ieb; i++) {
-        fprintf(rest, "%e %e %e %e %e %e ",
+        fprintf(rest, "%e %e %e %e %e %e %e ",
           v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           diff0_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           conv0_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
-          conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
+          conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          v_star[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
       }
     }
   }
@@ -3000,13 +3002,14 @@ void out_restart(void)
   for(k = Dom.Gfz.ksb; k < Dom.Gfz.keb; k++) {
     for(j = Dom.Gfz.jsb; j < Dom.Gfz.jeb; j++) {
       for(i = Dom.Gfz.isb; i < Dom.Gfz.ieb; i++) {
-        fprintf(rest, "%e %e %e %e %e %e ",
+        fprintf(rest, "%e %e %e %e %e %e %e ",
           w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           w0[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           diff0_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b], 
           conv0_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           diff_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b], 
-          conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
+          conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          w_star[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
       }
     }
   }
@@ -3199,21 +3202,23 @@ void in_restart(void)
     for(j = Dom.Gfx.jsb; j < Dom.Gfx.jeb; j++) {
       for(i = Dom.Gfx.isb; i < Dom.Gfx.ieb; i++) {
 #ifdef DOUBLE
-        fret = fscanf(infile, "%le %le %le %le %le %le ",
+        fret = fscanf(infile, "%le %le %le %le %le %le %le ",
           &u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &u0[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &diff0_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &conv0_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &diff_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
-          &conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+          &conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &u_star[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
 #else
-        fret = fscanf(infile, "%e %e %e %e %e %e ",
+        fret = fscanf(infile, "%e %e %e %e %e %e %e ",
           &u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &u0[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &diff0_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &conv0_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &diff_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
-          &conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+          &conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &u_star[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
 #endif
       }
     }
@@ -3224,21 +3229,23 @@ void in_restart(void)
     for(j = Dom.Gfy.jsb; j < Dom.Gfy.jeb; j++) {
       for(i = Dom.Gfy.isb; i < Dom.Gfy.ieb; i++) {
 #ifdef DOUBLE
-        fret = fscanf(infile, "%le %le %le %le %le %le ",
+        fret = fscanf(infile, "%le %le %le %le %le %le %le ",
           &v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &diff0_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &conv0_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
-          &conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
+          &conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &v_star[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
 #else
-        fret = fscanf(infile, "%e %e %e %e %e %e ",
+        fret = fscanf(infile, "%e %e %e %e %e %e %e ",
           &v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &diff0_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &conv0_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
-          &conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
+          &conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &v_star[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
 #endif
       }
     }
@@ -3249,21 +3256,23 @@ void in_restart(void)
     for(j = Dom.Gfz.jsb; j < Dom.Gfz.jeb; j++) {
       for(i = Dom.Gfz.isb; i < Dom.Gfz.ieb; i++) {
 #ifdef DOUBLE
-        fret = fscanf(infile, "%le %le %le %le %le %le ",
+        fret = fscanf(infile, "%le %le %le %le %le %le %le ",
           &w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &w0[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &diff0_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &conv0_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &diff_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
-          &conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
+          &conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &w_star[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
 #else
-        fret = fscanf(infile, "%e %e %e %e %e %e ",
+        fret = fscanf(infile, "%e %e %e %e %e %e %e ",
           &w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &w0[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &diff0_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &conv0_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &diff_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
-          &conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
+          &conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &w_star[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
 #endif
       }
     }

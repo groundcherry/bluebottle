@@ -69,7 +69,7 @@ FZh = zeros(np, nt);
 for i = 1:nt
   [FX(:,i), FY(:,i), FZ(:,i)] = cgns_read_part_force_total(casename, tstr{n(i)});
   [FXi(:,i), FYi(:,i), FZi(:,i)] = cgns_read_part_force_interaction(casename, tstr{n(i)});
-  [FXh(:,i), FYh(:,i), FZh(:,i)] = cgns_read_part_force_hydro(casename, (tstr{n(i)});
+  [FXh(:,i), FYh(:,i), FZh(:,i)] = cgns_read_part_force_hydro(casename, tstr{n(i)});
 end
 
 % plot
