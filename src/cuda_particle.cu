@@ -1570,9 +1570,11 @@ void cuda_part_BC_p(int dev)
   dim3 dimBlocks_c(threads_c, threads_c);
   dim3 numBlocks_c(blocks_y, blocks_z);
 
+  real dt0tmp = 0.;
+  if(dt0 > 0) dt0tmp = dt0;
   part_BC_p<<<numBlocks_c, dimBlocks_c>>>(_p0[dev], _rhs_p[dev], _phase[dev],
     _phase_shell[dev], _parts[dev], _dom[dev],
-    mu, nu, dt, gradP, rho_f, coeff_stride,
+    mu, nu, 0.5*(dt+dt0tmp), gradP, rho_f, coeff_stride,
     _pnm_re00[dev], _pnm_im00[dev],
     _phinm_re00[dev], _phinm_im00[dev], _chinm_re00[dev], _chinm_im00[dev],
     _pnm_re[dev], _pnm_im[dev],
@@ -1602,7 +1604,6 @@ void cuda_store_coeffs(void)
         _chinm_re[dev], _chinm_im[dev], coeff_stride);
     }
 */
-
     checkCudaErrors(cudaMemcpy(_pnm_re00[dev], _pnm_re[dev],
       sizeof(real) * coeff_stride*nparts, cudaMemcpyDeviceToDevice));
     checkCudaErrors(cudaMemcpy(_pnm_im00[dev], _pnm_im[dev],

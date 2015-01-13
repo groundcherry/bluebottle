@@ -1619,8 +1619,11 @@ __global__ void u_star_2(real rho_f, real nu,
       s_d[tj + tk*blockDim.x] = nu * (ddudxx + ddudyy + ddudzz);
 
       // diffusive term sums into right-hand side
-      s_u_star[tj + tk*blockDim.x] += (ab * s_d[tj + tk*blockDim.x]
-        - ab0 * diff0[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b]);
+      if(dt0 > 0) // Adams-Bashforth
+        s_u_star[tj + tk*blockDim.x] += (ab * s_d[tj + tk*blockDim.x]
+          - ab0 * diff0[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b]);
+      else
+        s_u_star[tj + tk*blockDim.x] += s_d[tj + tk*blockDim.x];
 
       // add on imposed pressure gradient
       s_u_star[tj + tk*blockDim.x] += f[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b];
@@ -1774,8 +1777,11 @@ __global__ void v_star_2(real rho_f, real nu,
       s_d[tk + ti*blockDim.x] = nu * (ddvdxx + ddvdyy + ddvdzz);
 
       // diffusive term sums into right-hand side
-      s_v_star[tk + ti*blockDim.x] += (ab * s_d[tk + ti*blockDim.x]
-        - ab0 * diff0[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b]);
+      if(dt0 > 0) // Adams-Bashforth
+        s_v_star[tk + ti*blockDim.x] += (ab * s_d[tk + ti*blockDim.x]
+          - ab0 * diff0[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b]);
+      else
+        s_v_star[tk + ti*blockDim.x] += s_d[tk + ti*blockDim.x];
 
       // add on imposed pressure gradient
       s_v_star[tk + ti*blockDim.x] += f[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b];
@@ -1929,8 +1935,11 @@ __global__ void w_star_2(real rho_f, real nu,
       s_d[ti + tj*blockDim.x] = nu * (ddwdxx + ddwdyy + ddwdzz);
 
       // diffusive term sums into right-hand side
-      s_w_star[ti + tj*blockDim.x] += (ab * s_d[ti + tj*blockDim.x]
-        - ab0 * diff0[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b]);
+      if(dt0 > 0) // Adams-Bashforth
+        s_w_star[ti + tj*blockDim.x] += (ab * s_d[ti + tj*blockDim.x]
+          - ab0 * diff0[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b]);
+      else        // forward Euler
+        s_w_star[ti + tj*blockDim.x] += s_d[ti + tj*blockDim.x];
 
       // add on imposed pressure gradient
       s_w_star[ti + tj*blockDim.x] += f[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b];
@@ -2221,7 +2230,6 @@ __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
 {
   int pp = threadIdx.x + blockIdx.x*blockDim.x; // particle number
   real m = 4./3. * PI * parts[pp].rho * parts[pp].r*parts[pp].r*parts[pp].r;
-  //real dT = dt / dt0;
 
   if(pp < nparts) {
     if(parts[pp].translating) {
@@ -2241,20 +2249,24 @@ __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
       parts[pp].v = parts[pp].v0 + parts[pp].vdot * dt;
       parts[pp].w = parts[pp].w0 + parts[pp].wdot * dt;
 
+      // update position (trapezoidal rule)
+      parts[pp].x = parts[pp].x + 0.5*(parts[pp].u+parts[pp].u0)*dt;
+      if(parts[pp].x < dom->xs) parts[pp].x = parts[pp].x + dom->xl;
+      else if(parts[pp].x > dom->xe) parts[pp].x = parts[pp].x - dom->xl;
+
+      parts[pp].y = parts[pp].y + 0.5*(parts[pp].v+parts[pp].v0)*dt;
+      if(parts[pp].y < dom->ys) parts[pp].y = parts[pp].y + dom->yl;
+      else if(parts[pp].y > dom->ye) parts[pp].y = parts[pp].y - dom->yl;
+
+      parts[pp].z = parts[pp].z + 0.5*(parts[pp].w+parts[pp].w0)*dt;
+      if(parts[pp].z < dom->zs) parts[pp].z = parts[pp].z + dom->zl;
+      else if(parts[pp].z > dom->ze) parts[pp].z = parts[pp].z - dom->zl;
+
+      // store for next time step
       parts[pp].u0 = parts[pp].u;
       parts[pp].v0 = parts[pp].v;
       parts[pp].w0 = parts[pp].w;
 
-      // update position
-      parts[pp].x = parts[pp].x + parts[pp].u * dt;
-      if(parts[pp].x < dom->xs) parts[pp].x = parts[pp].x + dom->xl;
-      else if(parts[pp].x > dom->xe) parts[pp].x = parts[pp].x - dom->xl;
-      parts[pp].y = parts[pp].y + parts[pp].v * dt;
-      if(parts[pp].y < dom->ys) parts[pp].y = parts[pp].y + dom->yl;
-      else if(parts[pp].y > dom->ye) parts[pp].y = parts[pp].y - dom->yl;
-      parts[pp].z = parts[pp].z + parts[pp].w * dt;
-      if(parts[pp].z < dom->zs) parts[pp].z = parts[pp].z + dom->zl;
-      else if(parts[pp].z > dom->ze) parts[pp].z = parts[pp].z - dom->zl;
     }
     if(parts[pp].rotating) {
       // update angular accelerations
@@ -2267,22 +2279,21 @@ __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
       parts[pp].ox = parts[pp].ox0 + parts[pp].oxdot * dt;
       parts[pp].oy = parts[pp].oy0 + parts[pp].oydot * dt;
       parts[pp].oz = parts[pp].oz0 + parts[pp].ozdot * dt;
-      parts[pp].ox0 = parts[pp].ox;
-      parts[pp].oy0 = parts[pp].oy;
-      parts[pp].oz0 = parts[pp].oz;
 
       /* update basis vectors */
-      // calculate rotation magnitude
-      real mag = sqrt(parts[pp].ox*parts[pp].ox + parts[pp].oy*parts[pp].oy
+      // calculate rotation magnitude (trapezoidal rule)
+      real mag = 0.5*sqrt(parts[pp].ox*parts[pp].ox + parts[pp].oy*parts[pp].oy
         + parts[pp].oz*parts[pp].oz);
+      mag += 0.5*sqrt(parts[pp].ox0*parts[pp].ox0 + parts[pp].oy0*parts[pp].oy0
+        + parts[pp].oz0*parts[pp].oz0);
       // calculate normalized rotation axis
       real X = 0;
       real Y = 0;
       real Z = 0;
       if(mag > 0) {
-        X = parts[pp].ox / mag;
-        Y = parts[pp].oy / mag;
-        Z = parts[pp].oz / mag;
+        X = 0.5 * (parts[pp].ox + parts[pp].ox0) / mag;
+        Y = 0.5 * (parts[pp].oy + parts[pp].oy0) / mag;
+        Z = 0.5 * (parts[pp].oz + parts[pp].oz0) / mag;
       }
       // calculate rotation quaternion
       real theta = mag * dt;
@@ -2294,6 +2305,11 @@ __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
       rotate(qr, qi, qj, qk, &parts[pp].axx, &parts[pp].axy, &parts[pp].axz);
       rotate(qr, qi, qj, qk, &parts[pp].ayx, &parts[pp].ayy, &parts[pp].ayz);
       rotate(qr, qi, qj, qk, &parts[pp].azx, &parts[pp].azy, &parts[pp].azz);
+
+      // store for next time step
+      parts[pp].ox0 = parts[pp].ox;
+      parts[pp].oy0 = parts[pp].oy;
+      parts[pp].oz0 = parts[pp].oz;
     }
   }
 }
@@ -2343,7 +2359,7 @@ __global__ void collision_parts(part_struct *parts, int i,
       real ai = parts[i].r;
       real aj = parts[j].r;
       real B = aj / ai;
-      real hN = 4.*(parts[i].rs - parts[i].r + parts[j].rs - parts[j].r);
+      real hN = 2.*(parts[i].rs - parts[i].r + parts[j].rs - parts[j].r);
 
       real ux, uy, uz;
       real rx, rx1, rx2, ry, ry1, ry2, rz, rz1, rz2, r;
@@ -2558,7 +2574,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
     real ai = parts[i].r;
     real h = 0;
-    real hN = 4.*(parts[i].rs - parts[i].r);
+    real hN = 2.*(parts[i].rs - parts[i].r);
     real ah, lnah;
 
     real Fnx, Fny, Fnz, Ftx, Fty, Ftz;
@@ -2584,7 +2600,6 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Fny = 0.;
       Fnz = 0.;
 
-      /* Need to reformulate these tangential forces using wall shear velocity */
       Ftx = 0.;
       Fty = -6.*PI*mu*ai*Uty*8./15.*lnah;
       Ftz = -6.*PI*mu*ai*Utz*8./15.*lnah;

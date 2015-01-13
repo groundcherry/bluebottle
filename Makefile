@@ -91,6 +91,11 @@ batch: COPT += -O2 -DBATCHRUN
 batch: CUDAOPT += -O2
 batch: bluebottle
 
+# compile with debug output
+debug: COPT += -DDEBUG -g
+debug: CUDAOPT += -DDEBUG -g -G
+debug: bluebottle
+
 OBJS = $(addprefix $(SRC_DIR)/, $(addsuffix .o, $(basename $(SRCC))))
 OBJSCUDA = $(addprefix $(SRC_DIR)/, $(addsuffix .o, $(basename $(SRCCUDA))))
 

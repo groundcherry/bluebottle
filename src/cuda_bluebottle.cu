@@ -3230,8 +3230,10 @@ void cuda_update_p()
 
     update_p_laplacian<<<numBlocks_p, dimBlocks_p>>>(_Lp, _p[dev], _dom[dev]);
 
+    real dt0tmp = 0.;
+    if(dt0 > 0) dt0tmp = dt0;
     update_p<<<numBlocks_p, dimBlocks_p>>>(_Lp, _p0[dev], _p[dev], _dom[dev],
-      nu, dt);
+      nu, 0.5*(dt+dt0tmp));
 
     // clean up temporary array
     checkCudaErrors(cudaFree(_Lp));
