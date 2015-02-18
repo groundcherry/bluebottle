@@ -197,8 +197,8 @@ __global__ void PP_rhs(real rho_f, real *u_star, real *v_star, real *w_star,
  * USAGE
  */
 __global__ void ustar_rhs(real rho_f, real nu, real *u, real *v, real *w,
-  real *p, real *f, real *conv0, real *u_star, dom_struct *dom, real dt,
-  real dt0);
+  real *p, real *f, real *conv0, real *conv, real *u_star, dom_struct *dom,
+  real dt, real dt0);
 /*
  * FUNCTION
  *  Compute the right-hand side of the u_star Helmholtz problem.
@@ -211,6 +211,7 @@ __global__ void ustar_rhs(real rho_f, real nu, real *u, real *v, real *w,
  *  * p -- device subdomain pressure field
  *  * f -- device subdomain body forcing field
  *  * conv0 -- device subdomain previous time step stored convective term
+ *  * conv -- device subdomain time step stored convective term
  *  * u_star -- device subdomain u-component intermediate velocity field
  *  * dom -- the subdomain in which this device is operating
  *  * dt -- the current timestep
@@ -224,8 +225,8 @@ __global__ void ustar_rhs(real rho_f, real nu, real *u, real *v, real *w,
  * USAGE
  */
 __global__ void vstar_rhs(real rho_f, real nu, real *u, real *v, real *w,
-  real *p, real *f, real *conv0, real *v_star, dom_struct *dom, real dt,
-  real dt0);
+  real *p, real *f, real *conv0, real *conv, real *v_star, dom_struct *dom,
+  real dt, real dt0);
 /*
  * FUNCTION
  *  Compute the right-hand side of the v_star Helmholtz problem.
@@ -238,6 +239,7 @@ __global__ void vstar_rhs(real rho_f, real nu, real *u, real *v, real *w,
  *  * p -- device subdomain pressure field
  *  * f -- device subdomain body forcing field
  *  * conv0 -- device subdomain previous time step stored convective term
+ *  * conv -- device subdomain time step stored convective term
  *  * v_star -- device subdomain v-component intermediate velocity field
  *  * dom -- the subdomain in which this device is operating
  *  * dt -- the current timestep
@@ -251,8 +253,8 @@ __global__ void vstar_rhs(real rho_f, real nu, real *u, real *v, real *w,
  * USAGE
  */
 __global__ void wstar_rhs(real rho_f, real nu, real *u, real *v, real *w,
-  real *p, real *f, real *conv0, real *w_star, dom_struct *dom, real dt,
-  real dt0);
+  real *p, real *f, real *conv0, real *conv, real *w_star, dom_struct *dom,
+  real dt, real dt0);
 /*
  * FUNCTION
  *  Compute the right-hand side of the w_star Helmholtz problem.
@@ -265,6 +267,7 @@ __global__ void wstar_rhs(real rho_f, real nu, real *u, real *v, real *w,
  *  * p -- device subdomain pressure field
  *  * f -- device subdomain body forcing field
  *  * conv0 -- device subdomain previous time step stored convective term
+ *  * conv -- device subdomain time step stored convective term
  *  * w_star -- device subdomain w-component intermediate velocity field
  *  * dom -- the subdomain in which this device is operating
  *  * dt -- the current timestep
@@ -379,7 +382,7 @@ __global__ void coeffs(dom_struct *dom, int *flag_u, int *flag_v, int *flag_w,
  * USAGE
  */
 __global__ void ustar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
-  real *values);
+  real *values, int *flag_u, int *flag_v, int *flag_w);
 /*
  * FUNCTION
  *  Set up the coefficient matrix for the u_star Helmholtz problem.
@@ -392,6 +395,9 @@ __global__ void ustar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
  *  * values -- the device pointer to the device-allocated CUSP dia_matrix
  *    values data structure (access it via:
  *    thrust::raw_pointer_cast(&A->values.values[0]))
+ *  * flag_u -- the x-direction velocity boundary flag
+ *  * flag_v -- the y-direction velocity boundary flag
+ *  * flag_w -- the z-direction velocity boundary flag
  ******
  */
 
@@ -401,7 +407,7 @@ __global__ void ustar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
  * USAGE
  */
 __global__ void vstar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
-  real *values);
+  real *values, int *flag_u, int *flag_v, int *flag_w);
 /*
  * FUNCTION
  *  Set up the coefficient matrix for the v_star Helmholtz problem.
@@ -414,6 +420,9 @@ __global__ void vstar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
  *  * values -- the device pointer to the device-allocated CUSP dia_matrix
  *    values data structure (access it via:
  *    thrust::raw_pointer_cast(&A->values.values[0]))
+ *  * flag_u -- the x-direction velocity boundary flag
+ *  * flag_v -- the y-direction velocity boundary flag
+ *  * flag_w -- the z-direction velocity boundary flag
  ******
  */
 
@@ -423,13 +432,475 @@ __global__ void vstar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
  * USAGE
  */
 __global__ void wstar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
-  real *values);
+  real *values, int *flag_u, int *flag_v, int *flag_w);
 /*
  * FUNCTION
  *  Set up the coefficient matrix for the w_star Helmholtz problem.
  * ARGUMENTS
  *  * nu -- fluid kinematic viscosity
  *  * dt -- time step
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ *  * flag_u -- the x-direction velocity boundary flag
+ *  * flag_v -- the y-direction velocity boundary flag
+ *  * flag_w -- the z-direction velocity boundary flag
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/ustar_coeffs_particles<<<>>>()
+ * NAME
+ *  ustar_coeffs_particles<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_coeffs_particles(dom_struct *dom, int pitch, real *values,
+  int *flag_u);
+/*
+ * FUNCTION
+ *  Edit the coefficient matrix to set particle boundary conditions.
+ * ARGUMENTS
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ *  * flag_u -- the x-direction velocity boundary flag
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_coeffs_particles<<<>>>()
+ * NAME
+ *  vstar_coeffs_particles<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_coeffs_particles(dom_struct *dom, int pitch, real *values,
+  int *flag_v);
+/*
+ * FUNCTION
+ *  Edit the coefficient matrix to set particle boundary conditions.
+ * ARGUMENTS
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ *  * flag_v -- the y-direction velocity boundary flag
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_coeffs_particles<<<>>>()
+ * NAME
+ *  wstar_coeffs_particles<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_coeffs_particles(dom_struct *dom, int pitch, real *values,
+  int *flag_u);
+/*
+ * FUNCTION
+ *  Edit the coefficient matrix to set particle boundary conditions.
+ * ARGUMENTS
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ *  * flag_w -- the z-direction velocity boundary flag
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/ustar_coeffs_dirichlet_W<<<>>>()
+ * NAME
+ *  ustar_coeffs_dirichlet_W<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_coeffs_dirichlet_W(real bc, real *u_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for u_star Helmholtz problem.
+ * ARGUMENTS
+ *  * bc -- the value of the Dirichlet boundary condition
+ *  * u_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/ustar_coeffs_dirichlet_E<<<>>>()
+ * NAME
+ *  ustar_coeffs_dirichlet_E<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_coeffs_dirichlet_E(real bc, real *u_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for u_star Helmholtz problem.
+ * ARGUMENTS
+ *  * bc -- the value of the Dirichlet boundary condition
+ *  * u_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/ustar_coeffs_dirichlet_S<<<>>>()
+ * NAME
+ *  ustar_coeffs_dirichlet_S<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_coeffs_dirichlet_S(real nu, real *u_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for u_star Helmholtz problem.
+ * ARGUMENTS
+ *  * nu -- fluid viscosity
+ *  * u_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/ustar_coeffs_dirichlet_N<<<>>>()
+ * NAME
+ *  ustar_coeffs_dirichlet_N<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_coeffs_dirichlet_N(real nu, real *u_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for u_star Helmholtz problem.
+ * ARGUMENTS
+ *  * nu -- fluid viscosity
+ *  * u_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/ustar_coeffs_dirichlet_B<<<>>>()
+ * NAME
+ *  ustar_coeffs_dirichlet_B<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_coeffs_dirichlet_B(real nu, real *u_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for u_star Helmholtz problem.
+ * ARGUMENTS
+ *  * nu -- fluid viscosity
+ *  * u_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/ustar_coeffs_dirichlet_T<<<>>>()
+ * NAME
+ *  ustar_coeffs_dirichlet_T<<<>>>()
+ * USAGE
+ */
+__global__ void ustar_coeffs_dirichlet_T(real nu, real *u_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for u_star Helmholtz problem.
+ * ARGUMENTS
+ *  * nu -- fluid viscosity
+ *  * u_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_coeffs_dirichlet_W<<<>>>()
+ * NAME
+ *  vstar_coeffs_dirichlet_W<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_coeffs_dirichlet_W(real nu, real *v_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for v_star Helmholtz problem.
+ * ARGUMENTS
+ *  * nu -- fluid viscosity
+ *  * v_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_coeffs_dirichlet_E<<<>>>()
+ * NAME
+ *  vstar_coeffs_dirichlet_E<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_coeffs_dirichlet_E(real nu, real *v_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for v_star Helmholtz problem.
+ * ARGUMENTS
+ *  * nu -- fluid viscosity
+ *  * v_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_coeffs_dirichlet_S<<<>>>()
+ * NAME
+ *  vstar_coeffs_dirichlet_S<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_coeffs_dirichlet_S(real bc, real *v_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for v_star Helmholtz problem.
+ * ARGUMENTS
+ *  * bc -- the value of the Dirichlet boundary condition
+ *  * v_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_coeffs_dirichlet_N<<<>>>()
+ * NAME
+ *  vstar_coeffs_dirichlet_N<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_coeffs_dirichlet_N(real bc, real *v_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for v_star Helmholtz problem.
+ * ARGUMENTS
+ *  * bc -- the value of the Dirichlet boundary condition
+ *  * v_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_coeffs_dirichlet_B<<<>>>()
+ * NAME
+ *  vstar_coeffs_dirichlet_B<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_coeffs_dirichlet_B(real nu, real *v_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for v_star Helmholtz problem.
+ * ARGUMENTS
+ *  * nu -- fluid viscosity
+ *  * v_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/vstar_coeffs_dirichlet_T<<<>>>()
+ * NAME
+ *  vstar_coeffs_dirichlet_T<<<>>>()
+ * USAGE
+ */
+__global__ void vstar_coeffs_dirichlet_T(real nu, real *v_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for v_star Helmholtz problem.
+ * ARGUMENTS
+ *  * nu -- fluid viscosity
+ *  * v_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_coeffs_dirichlet_W<<<>>>()
+ * NAME
+ *  wstar_coeffs_dirichlet_W<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_coeffs_dirichlet_W(real nu, real *w_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for w_star Helmholtz problem.
+ * ARGUMENTS
+ *  * nu -- fluid viscosity
+ *  * w_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_coeffs_dirichlet_E<<<>>>()
+ * NAME
+ *  wstar_coeffs_dirichlet_E<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_coeffs_dirichlet_E(real nu, real *w_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for w_star Helmholtz problem.
+ * ARGUMENTS
+ *  * nu -- fluid viscosity
+ *  * w_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_coeffs_dirichlet_S<<<>>>()
+ * NAME
+ *  wstar_coeffs_dirichlet_S<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_coeffs_dirichlet_S(real nu, real *w_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for w_star Helmholtz problem.
+ * ARGUMENTS
+ *  * nu -- fluid viscosity
+ *  * w_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_coeffs_dirichlet_N<<<>>>()
+ * NAME
+ *  wstar_coeffs_dirichlet_N<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_coeffs_dirichlet_N(real nu, real *w_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for w_star Helmholtz problem.
+ * ARGUMENTS
+ *  * nu -- fluid viscosity
+ *  * w_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_coeffs_dirichlet_B<<<>>>()
+ * NAME
+ *  wstar_coeffs_dirichlet_B<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_coeffs_dirichlet_B(real bc, real *w_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for w_star Helmholtz problem.
+ * ARGUMENTS
+ *  * bc -- the value of the Dirichlet boundary condition
+ *  * w_star -- the right-hand side vector
+ *  * dom -- the subdomain associated with this device
+ *  * pitch -- the pitch associated with the CUSP dia_matrix values data
+ *    structure
+ *  * values -- the device pointer to the device-allocated CUSP dia_matrix
+ *    values data structure (access it via:
+ *    thrust::raw_pointer_cast(&A->values.values[0]))
+ ******
+ */
+
+/****f* cuda_bicgstab_kernel/wstar_coeffs_dirichlet_T<<<>>>()
+ * NAME
+ *  wstar_coeffs_dirichlet_T<<<>>>()
+ * USAGE
+ */
+__global__ void wstar_coeffs_dirichlet_T(real bc, real *w_star, dom_struct *dom,
+  int pitch, real *values);
+/*
+ * FUNCTION
+ *  Set Dirichlet boundary conditions for w_star Helmholtz problem.
+ * ARGUMENTS
+ *  * bc -- the value of the Dirichlet boundary condition
+ *  * w_star -- the right-hand side vector
  *  * dom -- the subdomain associated with this device
  *  * pitch -- the pitch associated with the CUSP dia_matrix values data
  *    structure

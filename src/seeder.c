@@ -48,6 +48,8 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
   parts = (part_struct*) malloc(nparts * sizeof(part_struct));
   cpumem += nparts * sizeof(part_struct);
 
+  real gap = 1.00;
+
   // place the first particle
   parts[0].r = a;
   redo = 1;
@@ -56,9 +58,9 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
     parts[0].x = rand() / (real)RAND_MAX;
     parts[0].x *= Dom.xl;
     parts[0].x += Dom.xs;
-    if((bc.uW != PERIODIC) && (parts[0].x < (Dom.xs + 1.01*parts[0].r)))
+    if((bc.uW != PERIODIC) && (parts[0].x < (Dom.xs + gap*parts[0].r)))
       redo = 1;
-    if((bc.uE != PERIODIC) && (parts[0].x > (Dom.xe - 1.01*parts[0].r)))
+    if((bc.uE != PERIODIC) && (parts[0].x > (Dom.xe - gap*parts[0].r)))
       redo = 1;
   }
   redo = 1;
@@ -67,9 +69,9 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
     parts[0].y = rand() / (real)RAND_MAX;
     parts[0].y *= Dom.yl;
     parts[0].y += Dom.ys;
-    if((bc.vS != PERIODIC) && (parts[0].y < (Dom.ys + 1.01*parts[0].r)))
+    if((bc.vS != PERIODIC) && (parts[0].y < (Dom.ys + gap*parts[0].r)))
       redo = 1;
-    if((bc.vN != PERIODIC) && (parts[0].y > (Dom.ye - 1.01*parts[0].r)))
+    if((bc.vN != PERIODIC) && (parts[0].y > (Dom.ye - gap*parts[0].r)))
       redo = 1;
   }
   redo = 1;
@@ -79,9 +81,9 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
     //parts[0].z = acos(2.*(parts[0].z-0.5))/PI;
     parts[0].z *= Dom.zl;
     parts[0].z += Dom.zs;
-    if((bc.wB != PERIODIC) && (parts[0].z < (Dom.zs + 1.01*parts[0].r)))
+    if((bc.wB != PERIODIC) && (parts[0].z < (Dom.zs + gap*parts[0].r)))
       redo = 1;
-    if((bc.wT != PERIODIC) && (parts[0].z > (Dom.ze - 1.01*parts[0].r)))
+    if((bc.wT != PERIODIC) && (parts[0].z > (Dom.ze - gap*parts[0].r)))
       redo = 1;
   }
 
@@ -98,7 +100,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
   parts[0].E = E;
   parts[0].sigma = sigma;
   parts[0].order = o;
-  parts[0].rs = 1.01;
+  parts[0].rs = gap;
   parts[0].ncoeff = 0;
   parts[0].translating = t;
   parts[0].rotating = r;
@@ -118,9 +120,9 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
         parts[i].x = rand() / (real)RAND_MAX;
         parts[i].x *= Dom.xl;
         parts[i].x += Dom.xs;
-        if((bc.uW != PERIODIC) && (parts[i].x < (Dom.xs + 1.01*parts[i].r)))
+        if((bc.uW != PERIODIC) && (parts[i].x < (Dom.xs + gap*parts[i].r)))
           redo = 1;
-        if((bc.uE != PERIODIC) && (parts[i].x > (Dom.xe - 1.01*parts[i].r)))
+        if((bc.uE != PERIODIC) && (parts[i].x > (Dom.xe - gap*parts[i].r)))
           redo = 1;
       }
       redo = 1;
@@ -129,9 +131,9 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
         parts[i].y = rand() / (real)RAND_MAX;
         parts[i].y *= Dom.yl;
         parts[i].y += Dom.ys;
-        if((bc.vS != PERIODIC) && (parts[i].y < (Dom.ys + 1.01*parts[i].r)))
+        if((bc.vS != PERIODIC) && (parts[i].y < (Dom.ys + gap*parts[i].r)))
           redo = 1;
-        if((bc.vN != PERIODIC) && (parts[i].y > (Dom.ye - 1.01*parts[i].r)))
+        if((bc.vN != PERIODIC) && (parts[i].y > (Dom.ye - gap*parts[i].r)))
           redo = 1;
       }
       redo = 1;
@@ -140,9 +142,9 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
         parts[i].z = rand() / (real)RAND_MAX;
         parts[i].z *= Dom.zl;
         parts[i].z += Dom.zs;
-        if((bc.wB != PERIODIC) && (parts[i].z < (Dom.zs + 1.01*parts[i].r)))
+        if((bc.wB != PERIODIC) && (parts[i].z < (Dom.zs + gap*parts[i].r)))
           redo = 1;
-        if((bc.wT != PERIODIC) && (parts[i].z > (Dom.ze - 1.01*parts[i].r)))
+        if((bc.wT != PERIODIC) && (parts[i].z > (Dom.ze - gap*parts[i].r)))
           redo = 1;
       }
 
@@ -159,7 +161,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
       parts[i].E = E;
       parts[i].sigma = sigma;
       parts[i].order = o;
-      parts[i].rs = 1.01;
+      parts[i].rs = gap;
       parts[i].ncoeff = 0;
       parts[i].translating = t;
       parts[i].rotating = r;
@@ -173,7 +175,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
         yy = yy * yy;
         zz = parts[i].z - parts[j].z;
         zz = zz * zz;
-        if(sqrt(xx + yy + zz) < (1.01*parts[i].r + 1.01*parts[j].r)) {
+        if(sqrt(xx + yy + zz) < (gap*parts[i].r + gap*parts[j].r)) {
           fits = !fits;
           break;
         }
@@ -197,7 +199,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
           yy = yy * yy;
           zz = parts[i].z - parts[j].z;
           zz = zz * zz;
-          if(sqrt(xx + yy + zz) < (1.01*parts[i].r + 1.01*parts[j].r)) {
+          if(sqrt(xx + yy + zz) < (gap*parts[i].r + gap*parts[j].r)) {
             fits = !fits;
             break;
           }
@@ -220,7 +222,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
           yy = yy * yy;
           zz = parts[i].z - parts[j].z;
           zz = zz * zz;
-          if(sqrt(xx + yy + zz) < (1.01*parts[i].r + 1.01*parts[j].r)) {
+          if(sqrt(xx + yy + zz) < (gap*parts[i].r + gap*parts[j].r)) {
             fits = !fits;
             break;
           }
@@ -243,7 +245,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
           if(parts[i].z > (Dom.ze - parts[i].r))
             zz = parts[i].z - Dom.zl - parts[j].z;
           zz = zz * zz;
-          if(sqrt(xx + yy + zz) < (1.01*parts[i].r + 1.01*parts[j].r)) {
+          if(sqrt(xx + yy + zz) < (gap*parts[i].r + gap*parts[j].r)) {
             fits = !fits;
             break;
           }
@@ -269,7 +271,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
           yy = yy * yy;
           zz = parts[i].z - parts[j].z;
           zz = zz * zz;
-          if(sqrt(xx + yy + zz) < (1.01*parts[i].r + 1.01*parts[j].r)) {
+          if(sqrt(xx + yy + zz) < (gap*parts[i].r + gap*parts[j].r)) {
             fits = !fits;
             break;
           }
@@ -295,7 +297,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
           if(parts[i].z > (Dom.ze - parts[i].r))
             zz = parts[i].z - Dom.zl - parts[j].z;
           zz = zz * zz;
-          if(sqrt(xx + yy + zz) < (1.01*parts[i].r + 1.01*parts[j].r)) {
+          if(sqrt(xx + yy + zz) < (gap*parts[i].r + gap*parts[j].r)) {
             fits = !fits;
             break;
           }
@@ -321,7 +323,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
           if(parts[i].z > (Dom.ze - parts[i].r))
             zz = parts[i].z - Dom.zl - parts[j].z;
           zz = zz * zz;
-          if(sqrt(xx + yy + zz) < (1.01*parts[i].r + 1.01*parts[j].r)) {
+          if(sqrt(xx + yy + zz) < (gap*parts[i].r + gap*parts[j].r)) {
             fits = !fits;
             break;
           }
@@ -350,7 +352,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
           if(parts[i].z > (Dom.ze - parts[i].r))
             zz = parts[i].z - Dom.zl - parts[j].z;
           zz = zz * zz;
-          if(sqrt(xx + yy + zz) < (1.01*parts[i].r + 1.01*parts[j].r)) {
+          if(sqrt(xx + yy + zz) < (gap*parts[i].r + gap*parts[j].r)) {
             fits = !fits;
             break;
           }
@@ -374,7 +376,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
           yy = yy * yy;
           zz = parts[j].z - parts[i].z;
           zz = zz * zz;
-          if(sqrt(xx + yy + zz) < (1.01*parts[j].r + 1.01*parts[i].r)) {
+          if(sqrt(xx + yy + zz) < (gap*parts[j].r + gap*parts[i].r)) {
             fits = !fits;
             break;
           }
@@ -397,7 +399,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
           yy = yy * yy;
           zz = parts[j].z - parts[i].z;
           zz = zz * zz;
-          if(sqrt(xx + yy + zz) < (1.01*parts[j].r + 1.01*parts[i].r)) {
+          if(sqrt(xx + yy + zz) < (gap*parts[j].r + gap*parts[i].r)) {
             fits = !fits;
             break;
           }
@@ -420,7 +422,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
           if(parts[j].z > (Dom.ze - parts[j].r))
             zz = parts[j].z - Dom.zl - parts[i].z;
           zz = zz * zz;
-          if(sqrt(xx + yy + zz) < (1.01*parts[j].r + 1.01*parts[i].r)) {
+          if(sqrt(xx + yy + zz) < (gap*parts[j].r + gap*parts[i].r)) {
             fits = !fits;
             break;
           }
@@ -446,7 +448,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
           yy = yy * yy;
           zz = parts[j].z - parts[i].z;
           zz = zz * zz;
-          if(sqrt(xx + yy + zz) < (1.01*parts[j].r + 1.01*parts[i].r)) {
+          if(sqrt(xx + yy + zz) < (gap*parts[j].r + gap*parts[i].r)) {
             fits = !fits;
             break;
           }
@@ -472,7 +474,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
           if(parts[j].z > (Dom.ze - parts[j].r))
             zz = parts[j].z - Dom.zl - parts[i].z;
           zz = zz * zz;
-          if(sqrt(xx + yy + zz) < (1.01*parts[j].r + 1.01*parts[i].r)) {
+          if(sqrt(xx + yy + zz) < (gap*parts[j].r + gap*parts[i].r)) {
             fits = !fits;
             break;
           }
@@ -498,7 +500,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
           if(parts[j].z > (Dom.ze - parts[j].r))
             zz = parts[j].z - Dom.zl - parts[i].z;
           zz = zz * zz;
-          if(sqrt(xx + yy + zz) < (1.01*parts[j].r + 1.01*parts[i].r)) {
+          if(sqrt(xx + yy + zz) < (gap*parts[j].r + gap*parts[i].r)) {
             fits = !fits;
             break;
           }
@@ -527,7 +529,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
           if(parts[j].z > (Dom.ze - parts[j].r))
             zz = parts[j].z - Dom.zl - parts[i].z;
           zz = zz * zz;
-          if(sqrt(xx + yy + zz) < (1.01*parts[j].r + 1.01*parts[i].r)) {
+          if(sqrt(xx + yy + zz) < (gap*parts[j].r + gap*parts[i].r)) {
             fits = !fits;
             break;
           }

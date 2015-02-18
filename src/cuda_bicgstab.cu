@@ -51,6 +51,10 @@ void cuda_ustar_helmholtz(int rank)
 
     // write right-hand side
     cuda_ustar_rhs(dev);
+    cuda_dom_BC_star();
+    if(nparts > 0) {
+      cuda_part_BC_star();
+    }
 
     // create temporary U* without ghost cells for bicgstab result
     cusp::array1d<real, cusp::device_memory> ustar_tmp(dom[dev].Gfx.s3, 0.);
@@ -123,33 +127,8 @@ void cuda_ustar_helmholtz(int rank)
       thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
     ustar_coeffs<<<numBlocks_x, dimBlocks_x>>>(nu, dt, _dom[dev],
       _A_ustar->values.pitch,
-      thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
-
-    // account for boundary conditions
-    if(bc.uW == PERIODIC)
-      ustar_coeffs_periodic_W<<<numBlocks_x, dimBlocks_x>>>(nu, dt, _dom[dev],
-        _A_ustar->values.pitch,
-        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
-    if(bc.uE == PERIODIC)
-      ustar_coeffs_periodic_E<<<numBlocks_x, dimBlocks_x>>>(nu, dt, _dom[dev],
-        _A_ustar->values.pitch,
-        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
-    if(bc.uS == PERIODIC)
-      ustar_coeffs_periodic_S<<<numBlocks_y, dimBlocks_y>>>(nu, dt, _dom[dev],
-        _A_ustar->values.pitch,
-        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
-    if(bc.uN == PERIODIC)
-      ustar_coeffs_periodic_N<<<numBlocks_y, dimBlocks_y>>>(nu, dt, _dom[dev],
-        _A_ustar->values.pitch,
-        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
-    if(bc.uB == PERIODIC)
-      ustar_coeffs_periodic_B<<<numBlocks_z, dimBlocks_z>>>(nu, dt, _dom[dev],
-        _A_ustar->values.pitch,
-        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
-    if(bc.uT == PERIODIC)
-      ustar_coeffs_periodic_T<<<numBlocks_z, dimBlocks_z>>>(nu, dt, _dom[dev],
-        _A_ustar->values.pitch,
-        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
+      thrust::raw_pointer_cast(&_A_ustar->values.values[0]),
+      _flag_u[dev], _flag_v[dev], _flag_w[dev]);
 
 /*
 cusp::dia_matrix<int, real, cusp::host_memory> AA = *_A_ustar;
@@ -234,6 +213,61 @@ for(int i = 0; i < dom[dev].Gfx.s3; i++) {
     _ustar_rhs = new cusp::array1d<real, cusp::device_memory>(_ptr_ustar,
       _ptr_ustar + dom[dev].Gfx._s3);
 
+    // account for boundary conditions
+    if(bc.uW == PERIODIC)
+      ustar_coeffs_periodic_W<<<numBlocks_x, dimBlocks_x>>>(nu, dt, _dom[dev],
+        _A_ustar->values.pitch,
+        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
+    else if(bc.uW == DIRICHLET)
+      ustar_coeffs_dirichlet_W<<<numBlocks_x, dimBlocks_x>>>(bc.uWD,
+        _u_star[dev], _dom[dev], _A_ustar->values.pitch,
+        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
+    if(bc.uE == PERIODIC)
+      ustar_coeffs_periodic_E<<<numBlocks_x, dimBlocks_x>>>(nu, dt, _dom[dev],
+        _A_ustar->values.pitch,
+        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
+    else if(bc.uE == DIRICHLET)
+      ustar_coeffs_dirichlet_E<<<numBlocks_x, dimBlocks_x>>>(bc.uED,
+        _u_star[dev], _dom[dev], _A_ustar->values.pitch,
+        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
+    if(bc.uS == PERIODIC)
+      ustar_coeffs_periodic_S<<<numBlocks_y, dimBlocks_y>>>(nu, dt, _dom[dev],
+        _A_ustar->values.pitch,
+        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
+    else if(bc.uS == DIRICHLET)
+      ustar_coeffs_dirichlet_S<<<numBlocks_y, dimBlocks_y>>>(bc.uSD,
+        _u_star[dev], _dom[dev], _A_ustar->values.pitch,
+        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
+    if(bc.uN == PERIODIC)
+      ustar_coeffs_periodic_N<<<numBlocks_y, dimBlocks_y>>>(nu, dt, _dom[dev],
+        _A_ustar->values.pitch,
+        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
+    else if(bc.uN == DIRICHLET)
+      ustar_coeffs_dirichlet_N<<<numBlocks_y, dimBlocks_y>>>(bc.uND,
+        _u_star[dev], _dom[dev], _A_ustar->values.pitch,
+        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
+    if(bc.uB == PERIODIC)
+      ustar_coeffs_periodic_B<<<numBlocks_z, dimBlocks_z>>>(nu, dt, _dom[dev],
+        _A_ustar->values.pitch,
+        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
+    else if(bc.uB == DIRICHLET)
+      ustar_coeffs_dirichlet_B<<<numBlocks_z, dimBlocks_z>>>(bc.uBD,
+        _u_star[dev], _dom[dev], _A_ustar->values.pitch,
+        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
+    if(bc.uT == PERIODIC)
+      ustar_coeffs_periodic_T<<<numBlocks_z, dimBlocks_z>>>(nu, dt, _dom[dev],
+        _A_ustar->values.pitch,
+        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
+    else if(bc.uT == DIRICHLET)
+      ustar_coeffs_dirichlet_T<<<numBlocks_z, dimBlocks_z>>>(bc.uTD,
+        _u_star[dev], _dom[dev], _A_ustar->values.pitch,
+        thrust::raw_pointer_cast(&_A_ustar->values.values[0]));
+
+    ustar_coeffs_particles<<<numBlocks_x, dimBlocks_x>>>(_dom[dev],
+      _A_ustar->values.pitch,
+      thrust::raw_pointer_cast(&_A_ustar->values.values[0]),
+      _flag_u[dev]);
+
     // normalize the problem by the right-hand side before sending to CUSP
     real norm = cusp::blas::nrm2(*_ustar_rhs);
     if(norm == 0)
@@ -289,6 +323,10 @@ void cuda_vstar_helmholtz(int rank)
 
     // write right-hand side
     cuda_vstar_rhs(dev);
+    cuda_dom_BC_star();
+    if(nparts > 0) {
+      cuda_part_BC_star();
+    }
 
     // create temporary U* without ghost cells for bicgstab result
     cusp::array1d<real, cusp::device_memory> vstar_tmp(dom[dev].Gfy.s3, 0.);
@@ -361,33 +399,63 @@ void cuda_vstar_helmholtz(int rank)
       thrust::raw_pointer_cast(&_A_vstar->values.values[0]));
     vstar_coeffs<<<numBlocks_y, dimBlocks_y>>>(nu, dt, _dom[dev],
       _A_vstar->values.pitch,
-      thrust::raw_pointer_cast(&_A_vstar->values.values[0]));
+      thrust::raw_pointer_cast(&_A_vstar->values.values[0]),
+      _flag_u[dev], _flag_v[dev], _flag_w[dev]);
 
     // account for boundary conditions
     if(bc.vW == PERIODIC)
       vstar_coeffs_periodic_W<<<numBlocks_x, dimBlocks_x>>>(nu, dt, _dom[dev],
         _A_vstar->values.pitch,
         thrust::raw_pointer_cast(&_A_vstar->values.values[0]));
+    else if(bc.vW == DIRICHLET)
+      vstar_coeffs_dirichlet_W<<<numBlocks_x, dimBlocks_x>>>(bc.vWD,
+        _v_star[dev], _dom[dev], _A_vstar->values.pitch,
+        thrust::raw_pointer_cast(&_A_vstar->values.values[0]));
     if(bc.vE == PERIODIC)
       vstar_coeffs_periodic_E<<<numBlocks_x, dimBlocks_x>>>(nu, dt, _dom[dev],
         _A_vstar->values.pitch,
+        thrust::raw_pointer_cast(&_A_vstar->values.values[0]));
+    else if(bc.vE == DIRICHLET)
+      vstar_coeffs_dirichlet_E<<<numBlocks_x, dimBlocks_x>>>(bc.vED,
+        _v_star[dev], _dom[dev], _A_vstar->values.pitch,
         thrust::raw_pointer_cast(&_A_vstar->values.values[0]));
     if(bc.vS == PERIODIC)
       vstar_coeffs_periodic_S<<<numBlocks_y, dimBlocks_y>>>(nu, dt, _dom[dev],
         _A_vstar->values.pitch,
         thrust::raw_pointer_cast(&_A_vstar->values.values[0]));
+    else if(bc.vS == DIRICHLET)
+      vstar_coeffs_dirichlet_S<<<numBlocks_y, dimBlocks_y>>>(bc.vSD,
+        _v_star[dev], _dom[dev], _A_vstar->values.pitch,
+        thrust::raw_pointer_cast(&_A_vstar->values.values[0]));
     if(bc.vN == PERIODIC)
       vstar_coeffs_periodic_N<<<numBlocks_y, dimBlocks_y>>>(nu, dt, _dom[dev],
         _A_vstar->values.pitch,
+        thrust::raw_pointer_cast(&_A_vstar->values.values[0]));
+    else if(bc.vN == DIRICHLET)
+      vstar_coeffs_dirichlet_N<<<numBlocks_y, dimBlocks_y>>>(bc.vND,
+        _v_star[dev], _dom[dev], _A_vstar->values.pitch,
         thrust::raw_pointer_cast(&_A_vstar->values.values[0]));
     if(bc.vB == PERIODIC)
       vstar_coeffs_periodic_B<<<numBlocks_z, dimBlocks_z>>>(nu, dt, _dom[dev],
         _A_vstar->values.pitch,
         thrust::raw_pointer_cast(&_A_vstar->values.values[0]));
+    else if(bc.vB == DIRICHLET)
+      vstar_coeffs_dirichlet_B<<<numBlocks_z, dimBlocks_z>>>(bc.vBD,
+        _v_star[dev], _dom[dev], _A_vstar->values.pitch,
+        thrust::raw_pointer_cast(&_A_vstar->values.values[0]));
     if(bc.vT == PERIODIC)
       vstar_coeffs_periodic_T<<<numBlocks_z, dimBlocks_z>>>(nu, dt, _dom[dev],
         _A_vstar->values.pitch,
         thrust::raw_pointer_cast(&_A_vstar->values.values[0]));
+    else if(bc.vT == DIRICHLET)
+      vstar_coeffs_dirichlet_T<<<numBlocks_z, dimBlocks_z>>>(bc.vTD,
+        _v_star[dev], _dom[dev], _A_vstar->values.pitch,
+        thrust::raw_pointer_cast(&_A_vstar->values.values[0]));
+
+    vstar_coeffs_particles<<<numBlocks_y, dimBlocks_y>>>(_dom[dev],
+      _A_vstar->values.pitch,
+      thrust::raw_pointer_cast(&_A_vstar->values.values[0]),
+      _flag_v[dev]);
 
     // create CUSP pointer to right-hand side
     thrust::device_ptr<real> _ptr_vstar(_vstar_noghost);
@@ -405,7 +473,7 @@ void cuda_vstar_helmholtz(int rank)
     cusp::convergence_monitor<real> monitor(*_vstar_rhs, pp_max_iter,
       pp_residual);
     cusp::precond::diagonal<real, cusp::device_memory> M(*_A_vstar);
-    //cusp::krylov::bicgstab(*_A_ustar, ustar_tmp, *_ustar_rhs, monitor, M);
+    //cusp::krylov::bicgstab(*_A_vstar, vstar_tmp, *_vstar_rhs, monitor, M);
     cusp::krylov::cg(*_A_vstar, vstar_tmp, *_vstar_rhs, monitor, M);
     // write convergence data to file
     if(rank == 0)
@@ -450,6 +518,10 @@ void cuda_wstar_helmholtz(int rank)
 
     // write right-hand side
     cuda_wstar_rhs(dev);
+    cuda_dom_BC_star();
+    if(nparts > 0) {
+      cuda_part_BC_star();
+    }
 
     // create temporary U* without ghost cells for bicgstab result
     cusp::array1d<real, cusp::device_memory> wstar_tmp(dom[dev].Gfz.s3, 0.);
@@ -522,33 +594,63 @@ void cuda_wstar_helmholtz(int rank)
       thrust::raw_pointer_cast(&_A_wstar->values.values[0]));
     wstar_coeffs<<<numBlocks_z, dimBlocks_z>>>(nu, dt, _dom[dev],
       _A_wstar->values.pitch,
-      thrust::raw_pointer_cast(&_A_wstar->values.values[0]));
+      thrust::raw_pointer_cast(&_A_wstar->values.values[0]),
+      _flag_u[dev], _flag_v[dev], _flag_w[dev]);
 
     // account for boundary conditions
     if(bc.wW == PERIODIC)
       wstar_coeffs_periodic_W<<<numBlocks_x, dimBlocks_x>>>(nu, dt, _dom[dev],
         _A_wstar->values.pitch,
         thrust::raw_pointer_cast(&_A_wstar->values.values[0]));
+    else if(bc.wW == DIRICHLET)
+      wstar_coeffs_dirichlet_W<<<numBlocks_x, dimBlocks_x>>>(bc.wWD,
+        _w_star[dev], _dom[dev], _A_wstar->values.pitch,
+        thrust::raw_pointer_cast(&_A_wstar->values.values[0]));
     if(bc.wE == PERIODIC)
       wstar_coeffs_periodic_E<<<numBlocks_x, dimBlocks_x>>>(nu, dt, _dom[dev],
         _A_wstar->values.pitch,
+        thrust::raw_pointer_cast(&_A_wstar->values.values[0]));
+    else if(bc.wE == DIRICHLET)
+      wstar_coeffs_dirichlet_E<<<numBlocks_x, dimBlocks_x>>>(bc.wED,
+        _w_star[dev], _dom[dev], _A_wstar->values.pitch,
         thrust::raw_pointer_cast(&_A_wstar->values.values[0]));
     if(bc.wS == PERIODIC)
       wstar_coeffs_periodic_S<<<numBlocks_y, dimBlocks_y>>>(nu, dt, _dom[dev],
         _A_wstar->values.pitch,
         thrust::raw_pointer_cast(&_A_wstar->values.values[0]));
+    else if(bc.wS == DIRICHLET)
+      wstar_coeffs_dirichlet_S<<<numBlocks_y, dimBlocks_y>>>(bc.wSD,
+        _w_star[dev], _dom[dev], _A_wstar->values.pitch,
+        thrust::raw_pointer_cast(&_A_wstar->values.values[0]));
     if(bc.wN == PERIODIC)
       wstar_coeffs_periodic_N<<<numBlocks_y, dimBlocks_y>>>(nu, dt, _dom[dev],
         _A_wstar->values.pitch,
+        thrust::raw_pointer_cast(&_A_wstar->values.values[0]));
+    else if(bc.wN == DIRICHLET)
+      wstar_coeffs_dirichlet_N<<<numBlocks_y, dimBlocks_y>>>(bc.wND,
+        _w_star[dev], _dom[dev], _A_wstar->values.pitch,
         thrust::raw_pointer_cast(&_A_wstar->values.values[0]));
     if(bc.wB == PERIODIC)
       wstar_coeffs_periodic_B<<<numBlocks_z, dimBlocks_z>>>(nu, dt, _dom[dev],
         _A_wstar->values.pitch,
         thrust::raw_pointer_cast(&_A_wstar->values.values[0]));
+    else if(bc.wB == DIRICHLET)
+      wstar_coeffs_dirichlet_B<<<numBlocks_z, dimBlocks_z>>>(bc.wBD,
+        _w_star[dev], _dom[dev], _A_wstar->values.pitch,
+        thrust::raw_pointer_cast(&_A_wstar->values.values[0]));
     if(bc.wT == PERIODIC)
       wstar_coeffs_periodic_T<<<numBlocks_z, dimBlocks_z>>>(nu, dt, _dom[dev],
         _A_wstar->values.pitch,
         thrust::raw_pointer_cast(&_A_wstar->values.values[0]));
+    else if(bc.wT == DIRICHLET)
+      wstar_coeffs_dirichlet_T<<<numBlocks_z, dimBlocks_z>>>(bc.wTD,
+        _w_star[dev], _dom[dev], _A_wstar->values.pitch,
+        thrust::raw_pointer_cast(&_A_wstar->values.values[0]));
+
+    wstar_coeffs_particles<<<numBlocks_z, dimBlocks_z>>>(_dom[dev],
+      _A_wstar->values.pitch,
+      thrust::raw_pointer_cast(&_A_wstar->values.values[0]),
+      _flag_w[dev]);
 
     // create CUSP pointer to right-hand side
     thrust::device_ptr<real> _ptr_wstar(_wstar_noghost);
@@ -566,7 +668,7 @@ void cuda_wstar_helmholtz(int rank)
     cusp::convergence_monitor<real> monitor(*_wstar_rhs, pp_max_iter,
       pp_residual);
     cusp::precond::diagonal<real, cusp::device_memory> M(*_A_wstar);
-    //cusp::krylov::bicgstab(*_A_ustar, ustar_tmp, *_ustar_rhs, monitor, M);
+    //cusp::krylov::bicgstab(*_A_wstar, wstar_tmp, *_wstar_rhs, monitor, M);
     cusp::krylov::cg(*_A_wstar, wstar_tmp, *_wstar_rhs, monitor, M);
     // write convergence data to file
     if(rank == 0)
@@ -809,7 +911,8 @@ void cuda_ustar_rhs(int dev)
   dim3 numBlocks(blocks_y, blocks_z);
 
   ustar_rhs<<<numBlocks, dimBlocks>>>(rho_f, nu, _u0[dev], _v0[dev], _w0[dev],
-    _p0[dev], _f_x[dev], _conv0_u[dev], _u_star[dev], _dom[dev], dt, dt0);
+    _p0[dev], _f_x[dev], _conv0_u[dev], _conv_u[dev], _u_star[dev], _dom[dev],
+    dt, dt0);
 }
 
 extern "C"
@@ -837,7 +940,8 @@ void cuda_vstar_rhs(int dev)
   dim3 numBlocks(blocks_z, blocks_x);
 
   vstar_rhs<<<numBlocks, dimBlocks>>>(rho_f, nu, _u0[dev], _v0[dev], _w0[dev],
-    _p0[dev], _f_y[dev], _conv0_v[dev], _v_star[dev], _dom[dev], dt, dt0);
+    _p0[dev], _f_y[dev], _conv0_v[dev], _conv_v[dev], _v_star[dev], _dom[dev],
+    dt, dt0);
 }
 
 extern "C"
@@ -865,7 +969,8 @@ void cuda_wstar_rhs(int dev)
   dim3 numBlocks(blocks_x, blocks_y);
 
   wstar_rhs<<<numBlocks, dimBlocks>>>(rho_f, nu, _u0[dev], _v0[dev], _w0[dev],
-    _p0[dev], _f_z[dev], _conv0_w[dev], _w_star[dev], _dom[dev], dt, dt0);
+    _p0[dev], _f_z[dev], _conv0_w[dev], _conv_w[dev], _w_star[dev], _dom[dev],
+    dt, dt0);
 }
 
 extern "C"

@@ -1857,12 +1857,14 @@ int domain_init(void)
   cpumem += Dom.Gfy.s3b * sizeof(real);
   w0 = (real*) malloc(Dom.Gfz.s3b * sizeof(real));
   cpumem += Dom.Gfz.s3b * sizeof(real);
+#ifndef IMPLICIT
   diff0_u = (real*) malloc(Dom.Gfx.s3b * sizeof(real));
   cpumem += Dom.Gfx.s3b * sizeof(real);
   diff0_v = (real*) malloc(Dom.Gfy.s3b * sizeof(real));
   cpumem += Dom.Gfy.s3b * sizeof(real);
   diff0_w = (real*) malloc(Dom.Gfz.s3b * sizeof(real));
   cpumem += Dom.Gfz.s3b * sizeof(real);
+#endif
   conv0_u = (real*) malloc(Dom.Gfx.s3b * sizeof(real));
   cpumem += Dom.Gfx.s3b * sizeof(real);
   conv0_v = (real*) malloc(Dom.Gfy.s3b * sizeof(real));
@@ -1921,7 +1923,9 @@ int domain_init(void)
 
   for(i = 0; i < Dom.Gfx.s3b; i++) {
     u[i] = 0.;
+#ifndef IMPLICIT
     diff0_u[i] = 0.;
+#endif
     diff_u[i] = 0.;
     u0[i] = 0.;
     conv0_u[i] = 0.;
@@ -1931,7 +1935,9 @@ int domain_init(void)
   }
   for(i = 0; i < Dom.Gfy.s3b; i++) {
     v[i] = 0.;
+#ifndef IMPLICIT
     diff0_v[i] = 0.;
+#endif
     diff_v[i] = 0.;
     v0[i] = 0.;
     conv0_v[i] = 0.;
@@ -1941,7 +1947,9 @@ int domain_init(void)
   }
   for(i = 0; i < Dom.Gfz.s3b; i++) {
     w[i] = 0.;
+#ifndef IMPLICIT
     diff0_w[i] = 0.;
+#endif
     diff_w[i] = 0.;
     w0[i] = 0.;
     conv0_w[i] = 0.;
@@ -2124,9 +2132,9 @@ int domain_init(void)
   }
 
   // initialize some variables
-  dt = 2 * nu / (Dom.dx * Dom.dx);
-  dt += 2 * nu / (Dom.dy * Dom.dy);
-  dt += 2 * nu / (Dom.dz * Dom.dz);
+  dt = 2. * nu / (Dom.dx * Dom.dx);
+  dt += 2. * nu / (Dom.dy * Dom.dy);
+  dt += 2. * nu / (Dom.dz * Dom.dz);
   dt = CFL / dt;
   dt0 = -1.;
   stepnum = 0;
@@ -2581,12 +2589,14 @@ int domain_init_turb(void)
   cpumem += Dom.Gfy.s3b * sizeof(real);
   w0 = (real*) malloc(Dom.Gfz.s3b * sizeof(real));
   cpumem += Dom.Gfz.s3b * sizeof(real);
+#ifndef IMPLICIT
   diff0_u = (real*) malloc(Dom.Gfx.s3b * sizeof(real));
   cpumem += Dom.Gfx.s3b * sizeof(real);
   diff0_v = (real*) malloc(Dom.Gfy.s3b * sizeof(real));
   cpumem += Dom.Gfy.s3b * sizeof(real);
   diff0_w = (real*) malloc(Dom.Gfz.s3b * sizeof(real));
   cpumem += Dom.Gfz.s3b * sizeof(real);
+#endif
   conv0_u = (real*) malloc(Dom.Gfx.s3b * sizeof(real));
   cpumem += Dom.Gfx.s3b * sizeof(real);
   conv0_v = (real*) malloc(Dom.Gfy.s3b * sizeof(real));
@@ -2646,7 +2656,9 @@ int domain_init_turb(void)
   }
   for(i = 0; i < Dom.Gfx.s3b; i++) {
     u[i] = 0.;
+#ifndef IMPLICIT
     diff0_u[i] = 0.;
+#endif
     diff_u[i] = 0.;
     u0[i] = 0.;
     conv0_u[i] = 0.;
@@ -2655,7 +2667,9 @@ int domain_init_turb(void)
   }
   for(i = 0; i < Dom.Gfy.s3b; i++) {
     v[i] = 0.;
+#ifndef IMPLICIT
     diff0_v[i] = 0.;
+#endif
     diff_v[i] = 0.;
     v0[i] = 0.;
     conv0_v[i] = 0.;
@@ -2664,7 +2678,9 @@ int domain_init_turb(void)
   }
   for(i = 0; i < Dom.Gfz.s3b; i++) {
     w[i] = 0.;
+#ifndef IMPLICIT
     diff0_w[i] = 0.;
+#endif
     diff_w[i] = 0.;
     w0[i] = 0.;
     conv0_w[i] = 0.;
@@ -2845,9 +2861,11 @@ void domain_clean(void)
   free(u0);
   free(v0);
   free(w0);
+#ifndef IMPLICIT
   free(diff0_u);
   free(diff0_v);
   free(diff0_w);
+#endif
   free(conv0_u);
   free(conv0_v);
   free(conv0_w);
@@ -2970,6 +2988,7 @@ void out_restart(void)
   for(k = Dom.Gfx.ksb; k < Dom.Gfx.keb; k++) {
     for(j = Dom.Gfx.jsb; j < Dom.Gfx.jeb; j++) {
       for(i = Dom.Gfx.isb; i < Dom.Gfx.ieb; i++) {
+#ifndef IMPLICIT
         fprintf(rest, "%e %e %e %e %e %e %e ",
           u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           u0[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
@@ -2978,6 +2997,15 @@ void out_restart(void)
           diff_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           u_star[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+#else
+        fprintf(rest, "%e %e %e %e %e %e ",
+          u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          u0[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          conv0_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          diff_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          u_star[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+#endif
       }
     }
   }
@@ -2986,6 +3014,7 @@ void out_restart(void)
   for(k = Dom.Gfy.ksb; k < Dom.Gfy.keb; k++) {
     for(j = Dom.Gfy.jsb; j < Dom.Gfy.jeb; j++) {
       for(i = Dom.Gfy.isb; i < Dom.Gfy.ieb; i++) {
+#ifndef IMPLICIT
         fprintf(rest, "%e %e %e %e %e %e %e ",
           v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
@@ -2994,6 +3023,15 @@ void out_restart(void)
           diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           v_star[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+#else
+        fprintf(rest, "%e %e %e %e %e %e ",
+          v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          conv0_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          v_star[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+#endif
       }
     }
   }
@@ -3002,6 +3040,7 @@ void out_restart(void)
   for(k = Dom.Gfz.ksb; k < Dom.Gfz.keb; k++) {
     for(j = Dom.Gfz.jsb; j < Dom.Gfz.jeb; j++) {
       for(i = Dom.Gfz.isb; i < Dom.Gfz.ieb; i++) {
+#ifndef IMPLICIT
         fprintf(rest, "%e %e %e %e %e %e %e ",
           w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           w0[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
@@ -3010,6 +3049,15 @@ void out_restart(void)
           diff_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b], 
           conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           w_star[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
+#else
+        fprintf(rest, "%e %e %e %e %e %e ",
+          w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          w0[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          conv0_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          diff_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b], 
+          conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          w_star[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
+#endif
       }
     }
   }
@@ -3202,6 +3250,7 @@ void in_restart(void)
     for(j = Dom.Gfx.jsb; j < Dom.Gfx.jeb; j++) {
       for(i = Dom.Gfx.isb; i < Dom.Gfx.ieb; i++) {
 #ifdef DOUBLE
+  #ifndef IMPLICIT
         fret = fscanf(infile, "%le %le %le %le %le %le %le ",
           &u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &u0[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
@@ -3210,7 +3259,17 @@ void in_restart(void)
           &diff_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &u_star[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+  #else
+        fret = fscanf(infile, "%le %le %le %le %le %le ",
+          &u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &u0[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &conv0_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &diff_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &u_star[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+  #endif
 #else
+  #ifndef IMPLICIT
         fret = fscanf(infile, "%e %e %e %e %e %e %e ",
           &u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &u0[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
@@ -3219,6 +3278,15 @@ void in_restart(void)
           &diff_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &u_star[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+  #else
+        fret = fscanf(infile, "%e %e %e %e %e %e ",
+          &u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &u0[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &conv0_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &diff_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &u_star[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+  #endif
 #endif
       }
     }
@@ -3229,6 +3297,7 @@ void in_restart(void)
     for(j = Dom.Gfy.jsb; j < Dom.Gfy.jeb; j++) {
       for(i = Dom.Gfy.isb; i < Dom.Gfy.ieb; i++) {
 #ifdef DOUBLE
+  #ifndef IMPLICIT
         fret = fscanf(infile, "%le %le %le %le %le %le %le ",
           &v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
@@ -3237,7 +3306,17 @@ void in_restart(void)
           &diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &v_star[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
+  #else
+        fret = fscanf(infile, "%le %le %le %le %le %le ",
+          &v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &conv0_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &v_star[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
+  #endif
 #else
+  #ifndef IMPLICIT
         fret = fscanf(infile, "%e %e %e %e %e %e %e ",
           &v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
@@ -3246,6 +3325,15 @@ void in_restart(void)
           &diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &v_star[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
+  #else
+        fret = fscanf(infile, "%e %e %e %e %e %e ",
+          &v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &conv0_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &v_star[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
+  #endif
 #endif
       }
     }
@@ -3256,6 +3344,7 @@ void in_restart(void)
     for(j = Dom.Gfz.jsb; j < Dom.Gfz.jeb; j++) {
       for(i = Dom.Gfz.isb; i < Dom.Gfz.ieb; i++) {
 #ifdef DOUBLE
+  #ifndef IMPLICIT
         fret = fscanf(infile, "%le %le %le %le %le %le %le ",
           &w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &w0[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
@@ -3264,7 +3353,17 @@ void in_restart(void)
           &diff_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &w_star[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
+  #else
+        fret = fscanf(infile, "%le %le %le %le %le %le ",
+          &w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &w0[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &conv0_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &diff_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &w_star[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
+  #endif
 #else
+  #ifndef IMPLICIT
         fret = fscanf(infile, "%e %e %e %e %e %e %e ",
           &w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &w0[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
@@ -3273,6 +3372,15 @@ void in_restart(void)
           &diff_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &w_star[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
+  #else
+        fret = fscanf(infile, "%e %e %e %e %e %e ",
+          &w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &w0[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &conv0_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &diff_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &w_star[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
+  #endif
 #endif
       }
     }
@@ -3579,6 +3687,7 @@ void out_restart_turb(void)
   for(k = Dom.Gfx.ksb; k < Dom.Gfx.keb; k++) {
     for(j = Dom.Gfx.jsb; j < Dom.Gfx.jeb; j++) {
       for(i = Dom.Gfx.isb; i < Dom.Gfx.ieb; i++) {
+  #ifndef IMPLICIT
         fprintf(rest, "%e %e %e %e %e %e ",
           u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           u0[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
@@ -3586,6 +3695,14 @@ void out_restart_turb(void)
           conv0_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           diff_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+  #else
+        fprintf(rest, "%e %e %e %e %e ",
+          u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          u0[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          conv0_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          diff_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+  #endif
       }
     }
   }
@@ -3594,6 +3711,7 @@ void out_restart_turb(void)
   for(k = Dom.Gfy.ksb; k < Dom.Gfy.keb; k++) {
     for(j = Dom.Gfy.jsb; j < Dom.Gfy.jeb; j++) {
       for(i = Dom.Gfy.isb; i < Dom.Gfy.ieb; i++) {
+  #ifndef IMPLICIT
         fprintf(rest, "%e %e %e %e %e %e ",
           v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
@@ -3601,6 +3719,14 @@ void out_restart_turb(void)
           conv0_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
+  #else
+        fprintf(rest, "%e %e %e %e %e ",
+          v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          conv0_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
+  #endif
       }
     }
   }
@@ -3609,6 +3735,7 @@ void out_restart_turb(void)
   for(k = Dom.Gfz.ksb; k < Dom.Gfz.keb; k++) {
     for(j = Dom.Gfz.jsb; j < Dom.Gfz.jeb; j++) {
       for(i = Dom.Gfz.isb; i < Dom.Gfz.ieb; i++) {
+  #ifndef IMPLICIT
         fprintf(rest, "%e %e %e %e %e %e ",
           w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           w0[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
@@ -3616,6 +3743,14 @@ void out_restart_turb(void)
           conv0_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           diff_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b], 
           conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
+  #else
+        fprintf(rest, "%e %e %e %e %e ",
+          w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          w0[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          conv0_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          diff_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b], 
+          conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
+  #endif
       }
     }
   }
@@ -3697,6 +3832,7 @@ void in_restart_turb(void)
     for(j = Dom.Gfx.jsb; j < Dom.Gfx.jeb; j++) {
       for(i = Dom.Gfx.isb; i < Dom.Gfx.ieb; i++) {
 #ifdef DOUBLE
+  #ifndef IMPLICIT
         fret = fscanf(infile, "%le %le %le %le %le %le ",
           &u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &u0[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
@@ -3704,7 +3840,16 @@ void in_restart_turb(void)
           &conv0_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &diff_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+  #else
+        fret = fscanf(infile, "%le %le %le %le %le ",
+          &u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &u0[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &conv0_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &diff_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+  #endif
 #else
+  #ifndef IMPLICIT
         fret = fscanf(infile, "%e %e %e %e %e %e ",
           &u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &u0[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
@@ -3712,6 +3857,14 @@ void in_restart_turb(void)
           &conv0_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &diff_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
           &conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+  #else
+        fret = fscanf(infile, "%e %e %e %e %e ",
+          &u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &u0[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &conv0_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &diff_u[i+j*Dom.Gfx.s1b + k*Dom.Gfx.s2b],
+          &conv_u[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+  #endif
 #endif
       }
     }
@@ -3722,6 +3875,7 @@ void in_restart_turb(void)
     for(j = Dom.Gfy.jsb; j < Dom.Gfy.jeb; j++) {
       for(i = Dom.Gfy.isb; i < Dom.Gfy.ieb; i++) {
 #ifdef DOUBLE
+  #ifndef IMPLICIT
         fret = fscanf(infile, "%le %le %le %le %le %le ",
           &v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
@@ -3729,7 +3883,16 @@ void in_restart_turb(void)
           &conv0_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
+  #else
+        fret = fscanf(infile, "%le %le %le %le %le ",
+          &v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &conv0_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
+  #endif
 #else
+  #ifndef IMPLICIT
         fret = fscanf(infile, "%e %e %e %e %e %e ",
           &v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
@@ -3737,6 +3900,14 @@ void in_restart_turb(void)
           &conv0_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           &conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
+  #else
+        fret = fscanf(infile, "%e %e %e %e %e ",
+          &v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &conv0_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          &conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
+  #endif
 #endif
       }
     }
@@ -3747,6 +3918,7 @@ void in_restart_turb(void)
     for(j = Dom.Gfz.jsb; j < Dom.Gfz.jeb; j++) {
       for(i = Dom.Gfz.isb; i < Dom.Gfz.ieb; i++) {
 #ifdef DOUBLE
+  #ifndef IMPLICIT
         fret = fscanf(infile, "%le %le %le %le %le %le ",
           &w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &w0[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
@@ -3754,7 +3926,16 @@ void in_restart_turb(void)
           &conv0_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &diff_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
+  #else
+        fret = fscanf(infile, "%le %le %le %le %le ",
+          &w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &w0[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &conv0_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &diff_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
+  #endif
 #else
+  #ifndef IMPLICIT
         fret = fscanf(infile, "%e %e %e %e %e %e ",
           &w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &w0[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
@@ -3762,6 +3943,15 @@ void in_restart_turb(void)
           &conv0_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &diff_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
           &conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
+  #else
+        fret = fscanf(infile, "%e %e %e %e %e %e ",
+          &w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &w0[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &diff0_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &conv0_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &diff_w[i+j*Dom.Gfz.s1b + k*Dom.Gfz.s2b],
+          &conv_w[i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b]);
+  #endif
 #endif
       }
     }

@@ -55,12 +55,14 @@ real *f_z;
 real **_f_x;
 real **_f_y;
 real **_f_z;
+#ifndef IMPLICIT
 real *diff0_u;
 real *diff0_v;
 real *diff0_w;
 real **_diff0_u;
 real **_diff0_v;
 real **_diff0_w;
+#endif
 real *conv0_u;
 real *conv0_v;
 real *conv0_w;
@@ -314,8 +316,10 @@ int main(int argc, char *argv[]) {
       if(runrestart != 1) {
         // start BICGSTAB recorder
         recorder_bicgstab_init("solver_flow.rec");
-        // start Helmholtz recorder
-        //recorder_bicgstab_init("solver_helmholtz_flow.rec");
+        #ifdef IMPLICIT
+          // start Helmholtz recorder
+          recorder_bicgstab_init("solver_helmholtz_flow.rec");
+        #endif
         // start Lamb's coefficient recorder
         recorder_lamb_init("lamb.rec");
       }
@@ -460,7 +464,7 @@ int main(int argc, char *argv[]) {
         fflush(stdout);
 
         // get initial dt; this is an extra check for the SHEAR initialization
-        dt = cuda_find_dt();
+        //dt = cuda_find_dt();
 
         // share this with the precursor domain
         expd_compare_dt(np, status);
@@ -549,12 +553,14 @@ int main(int argc, char *argv[]) {
             #endif
 
             // solve for U_star
-            cuda_U_star_2();
-/*          IMPLICIT FORMULATION (only PERIODIC BC implemented)
-            cuda_ustar_helmholtz(rank);
-            cuda_vstar_helmholtz(rank);
-            cuda_wstar_helmholtz(rank);
-*/
+            #ifndef IMPLICIT
+              cuda_U_star_2();
+            #else
+              cuda_ustar_helmholtz(rank);
+              cuda_vstar_helmholtz(rank);
+              cuda_wstar_helmholtz(rank);
+            #endif
+
             // apply boundary conditions to U_star
             if(nparts > 0) {
               cuda_part_BC_star();
@@ -610,6 +616,9 @@ int main(int argc, char *argv[]) {
           printf(" %d iterations.\n", iter);
 
           if(!lambflag) {
+            // update particle position
+            cuda_move_parts();
+
             // store u, conv, and coeffs for use in next timestep
             cuda_store_u();
             if(nparts > 0)
@@ -617,9 +626,6 @@ int main(int argc, char *argv[]) {
 
             // compute div(U)
             //cuda_div_U();
-
-            // update particle position
-            cuda_move_parts();
 
             // compute next timestep size
             dt0 = dt;
@@ -941,7 +947,13 @@ int main(int argc, char *argv[]) {
       compute_vel_BC();
 
       // solve for U_star
-      cuda_U_star_2();
+      #ifndef IMPLICIT
+        cuda_U_star_2();
+      #else
+        cuda_ustar_helmholtz(rank);
+        cuda_vstar_helmholtz(rank);
+        cuda_wstar_helmholtz(rank);
+      #endif
       // apply boundary conditions to U_star
       cuda_dom_BC_star();
       // force solvability condition
@@ -995,8 +1007,11 @@ int main(int argc, char *argv[]) {
           rec_precursor_ttime_out = rec_precursor_ttime_out - rec_precursor_dt;
         }
       }
+      // write a restart file and exit when the time is appropriate
+      timestepwalltime = time(NULL);
+      diffwalltime = difftime(timestepwalltime, startwalltime);
       if(rec_restart_dt > 0) {
-        if(rec_restart_ttime_out >= rec_restart_dt) {
+        if((real)diffwalltime/60. > rec_restart_dt) {
           printf("  Writing precursor restart file (t = %e)...", ttime);
           fflush(stdout);
           cuda_dom_pull();
@@ -1004,8 +1019,22 @@ int main(int argc, char *argv[]) {
           printf("done.               \n");
           fflush(stdout);
           rec_restart_ttime_out = rec_restart_ttime_out - rec_restart_dt;
+          startwalltime = time(NULL);
+          if(rec_restart_stop)
+            break; // exit!
         }
       }
+    }
+
+    if(rec_restart_dt > 0 && ttime >= duration && !restart_stop) {
+      printf("  Writing final precursor restart file (t = %e)...", ttime);
+      fflush(stdout);
+      cuda_dom_pull();
+      out_restart_turb();
+      printf("done.               \n");
+      fflush(stdout);
+      rec_restart_ttime_out = rec_restart_ttime_out - rec_restart_dt;
+      startwalltime = time(NULL);
     }
 
     // clean up devices

@@ -25,7 +25,8 @@
 #include <cusp/dia_matrix.h>
 
 __global__ void ustar_rhs(real rho_f, real nu, real *u, real *v, real *w,
-  real *p, real *f, real *conv0, real *u_star, dom_struct *dom, real dt, real dt0)
+  real *p, real *f, real *conv0, real *conv, real *u_star, dom_struct *dom,
+  real dt, real dt0)
 {
   // create shared memory
   __shared__ real s_u0[MAX_THREADS_DIM * MAX_THREADS_DIM];      // u back
@@ -170,13 +171,14 @@ __global__ void ustar_rhs(real rho_f, real nu, real *u, real *v, real *w,
       && (tk > 0 && tk < (blockDim.y-1))) {
       u_star[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b]
         = s_u_star[tj + tk*blockDim.x];
-      conv0[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b] = s_c[tj + tk*blockDim.x];
+      conv[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b] = s_c[tj + tk*blockDim.x];
     }
   }
 }
 
 __global__ void vstar_rhs(real rho_f, real nu, real *u, real *v, real *w,
-  real *p, real *f, real *conv0, real *v_star, dom_struct *dom, real dt, real dt0)
+  real *p, real *f, real *conv0, real *conv, real *v_star, dom_struct *dom,
+  real dt, real dt0)
 {
   // create shared memory
   // no reason to load pressure into shared memory, but leaving it in global
@@ -321,13 +323,14 @@ __global__ void vstar_rhs(real rho_f, real nu, real *u, real *v, real *w,
       && (ti > 0 && ti < (blockDim.y-1))) {
       v_star[i+ j*dom->Gfy._s1b + k*dom->Gfy._s2b]
         = s_v_star[tk + ti*blockDim.x];
-      conv0[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b] = s_c[tk + ti*blockDim.x];
+      conv[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b] = s_c[tk + ti*blockDim.x];
     }
   }
 }
 
 __global__ void wstar_rhs(real rho_f, real nu, real *u, real *v, real *w,
-  real *p, real *f, real *conv0, real *w_star, dom_struct *dom, real dt, real dt0)
+  real *p, real *f, real *conv0, real *conv, real *w_star, dom_struct *dom,
+  real dt, real dt0)
 {
   // create shared memory
   // no reason to load pressure into shared memory, but leaving it in global
@@ -339,8 +342,8 @@ __global__ void wstar_rhs(real rho_f, real nu, real *u, real *v, real *w,
   __shared__ real s_u12[MAX_THREADS_DIM * MAX_THREADS_DIM];     // u forward
   __shared__ real s_v01[MAX_THREADS_DIM * MAX_THREADS_DIM];     // v back
   __shared__ real s_v12[MAX_THREADS_DIM * MAX_THREADS_DIM];     // v forward
-  __shared__ real s_d[MAX_THREADS_DIM * MAX_THREADS_DIM];       // diff0
-  __shared__ real s_c[MAX_THREADS_DIM * MAX_THREADS_DIM];       // conv0
+  __shared__ real s_d[MAX_THREADS_DIM * MAX_THREADS_DIM];       // diff
+  __shared__ real s_c[MAX_THREADS_DIM * MAX_THREADS_DIM];       // conv
   __shared__ real s_w_star[MAX_THREADS_DIM * MAX_THREADS_DIM];  // solution
 
   // working constants
@@ -472,7 +475,7 @@ __global__ void wstar_rhs(real rho_f, real nu, real *u, real *v, real *w,
       && (tj > 0 && tj < (blockDim.y-1))) {
       w_star[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b]
         = s_w_star[ti + tj*blockDim.x];
-      conv0[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b] = s_c[ti + tj*blockDim.x];
+      conv[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b] = s_c[ti + tj*blockDim.x];
     }
   }
 }
@@ -724,11 +727,110 @@ __global__ void wstar_coeffs_init(dom_struct *dom, int pitch, real *values)
   }
 }
 
-__global__ void ustar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
-  real *values)
+__global__ void ustar_coeffs_particles(dom_struct *dom, int pitch, real *values,
+  int *flag_u)
 {
   int i;  // iterator
-  int C;  // cell locations
+  int C, CC;  // cell
+
+  int tj = blockIdx.x * blockDim.x + threadIdx.x;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y;
+
+  // loop over all slices to initialize to zero
+  if(tj < dom->Gfx.jn && tk < dom->Gfx.kn) {
+    for(i = dom->Gfx.is-DOM_BUF; i < dom->Gfx.ie-DOM_BUF; i++) {
+      C = i + tj*dom->Gfx.s1 + tk*dom->Gfx.s2;
+      CC = (i+DOM_BUF) + (tj+DOM_BUF)*dom->Gfx.s1b + (tk+DOM_BUF)*dom->Gfx.s2b;
+      if(flag_u[CC] < 0) {
+        values[C + 0*pitch]  = 0.;
+        values[C + 1*pitch]  = 0.;
+        values[C + 2*pitch]  = 0.;
+        values[C + 3*pitch]  = 0.;
+        values[C + 4*pitch]  = 0.;
+        values[C + 5*pitch]  = 0.;
+        values[C + 6*pitch]  = 1.;
+        values[C + 7*pitch]  = 0.;
+        values[C + 8*pitch]  = 0.;
+        values[C + 9*pitch]  = 0.;
+        values[C + 10*pitch] = 0.;
+        values[C + 11*pitch] = 0.;
+        values[C + 12*pitch] = 0.;
+      }
+    }
+  }
+}
+
+__global__ void vstar_coeffs_particles(dom_struct *dom, int pitch, real *values,
+  int *flag_v)
+{
+  int j;  // iterator
+  int C, CC;  // cell
+
+  int tk = blockIdx.x * blockDim.x + threadIdx.x;
+  int ti = blockIdx.y * blockDim.y + threadIdx.y;
+
+  // loop over all slices to initialize to zero
+  if(tk < dom->Gfy.kn && ti < dom->Gfy.in) {
+    for(j = dom->Gfy.js-DOM_BUF; j < dom->Gfy.je-DOM_BUF; j++) {
+      C = ti + j*dom->Gfy.s1 + tk*dom->Gfy.s2;
+      CC = (ti+DOM_BUF) + (j+DOM_BUF)*dom->Gfy.s1b + (tk+DOM_BUF)*dom->Gfy.s2b;
+      if(flag_v[CC] < 0) {
+        values[C + 0*pitch]  = 0.;
+        values[C + 1*pitch]  = 0.;
+        values[C + 2*pitch]  = 0.;
+        values[C + 3*pitch]  = 0.;
+        values[C + 4*pitch]  = 0.;
+        values[C + 5*pitch]  = 0.;
+        values[C + 6*pitch]  = 1.;
+        values[C + 7*pitch]  = 0.;
+        values[C + 8*pitch]  = 0.;
+        values[C + 9*pitch]  = 0.;
+        values[C + 10*pitch] = 0.;
+        values[C + 11*pitch] = 0.;
+        values[C + 12*pitch] = 0.;
+      }
+    }
+  }
+}
+
+__global__ void wstar_coeffs_particles(dom_struct *dom, int pitch, real *values,
+  int *flag_w)
+{
+  int k;  // iterator
+  int C, CC;  // cell
+
+  int ti = blockIdx.x * blockDim.x + threadIdx.x;
+  int tj = blockIdx.y * blockDim.y + threadIdx.y;
+
+  // loop over all slices to initialize to zero
+  if(ti < dom->Gfz.in && tj < dom->Gfz.jn) {
+    for(k = dom->Gfz.ks-DOM_BUF; k < dom->Gfz.ke-DOM_BUF; k++) {
+      C = ti + tj*dom->Gfz.s1 + k*dom->Gfz.s2;
+      CC = (ti+DOM_BUF) + (tj+DOM_BUF)*dom->Gfz.s1b + (k+DOM_BUF)*dom->Gfz.s2b;
+      if(flag_w[CC] < 0) {
+        values[C + 0*pitch]  = 0.;
+        values[C + 1*pitch]  = 0.;
+        values[C + 2*pitch]  = 0.;
+        values[C + 3*pitch]  = 0.;
+        values[C + 4*pitch]  = 0.;
+        values[C + 5*pitch]  = 0.;
+        values[C + 6*pitch]  = 1.;
+        values[C + 7*pitch]  = 0.;
+        values[C + 8*pitch]  = 0.;
+        values[C + 9*pitch]  = 0.;
+        values[C + 10*pitch] = 0.;
+        values[C + 11*pitch] = 0.;
+        values[C + 12*pitch] = 0.;
+      }
+    }
+  }
+}
+
+__global__ void ustar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
+  real *values, int *flag_u, int *flag_v, int *flag_w)
+{
+  int i;  // iterator
+  int C, W, E, S, N, B, T;  // cell locations
   real ddx = 1. / (dom->dx * dom->dx);
   real ddy = 1. / (dom->dy * dom->dy);
   real ddz = 1. / (dom->dz * dom->dz);
@@ -739,26 +841,35 @@ __global__ void ustar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
   // loop over slices to set values
   if(tj < dom->Gfx.jn + DOM_BUF && tk < dom->Gfx.kn + DOM_BUF) {
     for(i = dom->Gfx.is; i < dom->Gfx.ie; i++) {
+      W = i + tj*dom->Gfx.s1b + tk*dom->Gfx.s2b;
+      E = (i+1) + tj*dom->Gfx.s1b + tk*dom->Gfx.s2b;
+      S = i + tj*dom->Gfy.s1b + tk*dom->Gfy.s2b;
+      N = i + (tj+1)*dom->Gfy.s1b + tk*dom->Gfy.s2b;
+      B = i + tj*dom->Gfz.s1b + tk*dom->Gfz.s2b;
+      T = i + tj*dom->Gfz.s1b + (tk+1)*dom->Gfz.s2b;
       C = (i-DOM_BUF) + (tj-DOM_BUF)*dom->Gfx.s1 + (tk-DOM_BUF)*dom->Gfx.s2;
-      values[C + pitch * 1]  -= 0.5*nu*dt*ddz;
-      values[C + pitch * 3]  -= 0.5*nu*dt*ddy;
-      values[C + pitch * 5]  -= 0.5*nu*dt*ddx;
+      values[C + pitch * 1]  -= (real)abs(flag_w[B])*0.5*nu*dt*ddz;
+      values[C + pitch * 3]  -= (real)abs(flag_v[S])*0.5*nu*dt*ddy;
+      values[C + pitch * 5]  -= (real)abs(flag_u[W])*0.5*nu*dt*ddx;
       values[C + pitch * 6]  += 1.;
-      values[C + pitch * 6]  += nu*dt*ddx;
-      values[C + pitch * 6]  += nu*dt*ddy;
-      values[C + pitch * 6]  += nu*dt*ddz;
-      values[C + pitch * 7]  -= 0.5*nu*dt*ddx;
-      values[C + pitch * 9]  -= 0.5*nu*dt*ddy;
-      values[C + pitch * 11] -= 0.5*nu*dt*ddz;
+      values[C + pitch * 6]  += (real)abs(flag_u[W])*0.5*nu*dt*ddx;
+      values[C + pitch * 6]  += (real)abs(flag_u[E])*0.5*nu*dt*ddx;
+      values[C + pitch * 6]  += (real)abs(flag_v[S])*0.5*nu*dt*ddy;
+      values[C + pitch * 6]  += (real)abs(flag_v[N])*0.5*nu*dt*ddy;
+      values[C + pitch * 6]  += (real)abs(flag_w[B])*0.5*nu*dt*ddz;
+      values[C + pitch * 6]  += (real)abs(flag_w[T])*0.5*nu*dt*ddz;
+      values[C + pitch * 7]  -= (real)abs(flag_u[E])*0.5*nu*dt*ddx;
+      values[C + pitch * 9]  -= (real)abs(flag_v[N])*0.5*nu*dt*ddy;
+      values[C + pitch * 11] -= (real)abs(flag_w[T])*0.5*nu*dt*ddz;
     }
   }
 }
 
 __global__ void vstar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
-  real *values)
+  real *values, int *flag_u, int *flag_v, int *flag_w)
 {
   int j;  // iterator
-  int C;  // cell locations
+  int C, W, E, S, N, B, T;  // cell locations
   real ddx = 1. / (dom->dx * dom->dx);
   real ddy = 1. / (dom->dy * dom->dy);
   real ddz = 1. / (dom->dz * dom->dz);
@@ -769,26 +880,35 @@ __global__ void vstar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
   // loop over slices to set values
   if(tk < dom->Gfy.kn + DOM_BUF && ti < dom->Gfy.in + DOM_BUF) {
     for(j = dom->Gfy.js; j < dom->Gfy.je; j++) {
+      W = ti + j*dom->Gfx.s1b + tk*dom->Gfx.s2b;
+      E = (ti+1) + j*dom->Gfx.s1b + tk*dom->Gfx.s2b;
+      S = ti + j*dom->Gfy.s1b + tk*dom->Gfy.s2b;
+      N = ti + (j+1)*dom->Gfy.s1b + tk*dom->Gfy.s2b;
+      B = ti + j*dom->Gfz.s1b + tk*dom->Gfz.s2b;
+      T = ti + j*dom->Gfz.s1b + (tk+1)*dom->Gfz.s2b;
       C = (ti-DOM_BUF) + (j-DOM_BUF)*dom->Gfy.s1 + (tk-DOM_BUF)*dom->Gfy.s2;
-      values[C + pitch * 1]  -= 0.5*nu*dt*ddz;
-      values[C + pitch * 3]  -= 0.5*nu*dt*ddy;
-      values[C + pitch * 5]  -= 0.5*nu*dt*ddx;
+      values[C + pitch * 1]  -= (real)abs(flag_w[B])*0.5*nu*dt*ddz;
+      values[C + pitch * 3]  -= (real)abs(flag_v[S])*0.5*nu*dt*ddy;
+      values[C + pitch * 5]  -= (real)abs(flag_u[W])*0.5*nu*dt*ddx;
       values[C + pitch * 6]  += 1.;
-      values[C + pitch * 6]  += nu*dt*ddx;
-      values[C + pitch * 6]  += nu*dt*ddy;
-      values[C + pitch * 6]  += nu*dt*ddz;
-      values[C + pitch * 7]  -= 0.5*nu*dt*ddx;
-      values[C + pitch * 9]  -= 0.5*nu*dt*ddy;
-      values[C + pitch * 11] -= 0.5*nu*dt*ddz;
+      values[C + pitch * 6]  += (real)abs(flag_u[W])*0.5*nu*dt*ddx;
+      values[C + pitch * 6]  += (real)abs(flag_u[E])*0.5*nu*dt*ddx;
+      values[C + pitch * 6]  += (real)abs(flag_v[S])*0.5*nu*dt*ddy;
+      values[C + pitch * 6]  += (real)abs(flag_v[N])*0.5*nu*dt*ddy;
+      values[C + pitch * 6]  += (real)abs(flag_w[B])*0.5*nu*dt*ddz;
+      values[C + pitch * 6]  += (real)abs(flag_w[T])*0.5*nu*dt*ddz;
+      values[C + pitch * 7]  -= (real)abs(flag_u[E])*0.5*nu*dt*ddx;
+      values[C + pitch * 9]  -= (real)abs(flag_v[N])*0.5*nu*dt*ddy;
+      values[C + pitch * 11] -= (real)abs(flag_w[T])*0.5*nu*dt*ddz;
     }
   }
 }
 
 __global__ void wstar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
-  real *values)
+  real *values, int *flag_u, int *flag_v, int *flag_w)
 {
   int k;  // iterator
-  int C;  // cell locations
+  int C, W, E, S, N, B, T;  // cell locations
   real ddx = 1. / (dom->dx * dom->dx);
   real ddy = 1. / (dom->dy * dom->dy);
   real ddz = 1. / (dom->dz * dom->dz);
@@ -799,33 +919,444 @@ __global__ void wstar_coeffs(real nu, real dt, dom_struct *dom, int pitch,
   // loop over slices to set values
   if(ti < dom->Gfz.in + DOM_BUF && tj < dom->Gfz.jn + DOM_BUF) {
     for(k = dom->Gfz.ks; k < dom->Gfz.ke; k++) {
+      W = ti + tj*dom->Gfx.s1b + k*dom->Gfx.s2b;
+      E = (ti+1) + tj*dom->Gfx.s1b + k*dom->Gfx.s2b;
+      S = ti + tj*dom->Gfy.s1b + k*dom->Gfy.s2b;
+      N = ti + (tj+1)*dom->Gfy.s1b + k*dom->Gfy.s2b;
+      B = ti + tj*dom->Gfz.s1b + k*dom->Gfz.s2b;
+      T = ti + tj*dom->Gfz.s1b + (k+1)*dom->Gfz.s2b;
       C = (ti-DOM_BUF) + (tj-DOM_BUF)*dom->Gfz.s1 + (k-DOM_BUF)*dom->Gfz.s2;
-      values[C + pitch * 1]  -= 0.5*nu*dt*ddz;
-      values[C + pitch * 3]  -= 0.5*nu*dt*ddy;
-      values[C + pitch * 5]  -= 0.5*nu*dt*ddx;
+      values[C + pitch * 1]  -= (real)abs(flag_w[B])*0.5*nu*dt*ddz;
+      values[C + pitch * 3]  -= (real)abs(flag_v[S])*0.5*nu*dt*ddy;
+      values[C + pitch * 5]  -= (real)abs(flag_u[W])*0.5*nu*dt*ddx;
       values[C + pitch * 6]  += 1.;
-      values[C + pitch * 6]  += nu*dt*ddx;
-      values[C + pitch * 6]  += nu*dt*ddy;
-      values[C + pitch * 6]  += nu*dt*ddz;
-      values[C + pitch * 7]  -= 0.5*nu*dt*ddx;
-      values[C + pitch * 9]  -= 0.5*nu*dt*ddy;
-      values[C + pitch * 11] -= 0.5*nu*dt*ddz;
+      values[C + pitch * 6]  += (real)abs(flag_u[W])*0.5*nu*dt*ddx;
+      values[C + pitch * 6]  += (real)abs(flag_u[E])*0.5*nu*dt*ddx;
+      values[C + pitch * 6]  += (real)abs(flag_v[S])*0.5*nu*dt*ddy;
+      values[C + pitch * 6]  += (real)abs(flag_v[N])*0.5*nu*dt*ddy;
+      values[C + pitch * 6]  += (real)abs(flag_w[B])*0.5*nu*dt*ddz;
+      values[C + pitch * 6]  += (real)abs(flag_w[T])*0.5*nu*dt*ddz;
+      values[C + pitch * 7]  -= (real)abs(flag_u[E])*0.5*nu*dt*ddx;
+      values[C + pitch * 9]  -= (real)abs(flag_v[N])*0.5*nu*dt*ddy;
+      values[C + pitch * 11] -= (real)abs(flag_w[T])*0.5*nu*dt*ddz;
     }
+  }
+}
+
+__global__ void ustar_coeffs_dirichlet_W(real bc, real *u_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int i = dom->Gfx.is-DOM_BUF;  // iterator
+  int C, CC;  // cell location
+
+  int tj = blockIdx.x * blockDim.x + threadIdx.x;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y;
+  
+  if((tj < dom->Gfx.jn) && (tk < dom->Gfx.kn)) {
+    C = i + tj*dom->Gfx.s1 + tk*dom->Gfx.s2;
+    CC = (i+DOM_BUF) + (tj+DOM_BUF)*dom->Gfx.s1b + (tk+DOM_BUF)*dom->Gfx.s2b;
+    values[C + 0*pitch] =  0.;
+    values[C + 1*pitch] =  0.;
+    values[C + 2*pitch] =  0.;
+    values[C + 3*pitch] =  0.;
+    values[C + 4*pitch] =  0.;
+    values[C + 5*pitch] =  0.;
+    values[C + 6*pitch] =  1.;
+    values[C + 7*pitch] =  0.;
+    values[C + 8*pitch] =  0.;
+    values[C + 9*pitch] =  0.;
+    values[C + 10*pitch] = 0.;
+    values[C + 11*pitch] = 0.;
+    values[C + 12*pitch] = 0.;
+    u_star[CC] = bc;
+  }
+}
+
+__global__ void ustar_coeffs_dirichlet_E(real bc, real *u_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int i = dom->Gfx.ie-1-DOM_BUF;  // iterator
+  int C, CC;  // cell location
+
+  int tj = blockIdx.x * blockDim.x + threadIdx.x;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y;
+  
+  if((tj < dom->Gfx.jn) && (tk < dom->Gfx.kn)) {
+    C = i + tj*dom->Gfx.s1 + tk*dom->Gfx.s2;
+    CC = (i+DOM_BUF) + (tj+DOM_BUF)*dom->Gfx.s1b + (tk+DOM_BUF)*dom->Gfx.s2b;
+    values[C + 0*pitch] =  0.;
+    values[C + 1*pitch] =  0.;
+    values[C + 2*pitch] =  0.;
+    values[C + 3*pitch] =  0.;
+    values[C + 4*pitch] =  0.;
+    values[C + 5*pitch] =  0.;
+    values[C + 6*pitch] =  1.;
+    values[C + 7*pitch] =  0.;
+    values[C + 8*pitch] =  0.;
+    values[C + 9*pitch] =  0.;
+    values[C + 10*pitch] = 0.;
+    values[C + 11*pitch] = 0.;
+    values[C + 12*pitch] = 0.;
+    u_star[CC] = bc;
+  }
+}
+
+__global__ void ustar_coeffs_dirichlet_S(real nu, real *u_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int j = dom->Gfx.js-DOM_BUF;  // iterator
+  int C, CC, S;  // cell locations
+  real ddy = 1. / (dom->dy * dom->dy);
+
+  int tk = blockIdx.x * blockDim.x + threadIdx.x;
+  int ti = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((tk < dom->Gfx.kn) && (ti < dom->Gfx.in)) {
+    C = ti + j*dom->Gfx.s1 + tk*dom->Gfx.s2;
+    CC = (ti+DOM_BUF) + (j+DOM_BUF)*dom->Gfx.s1b + (tk+DOM_BUF)*dom->Gfx.s2b;
+    S = (ti+DOM_BUF) + (j-1+DOM_BUF)*dom->Gfx.s1b + (tk+DOM_BUF)*dom->Gfx.s2b;
+    values[C + 3*pitch] =  0.;
+    u_star[CC] += u_star[S] * 0.5 * nu * ddy;
+  }
+}
+
+__global__ void ustar_coeffs_dirichlet_N(real nu, real *u_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int j = dom->Gfx.je-1-DOM_BUF;  // iterator
+  int C, CC, N;  // cell locations
+  real ddy = 1. / (dom->dy * dom->dy);
+
+  int tk = blockIdx.x * blockDim.x + threadIdx.x;
+  int ti = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((tk < dom->Gfx.kn) && (ti < dom->Gfx.in)) {
+    C = ti + j*dom->Gfx.s1 + tk*dom->Gfx.s2;
+    CC = (ti+DOM_BUF) + (j+DOM_BUF)*dom->Gfx.s1b + (tk+DOM_BUF)*dom->Gfx.s2b;
+    N = (ti+DOM_BUF) + (j+1+DOM_BUF)*dom->Gfx.s1b + (tk+DOM_BUF)*dom->Gfx.s2b;
+    values[C + 9*pitch] =  0.;
+    u_star[CC] += u_star[N] * 0.5 * nu * ddy;
+  }
+}
+
+__global__ void ustar_coeffs_dirichlet_B(real nu, real *u_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int k = dom->Gfx.ks-DOM_BUF;  // iterator
+  int C, CC, B;  // cell locations
+  real ddz = 1. / (dom->dz * dom->dz);
+
+  int ti = blockIdx.x * blockDim.x + threadIdx.x;
+  int tj = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((ti < dom->Gfx.in) && (tj < dom->Gfx.jn)) {
+    C = ti + tj*dom->Gfx.s1 + k*dom->Gfx.s2;
+    CC = (ti+DOM_BUF) + (tj+DOM_BUF)*dom->Gfx.s1b + (k+DOM_BUF)*dom->Gfx.s2b;
+    B = (ti+DOM_BUF) + (tj+DOM_BUF)*dom->Gfx.s1b + (k-1+DOM_BUF)*dom->Gfx.s2b;
+    values[C + 1*pitch] =  0.;
+    u_star[CC] += u_star[B] * 0.5 * nu * ddz;
+  }
+}
+
+__global__ void ustar_coeffs_dirichlet_T(real nu, real *u_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int k = dom->Gfx.ke-1-DOM_BUF;  // iterator
+  int C, CC, T;  // cell locations
+  real ddz = 1. / (dom->dz * dom->dz);
+
+  int ti = blockIdx.x * blockDim.x + threadIdx.x;
+  int tj = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((ti < dom->Gfx.in) && (tj < dom->Gfx.jn)) {
+    C = ti + tj*dom->Gfx.s1 + k*dom->Gfx.s2;
+    CC = (ti+DOM_BUF) + (tj+DOM_BUF)*dom->Gfx.s1b + (k+DOM_BUF)*dom->Gfx.s2b;
+    T = (ti+DOM_BUF) + (tj+DOM_BUF)*dom->Gfx.s1b + (k+1+DOM_BUF)*dom->Gfx.s2b;
+    values[C + 11*pitch] =  0.;
+    u_star[CC] += u_star[T] * 0.5 * nu * ddz;
+  }
+}
+
+__global__ void vstar_coeffs_dirichlet_W(real nu, real *v_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int i = dom->Gfy.is-DOM_BUF;  // iterator
+  int C, CC, W;  // cell locations
+  real ddx = 1. / (dom->dx * dom->dx);
+
+  int tj = blockIdx.x * blockDim.x + threadIdx.x;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((tj < dom->Gfy.jn) && (tk < dom->Gfy.kn)) {
+    C = i + tj*dom->Gfy.s1 + tk*dom->Gfy.s2;
+    CC = (i+DOM_BUF) + (tj+DOM_BUF)*dom->Gfy.s1b + (tk+DOM_BUF)*dom->Gfy.s2b;
+    W = (i-1+DOM_BUF) + (tj+DOM_BUF)*dom->Gfy.s1b + (tk+DOM_BUF)*dom->Gfy.s2b;
+    values[C + 5*pitch] =  0.;
+    v_star[CC] += v_star[W] * 0.5 * nu * ddx;
+  }
+}
+
+__global__ void vstar_coeffs_dirichlet_E(real nu, real *v_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int i = dom->Gfy.ie-1-DOM_BUF;  // iterator
+  int C, CC, E;  // cell locations
+  real ddx = 1. / (dom->dx * dom->dx);
+
+  int tj = blockIdx.x * blockDim.x + threadIdx.x;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((tj < dom->Gfy.jn) && (tk < dom->Gfy.kn)) {
+    C = i + tj*dom->Gfy.s1 + tk*dom->Gfy.s2;
+    CC = (i+DOM_BUF) + (tj+DOM_BUF)*dom->Gfy.s1b + (tk+DOM_BUF)*dom->Gfy.s2b;
+    E = (i+1+DOM_BUF) + (tj+DOM_BUF)*dom->Gfy.s1b + (tk+DOM_BUF)*dom->Gfy.s2b;
+    values[C + 7*pitch] =  0.;
+    v_star[CC] += v_star[E] * 0.5 * nu * ddx;
+  }
+}
+
+__global__ void vstar_coeffs_dirichlet_S(real bc, real *v_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int j = dom->Gfy.js-DOM_BUF;  // iterator
+  int C, CC;  // cell locations
+
+  int tk = blockIdx.x * blockDim.x + threadIdx.x;
+  int ti = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((tk < dom->Gfy.kn) && (ti < dom->Gfy.in)) {
+    C = ti + j*dom->Gfy.s1 + tk*dom->Gfy.s2;
+    CC = (ti+DOM_BUF) + (j+DOM_BUF)*dom->Gfy.s1b + (tk+DOM_BUF)*dom->Gfy.s2b;
+    values[C + 0*pitch] =  0.;
+    values[C + 1*pitch] =  0.;
+    values[C + 2*pitch] =  0.;
+    values[C + 3*pitch] =  0.;
+    values[C + 4*pitch] =  0.;
+    values[C + 5*pitch] =  0.;
+    values[C + 6*pitch] =  1.;
+    values[C + 7*pitch] =  0.;
+    values[C + 8*pitch] =  0.;
+    values[C + 9*pitch] =  0.;
+    values[C + 10*pitch] = 0.;
+    values[C + 11*pitch] = 0.;
+    values[C + 12*pitch] = 0.;
+    v_star[CC] = bc;
+  }
+}
+
+__global__ void vstar_coeffs_dirichlet_N(real bc, real *v_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int j = dom->Gfy.je-1-DOM_BUF;  // iterator
+  int C, CC;  // cell locations
+
+  int tk = blockIdx.x * blockDim.x + threadIdx.x;
+  int ti = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((tk < dom->Gfy.kn) && (ti < dom->Gfy.in)) {
+    C = ti + j*dom->Gfy.s1 + tk*dom->Gfy.s2;
+    CC = (ti+DOM_BUF) + (j+DOM_BUF)*dom->Gfy.s1b + (tk+DOM_BUF)*dom->Gfy.s2b;
+    values[C + 0*pitch] =  0.;
+    values[C + 1*pitch] =  0.;
+    values[C + 2*pitch] =  0.;
+    values[C + 3*pitch] =  0.;
+    values[C + 4*pitch] =  0.;
+    values[C + 5*pitch] =  0.;
+    values[C + 6*pitch] =  1.;
+    values[C + 7*pitch] =  0.;
+    values[C + 8*pitch] =  0.;
+    values[C + 9*pitch] =  0.;
+    values[C + 10*pitch] = 0.;
+    values[C + 11*pitch] = 0.;
+    values[C + 12*pitch] = 0.;
+    v_star[CC] = bc;
+  }
+}
+
+__global__ void vstar_coeffs_dirichlet_B(real nu, real *v_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int k = dom->Gfy.ks-DOM_BUF;  // iterator
+  int C, CC, B;  // cell locations
+  real ddz = 1. / (dom->dz * dom->dz);
+
+  int ti = blockIdx.x * blockDim.x + threadIdx.x;
+  int tj = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((ti < dom->Gfy.in) && (tj < dom->Gfy.jn)) {
+    C = ti + tj*dom->Gfy.s1 + k*dom->Gfy.s2;
+    CC = (ti+DOM_BUF) + (tj+DOM_BUF)*dom->Gfy.s1b + (k+DOM_BUF)*dom->Gfy.s2b;
+    B = (ti+DOM_BUF) + (tj+DOM_BUF)*dom->Gfy.s1b + (k-1+DOM_BUF)*dom->Gfy.s2b;
+    values[C + 1*pitch] =  0.;
+    v_star[CC] += v_star[B] * 0.5 * nu * ddz;
+  }
+}
+
+__global__ void vstar_coeffs_dirichlet_T(real nu, real *v_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int k = dom->Gfy.ke-1-DOM_BUF;  // iterator
+  int C, CC, T;  // cell locations
+  real ddz = 1. / (dom->dz * dom->dz);
+
+  int ti = blockIdx.x * blockDim.x + threadIdx.x;
+  int tj = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((ti < dom->Gfy.in) && (tj < dom->Gfy.jn)) {
+    C = ti + tj*dom->Gfy.s1 + k*dom->Gfy.s2;
+    CC = (ti+DOM_BUF) + (tj+DOM_BUF)*dom->Gfy.s1b + (k+DOM_BUF)*dom->Gfy.s2b;
+    T = (ti+DOM_BUF) + (tj+DOM_BUF)*dom->Gfy.s1b + (k+1+DOM_BUF)*dom->Gfy.s2b;
+    values[C + 11*pitch] = 0.;
+    v_star[CC] += v_star[T] * 0.5 * nu * ddz;
+  }
+}
+
+__global__ void wstar_coeffs_dirichlet_W(real nu, real *w_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int i = dom->Gfz.is-DOM_BUF;  // iterator
+  int C, CC, W;  // cell locations
+  real ddx = 1. / (dom->dx * dom->dx);
+
+  int tj = blockIdx.x * blockDim.x + threadIdx.x;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((tj < dom->Gfz.jn) && (tk < dom->Gfz.kn)) {
+    C = i + tj*dom->Gfz.s1 + tk*dom->Gfz.s2;
+    CC = (i+DOM_BUF) + (tj+DOM_BUF)*dom->Gfz.s1b + (tk+DOM_BUF)*dom->Gfz.s2b;
+    W = (i-1+DOM_BUF) + (tj+DOM_BUF)*dom->Gfz.s1b + (tk+DOM_BUF)*dom->Gfz.s2b;
+    values[C + 5*pitch] =  0.;
+    w_star[CC] += w_star[W] * 0.5 * nu * ddx;
+  }
+}
+
+__global__ void wstar_coeffs_dirichlet_E(real nu, real *w_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int i = dom->Gfz.ie-1-DOM_BUF;  // iterator
+  int C, CC, E;  // cell locations
+  real ddx = 1. / (dom->dx * dom->dx);
+
+  int tj = blockIdx.x * blockDim.x + threadIdx.x;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((tj < dom->Gfz.jn) && (tk < dom->Gfz.kn)) {
+    C = i + tj*dom->Gfz.s1 + tk*dom->Gfz.s2;
+    CC = (i+DOM_BUF) + (tj+DOM_BUF)*dom->Gfz.s1b + (tk+DOM_BUF)*dom->Gfz.s2b;
+    E = (i+1+DOM_BUF) + (tj+DOM_BUF)*dom->Gfz.s1b + (tk+DOM_BUF)*dom->Gfz.s2b;
+    values[C + 7*pitch] =  0.;
+    w_star[CC] += w_star[E] * 0.5 * nu * ddx;
+  }
+}
+
+__global__ void wstar_coeffs_dirichlet_S(real nu, real *w_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int j = dom->Gfz.js-DOM_BUF;  // iterator
+  int C, CC, S;  // cell locations
+  real ddy = 1. / (dom->dy * dom->dy);
+
+  int tk = blockIdx.x * blockDim.x + threadIdx.x;
+  int ti = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((tk < dom->Gfz.kn) && (ti < dom->Gfz.in)) {
+    C = ti + j*dom->Gfz.s1 + tk*dom->Gfz.s2;
+    CC = (ti+DOM_BUF) + (j+DOM_BUF)*dom->Gfz.s1b + (tk+DOM_BUF)*dom->Gfz.s2b;
+    S = (ti+DOM_BUF) + (j-1+DOM_BUF)*dom->Gfz.s1b + (tk+DOM_BUF)*dom->Gfz.s2b;
+    values[C + 3*pitch] =  0.;
+    w_star[CC] += w_star[S] * 0.5 * nu * ddy;
+  }
+}
+
+__global__ void wstar_coeffs_dirichlet_N(real nu, real *w_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int j = dom->Gfz.je-1-DOM_BUF;  // iterator
+  int C, CC, N;  // cell locations
+  real ddy = 1. / (dom->dy * dom->dy);
+
+  int tk = blockIdx.x * blockDim.x + threadIdx.x;
+  int ti = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((tk < dom->Gfz.kn) && (ti < dom->Gfz.in)) {
+    C = ti + j*dom->Gfz.s1 + tk*dom->Gfz.s2;
+    CC = (ti+DOM_BUF) + (j+DOM_BUF)*dom->Gfz.s1b + (tk+DOM_BUF)*dom->Gfz.s2b;
+    N = (ti+DOM_BUF) + (j+1+DOM_BUF)*dom->Gfz.s1b + (tk+DOM_BUF)*dom->Gfz.s2b;
+    values[C + 9*pitch] =  0.;
+    w_star[CC] += w_star[N] * 0.5 * nu * ddy;
+  }
+}
+
+__global__ void wstar_coeffs_dirichlet_B(real bc, real *w_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int k = dom->Gfz.ks-DOM_BUF;  // iterator
+  int C, CC;  // cell locations
+
+  int ti = blockIdx.x * blockDim.x + threadIdx.x;
+  int tj = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((ti < dom->Gfz.in) && (tj < dom->Gfz.jn)) {
+    C = ti + tj*dom->Gfz.s1 + k*dom->Gfz.s2;
+    CC = (ti+DOM_BUF) + (tj+DOM_BUF)*dom->Gfz.s1b + (k+DOM_BUF)*dom->Gfz.s2b;
+    values[C + 0*pitch] =  0.;
+    values[C + 1*pitch] =  0.;
+    values[C + 2*pitch] =  0.;
+    values[C + 3*pitch] =  0.;
+    values[C + 4*pitch] =  0.;
+    values[C + 5*pitch] =  0.;
+    values[C + 6*pitch] =  1.;
+    values[C + 7*pitch] =  0.;
+    values[C + 8*pitch] =  0.;
+    values[C + 9*pitch] =  0.;
+    values[C + 10*pitch] = 0.;
+    values[C + 11*pitch] = 0.;
+    values[C + 12*pitch] = 0.;
+    w_star[CC] = bc;
+  }
+}
+
+__global__ void wstar_coeffs_dirichlet_T(real bc, real *w_star, dom_struct *dom,
+  int pitch, real *values)
+{
+  int k = dom->Gfz.ke-1-DOM_BUF;  // iterator
+  int C, CC;  // cell locations
+
+  int ti = blockIdx.x * blockDim.x + threadIdx.x;
+  int tj = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if((ti < dom->Gfz.in) && (tj < dom->Gfz.jn)) {
+    C = ti + tj*dom->Gfz.s1 + k*dom->Gfz.s2;
+    CC = (ti+DOM_BUF) + (tj+DOM_BUF)*dom->Gfz.s1b + (k+DOM_BUF)*dom->Gfz.s2b;
+    values[C + 0*pitch] =  0.;
+    values[C + 1*pitch] =  0.;
+    values[C + 2*pitch] =  0.;
+    values[C + 3*pitch] =  0.;
+    values[C + 4*pitch] =  0.;
+    values[C + 5*pitch] =  0.;
+    values[C + 6*pitch] =  1.;
+    values[C + 7*pitch] =  0.;
+    values[C + 8*pitch] =  0.;
+    values[C + 9*pitch] =  0.;
+    values[C + 10*pitch] = 0.;
+    values[C + 11*pitch] = 0.;
+    values[C + 12*pitch] = 0.;
+    w_star[CC] = bc;
   }
 }
 
 __global__ void ustar_coeffs_periodic_W(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int i = dom->Gfx.is;  // iterator
+  int i = dom->Gfx.is-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddx = 1. / (dom->dx * dom->dx);
 
-  int tj = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int tk = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int tj = blockIdx.x * blockDim.x + threadIdx.x;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((tj < (dom->Gfx.jn + DOM_BUF)) && (tk < (dom->Gfx.kn + DOM_BUF))) {
-    C = (i-DOM_BUF) + (tj-DOM_BUF)*dom->Gfx.s1 + (tk-DOM_BUF)*dom->Gfx.s2;
+  if((tj < dom->Gfx.jn) && (tk < dom->Gfx.kn)) {
+    C = i + tj*dom->Gfx.s1 + tk*dom->Gfx.s2;
     values[C + pitch * 5] += 0.5*nu*dt*ddx;
     values[C + pitch * 8] -= 0.5*nu*dt*ddx;
   }
@@ -834,15 +1365,15 @@ __global__ void ustar_coeffs_periodic_W(real nu, real dt, dom_struct *dom,
 __global__ void ustar_coeffs_periodic_E(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int i = dom->Gfx.ie-1;  // iterator
+  int i = dom->Gfx.ie-1-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddx = 1. / (dom->dx * dom->dx);
 
-  int tj = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int tk = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int tj = blockIdx.x * blockDim.x + threadIdx.x;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((tj < (dom->Gfx.jn + DOM_BUF)) && (tk < (dom->Gfx.kn + DOM_BUF))) {
-    C = (i-DOM_BUF) + (tj-DOM_BUF)*dom->Gfx.s1 + (tk-DOM_BUF)*dom->Gfx.s2;
+  if((tj < dom->Gfx.jn) && (tk < dom->Gfx.kn)) {
+    C = i + tj*dom->Gfx.s1 + tk*dom->Gfx.s2;
     values[C + pitch * 4] -= 0.5*nu*dt*ddx;
     values[C + pitch * 7] += 0.5*nu*dt*ddx;
   }
@@ -851,15 +1382,15 @@ __global__ void ustar_coeffs_periodic_E(real nu, real dt, dom_struct *dom,
 __global__ void ustar_coeffs_periodic_S(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int j = dom->Gfx.js;  // iterator
+  int j = dom->Gfx.js-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddy = 1. / (dom->dy * dom->dy);
 
-  int tk = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int ti = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int tk = blockIdx.x * blockDim.x + threadIdx.x;
+  int ti = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((tk < (dom->Gfx.kn + DOM_BUF)) && (ti < (dom->Gfx.in + DOM_BUF))) {
-    C = (ti-DOM_BUF) + (j-DOM_BUF)*dom->Gfx.s1 + (tk-DOM_BUF)*dom->Gfx.s2;
+  if((tk < dom->Gfx.kn) && (ti < dom->Gfx.in)) {
+    C = ti + j*dom->Gfx.s1 + tk*dom->Gfx.s2;
     values[C + pitch * 3]  += 0.5*nu*dt*ddy;
     values[C + pitch * 10] -= 0.5*nu*dt*ddy;
   }
@@ -868,15 +1399,15 @@ __global__ void ustar_coeffs_periodic_S(real nu, real dt, dom_struct *dom,
 __global__ void ustar_coeffs_periodic_N(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int j = dom->Gfx.je-1;  // iterator
+  int j = dom->Gfx.je-1-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddy = 1. / (dom->dy * dom->dy);
 
-  int tk = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int ti = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int tk = blockIdx.x * blockDim.x + threadIdx.x;
+  int ti = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((tk < (dom->Gfx.kn + DOM_BUF)) && (ti < (dom->Gfx.in + DOM_BUF))) {
-    C = (ti-DOM_BUF) + (j-DOM_BUF)*dom->Gfx.s1 + (tk-DOM_BUF)*dom->Gfx.s2;
+  if((tk < dom->Gfx.kn) && (ti < dom->Gfx.in)) {
+    C = ti + j*dom->Gfx.s1 + tk*dom->Gfx.s2;
     values[C + pitch * 2] -= 0.5*nu*dt*ddy;
     values[C + pitch * 9] += 0.5*nu*dt*ddy;
   }
@@ -885,15 +1416,15 @@ __global__ void ustar_coeffs_periodic_N(real nu, real dt, dom_struct *dom,
 __global__ void ustar_coeffs_periodic_B(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int k = dom->Gfx.ks;  // iterator
+  int k = dom->Gfx.ks-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddz = 1. / (dom->dz * dom->dz);
 
-  int ti = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int tj = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int ti = blockIdx.x * blockDim.x + threadIdx.x;
+  int tj = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((ti < (dom->Gfx.in + DOM_BUF)) && (tj < (dom->Gfx.jn + DOM_BUF))) {
-    C = (ti-DOM_BUF) + (tj-DOM_BUF)*dom->Gfx.s1 + (k-DOM_BUF)*dom->Gfx.s2;
+  if((ti < dom->Gfx.in) && (tj < dom->Gfx.jn)) {
+    C = ti + tj*dom->Gfx.s1 + k*dom->Gfx.s2;
     values[C + pitch * 1]  += 0.5*nu*dt*ddz;
     values[C + pitch * 12] -= 0.5*nu*dt*ddz;
   }
@@ -902,15 +1433,15 @@ __global__ void ustar_coeffs_periodic_B(real nu, real dt, dom_struct *dom,
 __global__ void ustar_coeffs_periodic_T(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int k = dom->Gfx.ke-1;  // iterator
+  int k = dom->Gfx.ke-1-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddz = 1. / (dom->dz * dom->dz);
 
-  int ti = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int tj = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int ti = blockIdx.x * blockDim.x + threadIdx.x;
+  int tj = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((ti < (dom->Gfx.in + DOM_BUF)) && (tj < (dom->Gfx.jn + DOM_BUF))) {
-    C = (ti-DOM_BUF) + (tj-DOM_BUF)*dom->Gfx.s1 + (k-DOM_BUF)*dom->Gfx.s2;
+  if((ti < dom->Gfx.in) && tj < (dom->Gfx.jn)) {
+    C = ti + tj*dom->Gfx.s1 + k*dom->Gfx.s2;
     values[C + pitch * 0]  -= 0.5*nu*dt*ddz;
     values[C + pitch * 11] += 0.5*nu*dt*ddz;
   }
@@ -919,15 +1450,15 @@ __global__ void ustar_coeffs_periodic_T(real nu, real dt, dom_struct *dom,
 __global__ void vstar_coeffs_periodic_W(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int i = dom->Gfy.is;  // iterator
+  int i = dom->Gfy.is-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddx = 1. / (dom->dx * dom->dx);
 
-  int tj = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int tk = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int tj = blockIdx.x * blockDim.x + threadIdx.x;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((tj < (dom->Gfy.jn + DOM_BUF)) && (tk < (dom->Gfy.kn + DOM_BUF))) {
-    C = (i-DOM_BUF) + (tj-DOM_BUF)*dom->Gfy.s1 + (tk-DOM_BUF)*dom->Gfy.s2;
+  if((tj < dom->Gfy.jn) && (tk < dom->Gfy.kn)) {
+    C = i + tj*dom->Gfy.s1 + tk*dom->Gfy.s2;
     values[C + pitch * 5] += 0.5*nu*dt*ddx;
     values[C + pitch * 8] -= 0.5*nu*dt*ddx;
   }
@@ -936,15 +1467,15 @@ __global__ void vstar_coeffs_periodic_W(real nu, real dt, dom_struct *dom,
 __global__ void vstar_coeffs_periodic_E(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int i = dom->Gfy.ie-1;  // iterator
+  int i = dom->Gfy.ie-1-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddx = 1. / (dom->dx * dom->dx);
 
-  int tj = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int tk = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int tj = blockIdx.x * blockDim.x + threadIdx.x;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((tj < (dom->Gfy.jn + DOM_BUF)) && (tk < (dom->Gfy.kn + DOM_BUF))) {
-    C = (i-DOM_BUF) + (tj-DOM_BUF)*dom->Gfy.s1 + (tk-DOM_BUF)*dom->Gfy.s2;
+  if((tj < dom->Gfy.jn) && (tk < dom->Gfy.kn)) {
+    C = i + tj*dom->Gfy.s1 + tk*dom->Gfy.s2;
     values[C + pitch * 4] -= 0.5*nu*dt*ddx;
     values[C + pitch * 7] += 0.5*nu*dt*ddx;
   }
@@ -953,15 +1484,15 @@ __global__ void vstar_coeffs_periodic_E(real nu, real dt, dom_struct *dom,
 __global__ void vstar_coeffs_periodic_S(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int j = dom->Gfy.js;  // iterator
+  int j = dom->Gfy.js-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddy = 1. / (dom->dy * dom->dy);
 
-  int tk = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int ti = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int tk = blockIdx.x * blockDim.x + threadIdx.x;
+  int ti = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((tk < (dom->Gfy.kn + DOM_BUF)) && (ti < (dom->Gfy.in + DOM_BUF))) {
-    C = (ti-DOM_BUF) + (j-DOM_BUF)*dom->Gfy.s1 + (tk-DOM_BUF)*dom->Gfy.s2;
+  if((tk < dom->Gfy.kn) && (ti < dom->Gfy.in)) {
+    C = ti + j*dom->Gfy.s1 + tk*dom->Gfy.s2;
     values[C + pitch * 3]  += 0.5*nu*dt*ddy;
     values[C + pitch * 10] -= 0.5*nu*dt*ddy;
   }
@@ -970,15 +1501,15 @@ __global__ void vstar_coeffs_periodic_S(real nu, real dt, dom_struct *dom,
 __global__ void vstar_coeffs_periodic_N(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int j = dom->Gfy.je-1;  // iterator
+  int j = dom->Gfy.je-1-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddy = 1. / (dom->dy * dom->dy);
 
-  int tk = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int ti = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int tk = blockIdx.x * blockDim.x + threadIdx.x;
+  int ti = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((tk < (dom->Gfy.kn + DOM_BUF)) && (ti < (dom->Gfy.in + DOM_BUF))) {
-    C = (ti-DOM_BUF) + (j-DOM_BUF)*dom->Gfy.s1 + (tk-DOM_BUF)*dom->Gfy.s2;
+  if((tk < dom->Gfy.kn) && (ti < dom->Gfy.in)) {
+    C = ti + j*dom->Gfy.s1 + tk*dom->Gfy.s2;
     values[C + pitch * 2] -= 0.5*nu*dt*ddy;
     values[C + pitch * 9] += 0.5*nu*dt*ddy;
   }
@@ -987,15 +1518,15 @@ __global__ void vstar_coeffs_periodic_N(real nu, real dt, dom_struct *dom,
 __global__ void vstar_coeffs_periodic_B(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int k = dom->Gfy.ks;  // iterator
+  int k = dom->Gfy.ks-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddz = 1. / (dom->dz * dom->dz);
 
-  int ti = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int tj = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int ti = blockIdx.x * blockDim.x + threadIdx.x;
+  int tj = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((ti < (dom->Gfy.in + DOM_BUF)) && (tj < (dom->Gfy.jn + DOM_BUF))) {
-    C = (ti-DOM_BUF) + (tj-DOM_BUF)*dom->Gfy.s1 + (k-DOM_BUF)*dom->Gfy.s2;
+  if((ti < dom->Gfy.in) && (tj < dom->Gfy.jn)) {
+    C = ti + tj*dom->Gfy.s1 + k*dom->Gfy.s2;
     values[C + pitch * 1]  += 0.5*nu*dt*ddz;
     values[C + pitch * 12] -= 0.5*nu*dt*ddz;
   }
@@ -1004,15 +1535,15 @@ __global__ void vstar_coeffs_periodic_B(real nu, real dt, dom_struct *dom,
 __global__ void vstar_coeffs_periodic_T(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int k = dom->Gfy.ke-1;  // iterator
+  int k = dom->Gfy.ke-1-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddz = 1. / (dom->dz * dom->dz);
 
-  int ti = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int tj = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int ti = blockIdx.x * blockDim.x + threadIdx.x;
+  int tj = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((ti < (dom->Gfy.in + DOM_BUF)) && (tj < (dom->Gfy.jn + DOM_BUF))) {
-    C = (ti-DOM_BUF) + (tj-DOM_BUF)*dom->Gfy.s1 + (k-DOM_BUF)*dom->Gfy.s2;
+  if((ti < dom->Gfy.in) && (tj < dom->Gfy.jn)) {
+    C = ti + tj*dom->Gfy.s1 + k*dom->Gfy.s2;
     values[C + pitch * 0]  -= 0.5*nu*dt*ddz;
     values[C + pitch * 11] += 0.5*nu*dt*ddz;
   }
@@ -1021,15 +1552,15 @@ __global__ void vstar_coeffs_periodic_T(real nu, real dt, dom_struct *dom,
 __global__ void wstar_coeffs_periodic_W(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int i = dom->Gfz.is;  // iterator
+  int i = dom->Gfz.is-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddx = 1. / (dom->dx * dom->dx);
 
-  int tj = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int tk = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int tj = blockIdx.x * blockDim.x + threadIdx.x;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((tj < (dom->Gfz.jn + DOM_BUF)) && (tk < (dom->Gfz.kn + DOM_BUF))) {
-    C = (i-DOM_BUF) + (tj-DOM_BUF)*dom->Gfz.s1 + (tk-DOM_BUF)*dom->Gfz.s2;
+  if((tj < dom->Gfz.jn) && (tk < dom->Gfz.kn)) {
+    C = i + tj*dom->Gfz.s1 + tk*dom->Gfz.s2;
     values[C + pitch * 5] += 0.5*nu*dt*ddx;
     values[C + pitch * 8] -= 0.5*nu*dt*ddx;
   }
@@ -1038,15 +1569,15 @@ __global__ void wstar_coeffs_periodic_W(real nu, real dt, dom_struct *dom,
 __global__ void wstar_coeffs_periodic_E(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int i = dom->Gfz.ie-1;  // iterator
+  int i = dom->Gfz.ie-1-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddx = 1. / (dom->dx * dom->dx);
 
-  int tj = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int tk = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int tj = blockIdx.x * blockDim.x + threadIdx.x;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((tj < (dom->Gfz.jn + DOM_BUF)) && (tk < (dom->Gfz.kn + DOM_BUF))) {
-    C = (i-DOM_BUF) + (tj-DOM_BUF)*dom->Gfz.s1 + (tk-DOM_BUF)*dom->Gfz.s2;
+  if((tj < dom->Gfz.jn) && (tk < dom->Gfz.kn)) {
+    C = i + tj*dom->Gfz.s1 + tk*dom->Gfz.s2;
     values[C + pitch * 4] -= 0.5*nu*dt*ddx;
     values[C + pitch * 7] += 0.5*nu*dt*ddx;
   }
@@ -1055,15 +1586,15 @@ __global__ void wstar_coeffs_periodic_E(real nu, real dt, dom_struct *dom,
 __global__ void wstar_coeffs_periodic_S(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int j = dom->Gfz.js;  // iterator
+  int j = dom->Gfz.js-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddy = 1. / (dom->dy * dom->dy);
 
-  int tk = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int ti = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int tk = blockIdx.x * blockDim.x + threadIdx.x;
+  int ti = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((tk < (dom->Gfz.kn + DOM_BUF)) && (ti < (dom->Gfz.in + DOM_BUF))) {
-    C = (ti-DOM_BUF) + (j-DOM_BUF)*dom->Gfz.s1 + (tk-DOM_BUF)*dom->Gfz.s2;
+  if((tk < dom->Gfz.kn) && (ti < dom->Gfz.in)) {
+    C = ti + j*dom->Gfz.s1 + tk*dom->Gfz.s2;
     values[C + pitch * 3]  += 0.5*nu*dt*ddy;
     values[C + pitch * 10] -= 0.5*nu*dt*ddy;
   }
@@ -1072,15 +1603,15 @@ __global__ void wstar_coeffs_periodic_S(real nu, real dt, dom_struct *dom,
 __global__ void wstar_coeffs_periodic_N(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int j = dom->Gfz.je-1;  // iterator
+  int j = dom->Gfz.je-1-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddy = 1. / (dom->dy * dom->dy);
 
-  int tk = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int ti = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int tk = blockIdx.x * blockDim.x + threadIdx.x;
+  int ti = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((tk < (dom->Gfz.kn + DOM_BUF)) && (ti < (dom->Gfz.in + DOM_BUF))) {
-    C = (ti-DOM_BUF) + (j-DOM_BUF)*dom->Gfz.s1 + (tk-DOM_BUF)*dom->Gfz.s2;
+  if((tk < dom->Gfz.kn) && (ti < dom->Gfz.in)) {
+    C = ti + j*dom->Gfz.s1 + tk*dom->Gfz.s2;
     values[C + pitch * 2] -= 0.5*nu*dt*ddy;
     values[C + pitch * 9] += 0.5*nu*dt*ddy;
   }
@@ -1089,15 +1620,15 @@ __global__ void wstar_coeffs_periodic_N(real nu, real dt, dom_struct *dom,
 __global__ void wstar_coeffs_periodic_B(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int k = dom->Gfz.ks;  // iterator
+  int k = dom->Gfz.ks-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddz = 1. / (dom->dz * dom->dz);
 
-  int ti = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int tj = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int ti = blockIdx.x * blockDim.x + threadIdx.x;
+  int tj = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((ti < (dom->Gfz.in + DOM_BUF)) && (tj < (dom->Gfz.jn + DOM_BUF))) {
-    C = (ti-DOM_BUF) + (tj-DOM_BUF)*dom->Gfz.s1 + (k-DOM_BUF)*dom->Gfz.s2;
+  if((ti < dom->Gfz.in) && (tj < dom->Gfz.jn)) {
+    C = ti + tj*dom->Gfz.s1 + k*dom->Gfz.s2;
     values[C + pitch * 1]  += 0.5*nu*dt*ddz;
     values[C + pitch * 12] -= 0.5*nu*dt*ddz;
   }
@@ -1106,15 +1637,15 @@ __global__ void wstar_coeffs_periodic_B(real nu, real dt, dom_struct *dom,
 __global__ void wstar_coeffs_periodic_T(real nu, real dt, dom_struct *dom,
   int pitch, real *values)
 {
-  int k = dom->Gfz.ke-1;  // iterator
+  int k = dom->Gfz.ke-1-DOM_BUF;  // iterator
   int C;  // cell locations
   real ddz = 1. / (dom->dz * dom->dz);
 
-  int ti = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
-  int tj = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+  int ti = blockIdx.x * blockDim.x + threadIdx.x;
+  int tj = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if((ti < (dom->Gfz.in + DOM_BUF)) && (tj < (dom->Gfz.jn + DOM_BUF))) {
-    C = (ti-DOM_BUF) + (tj-DOM_BUF)*dom->Gfz.s1 + (k-DOM_BUF)*dom->Gfz.s2;
+  if((ti < dom->Gfz.in) && (tj < dom->Gfz.jn)) {
+    C = ti + tj*dom->Gfz.s1 + k*dom->Gfz.s2;
     values[C + pitch * 0]  -= 0.5*nu*dt*ddz;
     values[C + pitch * 11] += 0.5*nu*dt*ddz;
   }
@@ -1300,10 +1831,6 @@ __global__ void coeffs_particle(dom_struct *dom, int pitch, real *values,
 
   int tj = blockIdx.x * blockDim.x + threadIdx.x;
   int tk = blockIdx.y * blockDim.y + threadIdx.y;
-
-  real denom = -2. / (dom->dx * dom->dx);
-  denom -= 2./ (dom->dy * dom->dy);
-  denom -= 2./ (dom->dz * dom->dz);
 
   if(tj < dom->Gcc.jn && tk < dom->Gcc.kn) {
     for(i = dom->Gcc.is-DOM_BUF; i < dom->Gcc.ie-DOM_BUF; i++) {

@@ -1491,6 +1491,7 @@ __global__ void copy_w_fluid(real *w_noghost, real *w_ghost, int *phase, dom_str
   }
 }
 
+#ifndef IMPLICIT
 __global__ void u_star_2(real rho_f, real nu,
   real *u0, real *v0, real *w0, real *p, real *f,
   real *diff0, real *conv0, real *diff, real *conv, real *u_star,
@@ -1650,7 +1651,9 @@ __global__ void u_star_2(real rho_f, real nu,
     }
   }
 }
+#endif
 
+#ifndef IMPLICIT
 __global__ void v_star_2(real rho_f, real nu,
   real *u0, real *v0, real *w0, real *p, real *f,
   real *diff0, real *conv0, real *diff, real *conv, real *v_star,
@@ -1808,7 +1811,9 @@ __global__ void v_star_2(real rho_f, real nu,
     }
   }
 }
+#endif
 
+#ifndef IMPLICIT
 __global__ void w_star_2(real rho_f, real nu,
   real *u0, real *v0, real *w0, real *p, real *f,
   real *diff0, real *conv0, real *diff, real *conv, real *w_star,
@@ -1966,6 +1971,7 @@ __global__ void w_star_2(real rho_f, real nu,
     }
   }
 }
+#endif
 
 __global__ void forcing_reset_x(real *fx, dom_struct *dom)
 {
@@ -2216,12 +2222,26 @@ __global__ void move_parts_a(dom_struct *dom, part_struct *parts, int nparts,
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.z;
 
       // update linear velocities
-      parts[pp].u = parts[pp].u0 + parts[pp].udot * dt;
-      parts[pp].v = parts[pp].v0 + parts[pp].vdot * dt;
-      parts[pp].w = parts[pp].w0 + parts[pp].wdot * dt;
+      parts[pp].u = parts[pp].u0 + 0.5*(parts[pp].udot+parts[pp].udot0) * dt;
+      parts[pp].v = parts[pp].v0 + 0.5*(parts[pp].vdot+parts[pp].vdot0) * dt;
+      parts[pp].w = parts[pp].w0 + 0.5*(parts[pp].wdot+parts[pp].wdot0) * dt;
 
       // do not update position
     }
+/* Not necessary (actually: breaks things)
+    if(parts[pp].rotating) {
+      // update angular accelerations
+      real I = 0.4 * m * parts[pp].r*parts[pp].r;
+      parts[pp].oxdot = (parts[pp].Lx + parts[pp].iLx + parts[pp].aLx) / I;
+      parts[pp].oydot = (parts[pp].Ly + parts[pp].iLy + parts[pp].aLy) / I;
+      parts[pp].ozdot = (parts[pp].Lz + parts[pp].iLz + parts[pp].aLz) / I;
+
+      // update angular velocities
+      parts[pp].ox = parts[pp].ox0 + 0.5*(parts[pp].oxdot+parts[pp].oxdot0)*dt;
+      parts[pp].oy = parts[pp].oy0 + 0.5*(parts[pp].oydot+parts[pp].oydot0)*dt;
+      parts[pp].oz = parts[pp].oz0 + 0.5*(parts[pp].ozdot+parts[pp].ozdot0)*dt;
+    }
+*/
   }
 }
 
@@ -2245,9 +2265,9 @@ __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.z;
 
       // update linear velocities
-      parts[pp].u = parts[pp].u0 + parts[pp].udot * dt;
-      parts[pp].v = parts[pp].v0 + parts[pp].vdot * dt;
-      parts[pp].w = parts[pp].w0 + parts[pp].wdot * dt;
+      parts[pp].u = parts[pp].u0 + 0.5*(parts[pp].udot+parts[pp].udot0) * dt;
+      parts[pp].v = parts[pp].v0 + 0.5*(parts[pp].vdot+parts[pp].vdot0) * dt;
+      parts[pp].w = parts[pp].w0 + 0.5*(parts[pp].wdot+parts[pp].wdot0) * dt;
 
       // update position (trapezoidal rule)
       parts[pp].x = parts[pp].x + 0.5*(parts[pp].u+parts[pp].u0)*dt;
@@ -2266,7 +2286,9 @@ __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
       parts[pp].u0 = parts[pp].u;
       parts[pp].v0 = parts[pp].v;
       parts[pp].w0 = parts[pp].w;
-
+      parts[pp].udot0 = parts[pp].udot;
+      parts[pp].vdot0 = parts[pp].vdot;
+      parts[pp].wdot0 = parts[pp].wdot;
     }
     if(parts[pp].rotating) {
       // update angular accelerations
@@ -2276,9 +2298,9 @@ __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
       parts[pp].ozdot = (parts[pp].Lz + parts[pp].iLz + parts[pp].aLz) / I;
 
       // update angular velocities
-      parts[pp].ox = parts[pp].ox0 + parts[pp].oxdot * dt;
-      parts[pp].oy = parts[pp].oy0 + parts[pp].oydot * dt;
-      parts[pp].oz = parts[pp].oz0 + parts[pp].ozdot * dt;
+      parts[pp].ox = parts[pp].ox0 + 0.5*(parts[pp].oxdot+parts[pp].oxdot0)*dt;
+      parts[pp].oy = parts[pp].oy0 + 0.5*(parts[pp].oydot+parts[pp].oydot0)*dt;
+      parts[pp].oz = parts[pp].oz0 + 0.5*(parts[pp].ozdot+parts[pp].ozdot0)*dt;
 
       /* update basis vectors */
       // calculate rotation magnitude (trapezoidal rule)
@@ -2310,6 +2332,9 @@ __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
       parts[pp].ox0 = parts[pp].ox;
       parts[pp].oy0 = parts[pp].oy;
       parts[pp].oz0 = parts[pp].oz;
+      parts[pp].oxdot0 = parts[pp].oxdot;
+      parts[pp].oydot0 = parts[pp].oydot;
+      parts[pp].ozdot0 = parts[pp].ozdot;
     }
   }
 }
@@ -2359,7 +2384,7 @@ __global__ void collision_parts(part_struct *parts, int i,
       real ai = parts[i].r;
       real aj = parts[j].r;
       real B = aj / ai;
-      real hN = 2.*(parts[i].rs - parts[i].r + parts[j].rs - parts[j].r);
+      real hN = 4.*(parts[i].rs - parts[i].r + parts[j].rs - parts[j].r);
 
       real ux, uy, uz;
       real rx, rx1, rx2, ry, ry1, ry2, rz, rz1, rz2, r;
@@ -2574,7 +2599,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
     real ai = parts[i].r;
     real h = 0;
-    real hN = 2.*(parts[i].rs - parts[i].r);
+    real hN = 4.*(parts[i].rs - parts[i].r);
     real ah, lnah;
 
     real Fnx, Fny, Fnz, Ftx, Fty, Ftz;
@@ -2960,9 +2985,15 @@ __global__ void spring_parts(part_struct *parts, int nparts)
     //real dy = parts[i].y-parts[i].spring_y;
     //real dz = parts[i].z-parts[i].spring_z;
 
-    parts[i].kFx = - parts[i].spring_k * dx;
-    parts[i].kFy = - parts[i].spring_k * dy;
-    parts[i].kFz = - parts[i].spring_k * dz;
+    if(dx > 0.) {
+      parts[i].kFx = - parts[i].spring_k * dx;
+      parts[i].kFy = - parts[i].spring_k * dy;
+      parts[i].kFz = - parts[i].spring_k * dz;
+    } else {
+      parts[i].kFx = 0.;
+      parts[i].kFy = 0.;
+      parts[i].kFz = 0.;
+    }
   }
 }
 

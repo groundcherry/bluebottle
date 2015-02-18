@@ -154,9 +154,11 @@ void cuda_U_star_test_exp(void)
   printf("done.\n");
 
   // call code to test
+#ifdef EXPLICIT
   printf("  Running cuda_U_star_2()...");
   cuda_U_star_2();
   printf("done.\n");
+#endif
 
   // pull fields back to host
   printf("  Pulling fields back to host...");
@@ -298,8 +300,10 @@ printf("dt = %f, dt0 = %f\n", dt, dt0);
           + 2.*PI*sin(x)*cos(x)
           *(sin(y)*sin(y)-cos(y)*cos(y));
         conv0_u[C] *= exp(16.*PI*PI*1.0*dt);
+#ifdef EXPLICIT
         diff0_u[C] = -8.*PI*PI*nu*cos(x)*sin(y);
         diff0_u[C] *= exp(16.*PI*PI*1.0*dt);
+#endif
       }
     }
   }
@@ -327,8 +331,10 @@ printf("dt = %f, dt0 = %f\n", dt, dt0);
           + 2.*PI*sin(y)*cos(y)
           *(sin(x)*sin(x)-cos(x)*cos(x));
         conv0_v[C] *= exp(16.*PI*PI*1.0*dt);
+#ifdef EXPLICIT
         diff0_v[C] = 8.*PI*PI*nu*sin(x)*cos(y);
         diff0_v[C] *= exp(16.*PI*PI*1.0*dt);
+#endif
       }
     }
   }
@@ -411,9 +417,11 @@ printf("dt = %f, dt0 = %f\n", dt, dt0);
   printf("done.\n");
 
   // call code to test
+#ifdef EXPLICIT
   printf("  Running cuda_U_star_2()...");
   cuda_U_star_2();
   printf("done.\n");
+#endif
 
   // pull fields back to host
   printf("  Pulling fields back to host...");
@@ -1375,10 +1383,12 @@ void cuda_project_test(void)
   printf("done.\n");
 
   // call code to test
+#ifdef EXPLICIT
   printf("  Running cuda_U_star_2()...");
   cuda_U_star_2();
   cuda_project();
   printf("done.\n");
+#endif
 
   // pull fields back to host
   printf("  Pulling fields back to host...");

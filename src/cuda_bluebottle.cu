@@ -58,12 +58,14 @@ void cuda_dom_malloc(void)
   cpumem += nsubdom * sizeof(real*);
   _f_z = (real**) malloc(nsubdom * sizeof(real*));
   cpumem += nsubdom * sizeof(real*);
+#ifndef IMPLICIT
   _diff0_u = (real**) malloc(nsubdom * sizeof(real*));
   cpumem += nsubdom * sizeof(real*);
   _diff0_v = (real**) malloc(nsubdom * sizeof(real*));
   cpumem += nsubdom * sizeof(real*);
   _diff0_w = (real**) malloc(nsubdom * sizeof(real*));
   cpumem += nsubdom * sizeof(real*);
+#endif
   _conv0_u = (real**) malloc(nsubdom * sizeof(real*));
   cpumem += nsubdom * sizeof(real*);
   _conv0_v = (real**) malloc(nsubdom * sizeof(real*));
@@ -162,6 +164,7 @@ void cuda_dom_malloc(void)
       sizeof(real) * dom[dev].Gfz.s3b));
     gpumem += dom[dev].Gfz.s3b * sizeof(real);
     
+#ifndef IMPLICIT
     checkCudaErrors(cudaMalloc((void**) &(_diff0_u[dev]),
       sizeof(real) * dom[dev].Gfx.s3b));
     gpumem += dom[dev].Gfx.s3b * sizeof(real);
@@ -171,6 +174,7 @@ void cuda_dom_malloc(void)
     checkCudaErrors(cudaMalloc((void**) &(_diff0_w[dev]),
       sizeof(real) * dom[dev].Gfz.s3b));
     gpumem += dom[dev].Gfz.s3b * sizeof(real);
+#endif
     checkCudaErrors(cudaMalloc((void**) &(_conv0_u[dev]),
       sizeof(real) * dom[dev].Gfx.s3b));
     gpumem += dom[dev].Gfx.s3b * sizeof(real);
@@ -284,12 +288,14 @@ void cuda_dom_push(void)
     // cpumem += dom[dev].Gfy.s3b * sizeof(real);
     real *ww_star = (real*) malloc(dom[dev].Gfz.s3b * sizeof(real));
     // cpumem += dom[dev].Gfz.s3b * sizeof(real);
+#ifndef IMPLICIT
     real *diff0_uu = (real*) malloc(dom[dev].Gfx.s3b * sizeof(real));
     // cpumem += dom[dev].Gfx.s3b * sizeof(real);
     real *diff0_vv = (real*) malloc(dom[dev].Gfy.s3b * sizeof(real));
     // cpumem += dom[dev].Gfy.s3b * sizeof(real);
     real *diff0_ww = (real*) malloc(dom[dev].Gfz.s3b * sizeof(real));
     // cpumem += dom[dev].Gfz.s3b * sizeof(real);
+#endif
     real *conv0_uu = (real*) malloc(dom[dev].Gfx.s3b * sizeof(real));
     // cpumem += dom[dev].Gfx.s3b * sizeof(real);
     real *conv0_vv = (real*) malloc(dom[dev].Gfy.s3b * sizeof(real));
@@ -337,7 +343,9 @@ void cuda_dom_push(void)
           uu[CC] = u[C];
           uu0[CC] = u0[C];
           uu_star[CC] = u_star[C];
+#ifndef IMPLICIT
           diff0_uu[CC] = diff0_u[C];
+#endif
           conv0_uu[CC] = conv0_u[C];
           diff_uu[CC] = diff_u[C];
           conv_uu[CC] = conv_u[C];
@@ -356,7 +364,9 @@ void cuda_dom_push(void)
           vv[CC] = v[C];
           vv0[CC] = v0[C];
           vv_star[CC] = v_star[C];
+#ifndef IMPLICIT
           diff0_vv[CC] = diff0_v[C];
+#endif
           conv0_vv[CC] = conv0_v[C];
           diff_vv[CC] = diff_v[C];
           conv_vv[CC] = conv_v[C];
@@ -375,7 +385,9 @@ void cuda_dom_push(void)
           ww[CC] = w[C];
           ww0[CC] = w0[C];
           ww_star[CC] = w_star[C];
+#ifndef IMPLICIT
           diff0_ww[CC] = diff0_w[C];
+#endif
           conv0_ww[CC] = conv0_w[C];
           diff_ww[CC] = diff_w[C];
           conv_ww[CC] = conv_w[C];
@@ -408,12 +420,14 @@ void cuda_dom_push(void)
       sizeof(real) * dom[dev].Gfy.s3b, cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(_w_star[dev], ww_star,
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyHostToDevice));
+#ifndef IMPLICIT
     checkCudaErrors(cudaMemcpy(_diff0_u[dev], diff0_uu,
       sizeof(real) * dom[dev].Gfx.s3b, cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(_diff0_v[dev], diff0_vv,
       sizeof(real) * dom[dev].Gfy.s3b, cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(_diff0_w[dev], diff0_ww,
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyHostToDevice));
+#endif
     checkCudaErrors(cudaMemcpy(_conv0_u[dev], conv0_uu,
       sizeof(real) * dom[dev].Gfx.s3b, cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(_conv0_v[dev], conv0_vv,
@@ -446,9 +460,11 @@ void cuda_dom_push(void)
     free(uu_star);
     free(vv_star);
     free(ww_star);
+#ifndef IMPLICIT
     free(diff0_uu);
     free(diff0_vv);
     free(diff0_ww);
+#endif
     free(conv0_uu);
     free(conv0_vv);
     free(conv0_ww);
@@ -771,12 +787,14 @@ void cuda_dom_pull(void)
       cudaMemcpyDeviceToHost)); 
     checkCudaErrors(cudaMemcpy(ww0, _w0[dev], sizeof(real) * dom[dev].Gfz.s3b,
       cudaMemcpyDeviceToHost)); 
+#ifndef IMPLICIT
     checkCudaErrors(cudaMemcpy(diffuu0, _diff0_u[dev],
       sizeof(real) * dom[dev].Gfx.s3b, cudaMemcpyDeviceToHost));
     checkCudaErrors(cudaMemcpy(diffvv0, _diff0_v[dev],
       sizeof(real) * dom[dev].Gfy.s3b, cudaMemcpyDeviceToHost));
     checkCudaErrors(cudaMemcpy(diffww0, _diff0_w[dev],
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyDeviceToHost));
+#endif
     checkCudaErrors(cudaMemcpy(convuu0, _conv0_u[dev],
       sizeof(real) * dom[dev].Gfx.s3b, cudaMemcpyDeviceToHost));
     checkCudaErrors(cudaMemcpy(convvv0, _conv0_v[dev],
@@ -979,7 +997,9 @@ void cuda_dom_pull(void)
           kk = k - dom[dev].Gfx.ksb;
           C = i + j * Dom.Gfx.s1b + k * Dom.Gfx.s2b;
           CC = ii + jj * dom[dev].Gfx.s1b + kk * dom[dev].Gfx.s2b;
+#ifndef IMPLICIT
           diff0_u[C] = diffuu0[CC];
+#endif
           conv0_u[C] = convuu0[CC];
           diff_u[C] = diffuu[CC];
           conv_u[C] = convuu[CC];
@@ -995,7 +1015,9 @@ void cuda_dom_pull(void)
           kk = k - dom[dev].Gfy.ksb;
           C = i + j * Dom.Gfy.s1b + k * Dom.Gfy.s2b;
           CC = ii + jj * dom[dev].Gfy.s1b + kk * dom[dev].Gfy.s2b;
+#ifndef IMPLICIT
           diff0_v[C] = diffvv0[CC];
+#endif
           conv0_v[C] = convvv0[CC];
           diff_v[C] = diffvv[CC];
           conv_v[C] = convvv[CC];
@@ -1011,7 +1033,9 @@ void cuda_dom_pull(void)
           kk = k - dom[dev].Gfz.ksb;
           C = i + j * Dom.Gfz.s1b + k * Dom.Gfz.s2b;
           CC = ii + jj * dom[dev].Gfz.s1b + kk * dom[dev].Gfz.s2b;
+#ifndef IMPLICIT
           diff0_w[C] = diffww0[CC];
+#endif
           conv0_w[C] = convww0[CC];
           diff_w[C] = diffww[CC];
           conv_w[C] = convww[CC];
@@ -1302,9 +1326,11 @@ void cuda_dom_free(void)
     checkCudaErrors(cudaFree(_f_x[dev]));
     checkCudaErrors(cudaFree(_f_y[dev]));
     checkCudaErrors(cudaFree(_f_z[dev]));
+#ifndef IMPLICIT
     checkCudaErrors(cudaFree(_diff0_u[dev]));
     checkCudaErrors(cudaFree(_diff0_v[dev]));
     checkCudaErrors(cudaFree(_diff0_w[dev]));
+#endif
     checkCudaErrors(cudaFree(_conv0_u[dev]));
     checkCudaErrors(cudaFree(_conv0_v[dev]));
     checkCudaErrors(cudaFree(_conv0_w[dev]));
@@ -1343,9 +1369,11 @@ void cuda_dom_free(void)
   free(_f_x);
   free(_f_y);
   free(_f_z);
+#ifndef IMPLICIT
   free(_diff0_u);
   free(_diff0_v);
   free(_diff0_w);
+#endif
   free(_conv0_u);
   free(_conv0_v);
   free(_conv0_w);
@@ -2750,6 +2778,7 @@ void cuda_dom_BC_star(void)
   }
 }
 
+#ifndef IMPLICIT
 extern "C"
 void cuda_U_star_2(void)
 {
@@ -2848,6 +2877,7 @@ void cuda_U_star_2(void)
   #endif
   }
 }
+#endif
 
 extern "C"
 void cuda_dom_BC_p(void)
@@ -3141,9 +3171,15 @@ real cuda_find_dt(void)
     real v_max = find_max_mag(dom[dev].Gfy.s3b, _v[dev]);
     real w_max = find_max_mag(dom[dev].Gfz.s3b, _w[dev]);
 
+#ifndef IMPLICIT
     dts[dev] = (u_max + 2. * nu / dom[dev].dx) / dom[dev].dx;
     dts[dev] += (v_max + 2. * nu / dom[dev].dy) / dom[dev].dy;
     dts[dev] += (w_max + 2. * nu / dom[dev].dz) / dom[dev].dz;
+#else
+    dts[dev] = u_max / dom[dev].dx;
+    dts[dev] += v_max / dom[dev].dy;
+    dts[dev] += w_max / dom[dev].dz;
+#endif
     dts[dev] = CFL / dts[dev];
   }
 
@@ -3154,6 +3190,10 @@ real cuda_find_dt(void)
 
   // clean up
   free(dts);
+
+#ifdef IMPLICIT
+  if(min > 1.1*dt) min = 1.1*dt;
+#endif
 
   return min;
 }
@@ -3173,12 +3213,14 @@ void cuda_store_u(void)
       dom[dev].Gfy.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
     checkCudaErrors(cudaMemcpy(_conv0_w[dev], _conv_w[dev],
       dom[dev].Gfz.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
+#ifndef IMPLICIT
     checkCudaErrors(cudaMemcpy(_diff0_u[dev], _diff_u[dev],
       dom[dev].Gfx.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
     checkCudaErrors(cudaMemcpy(_diff0_v[dev], _diff_v[dev],
       dom[dev].Gfy.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
     checkCudaErrors(cudaMemcpy(_diff0_w[dev], _diff_w[dev],
       dom[dev].Gfz.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
+#endif
 
     checkCudaErrors(cudaMemcpy(_p0[dev], _p[dev],
       dom[dev].Gcc.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
@@ -3230,10 +3272,8 @@ void cuda_update_p()
 
     update_p_laplacian<<<numBlocks_p, dimBlocks_p>>>(_Lp, _p[dev], _dom[dev]);
 
-    real dt0tmp = 0.;
-    if(dt0 > 0) dt0tmp = dt0;
     update_p<<<numBlocks_p, dimBlocks_p>>>(_Lp, _p0[dev], _p[dev], _dom[dev],
-      nu, 0.5*(dt+dt0tmp));
+      nu, dt);
 
     // clean up temporary array
     checkCudaErrors(cudaFree(_Lp));

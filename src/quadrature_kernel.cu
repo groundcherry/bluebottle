@@ -202,11 +202,12 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   real pn = p[C+dom->Gcc.s1b];
   real pb = p[C-dom->Gcc.s2b];
   real pt = p[C+dom->Gcc.s2b];
-  real dpdx = 0.5 * (pe - pw) * ddx;
-  real dpdy = 0.5 * (pn - ps) * ddy;
-  real dpdz = 0.5 * (pt - pb) * ddz;
+  real dpdx = (pe - pw) * ddx;
+  real dpdy = (pn - ps) * ddy;
+  real dpdz = (pt - pb) * ddz;
 
-/* WITH NEW FLOW SOLVER, PARTICLES SEEM TO NOT LIKE THIS
+// WITH NEW FLOW SOLVER, PARTICLES SEEM TO NOT LIKE THIS
+/*
   real a = dt0/dt;
   a = (a + 2.)/(a + 1.);
   real pc = p[C]*a + p0[C]*(1.-a);
@@ -216,9 +217,61 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   real pn = p[C+dom->Gcc.s1b]*a + p0[C+dom->Gcc.s1b]*(1.-a);
   real pb = p[C-dom->Gcc.s2b]*a + p0[C-dom->Gcc.s2b]*(1.-a);
   real pt = p[C+dom->Gcc.s2b]*a + p0[C+dom->Gcc.s2b]*(1.-a);
-  real dpdx = 0.5 * (pe - pw) * ddx;
-  real dpdy = 0.5 * (pn - ps) * ddy;
-  real dpdz = 0.5 * (pt - pb) * ddz;
+  real dpdx = (pe - pw) * ddx;
+  real dpdy = (pn - ps) * ddy;
+  real dpdz = (pt - pb) * ddz;
+
+
+  real a = dt0/dt;
+  a = (a + 2.)/(a + 1.);
+  real pc = p[C];
+  real pw = p[C-1];
+  real pe = p[C+1];
+  real ps = p[C-dom->Gcc.s1b];
+  real pn = p[C+dom->Gcc.s1b];
+  real pb = p[C-dom->Gcc.s2b];
+  real pt = p[C+dom->Gcc.s2b];
+  real dpdx = (pe - pw) * ddx;
+  real dpdy = (pn - ps) * ddy;
+  real dpdz = (pt - pb) * ddz;
+
+  pc = p0[C0];
+  pw = p0[C0-1];
+  pe = p0[C0+1];
+  ps = p0[C0-dom->Gcc.s1b];
+  pn = p0[C0+dom->Gcc.s1b];
+  pb = p0[C0-dom->Gcc.s2b];
+  pt = p0[C0+dom->Gcc.s2b];
+  real dpdx0 = (pe - pw) * ddx;
+  real dpdy0 = (pn - ps) * ddy;
+  real dpdz0 = (pt - pb) * ddz;
+
+  real ptmp = pc + dpdx*(x-xx) + dpdy*(y-yy) + dpdz*(z-zz);
+  real ptmp0 = pc + dpdx0*(x-xx0) + dpdy0*(y-yy0) + dpdz0*(z-zz0);
+
+  // switch to particle rest frame
+  real ocrossr2 = (oy*zp - oz*yp) * (oy*zp - oz*yp);
+  ocrossr2 += (ox*zp - oz*xp) * (ox*zp - oz*xp);
+  ocrossr2 += (ox*yp - oy*xp) * (ox*yp - oy*xp);
+  real ocrossr20 = (oy0*zp - oz0*yp) * (oy0*zp - oz0*yp);
+  ocrossr20 += (ox0*zp - oz0*xp) * (ox0*zp - oz0*xp);
+  ocrossr20 += (ox0*yp - oy0*xp) * (ox0*yp - oy0*xp);
+  real rhoV = rho_f;
+  real accdotr = (-gradP.x/rhoV - udot)*xp + (-gradP.y/rhoV - vdot)*yp
+    + (-gradP.z/rhoV - wdot)*zp;
+  real accdotr0 = (-gradP.x/rhoV - udot0)*xp + (-gradP.y/rhoV - vdot0)*yp
+    + (-gradP.z/rhoV - wdot0)*zp;
+
+  ptmp -= 0.5 * rho_f * ocrossr2 + rho_f * accdotr;
+  ptmp0 -= 0.5 * rho_f * ocrossr20 + rho_f * accdotr0;
+
+  // zero if this node intersects another particle
+  pp[node+nnodes*part] = (parts[part].nodes[node]==-1)*(ptmp*a + ptmp0*(1.-a));
+
+
+
+
+
 */
 
   pp[node+nnodes*part] = pc + dpdx*(x-xx) + dpdy*(y-yy) + dpdz*(z-zz);
@@ -251,9 +304,9 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   yy = (j-0.5) * dom->dy + dom->ys;
   zz = (k-0.5) * dom->dz + dom->zs;
   C = i + j*dom->Gfx.s1b + k*dom->Gfx.s2b;
-  real dudx = 0.5 * (u[C+1] - u[C-1]) * ddx;
-  real dudy = 0.5 * (u[C+dom->Gfx.s1b] - u[C-dom->Gfx.s1b]) * ddy;
-  real dudz = 0.5 * (u[C+dom->Gfx.s2b] - u[C-dom->Gfx.s2b]) * ddz;
+  real dudx = (u[C+1] - u[C-1]) * ddx;
+  real dudy = (u[C+dom->Gfx.s1b] - u[C-dom->Gfx.s1b]) * ddy;
+  real dudz = (u[C+dom->Gfx.s2b] - u[C-dom->Gfx.s2b]) * ddz;
   uu = u[C] + dudx * (x - xx) + dudy * (y - yy) + dudz * (z - zz);
   // set uunode equal to interfering particle u-velocity
   uunode = parts[intnode].u;
@@ -296,9 +349,9 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   yy = (j-DOM_BUF) * dom->dy + dom->ys;
   zz = (k-0.5) * dom->dz + dom->zs;
   C = i + j*dom->Gfy.s1b + k*dom->Gfy.s2b;
-  real dvdx = 0.5 * (v[C+1] - v[C-1]) * ddx;
-  real dvdy = 0.5 * (v[C+dom->Gfy.s1b] - v[C-dom->Gfy.s1b]) * ddy;
-  real dvdz = 0.5 * (v[C+dom->Gfy.s2b] - v[C-dom->Gfy.s2b]) * ddz;
+  real dvdx = (v[C+1] - v[C-1]) * ddx;
+  real dvdy = (v[C+dom->Gfy.s1b] - v[C-dom->Gfy.s1b]) * ddy;
+  real dvdz = (v[C+dom->Gfy.s2b] - v[C-dom->Gfy.s2b]) * ddz;
   vv = v[C] + dvdx * (x - xx) + dvdy * (y - yy) + dvdz * (z - zz);
   // set vvnode equal to interfering particle v-velocity
   vvnode = parts[intnode].v;
@@ -337,9 +390,9 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   yy = (j-0.5) * dom->dy + dom->ys;
   zz = (k-DOM_BUF) * dom->dz + dom->zs;
   C = i + j*dom->Gfz.s1b + k*dom->Gfz.s2b;
-  real dwdx = 0.5 * (w[C+1] - w[C-1]) * ddx;
-  real dwdy = 0.5 * (w[C+dom->Gfz.s1b] - w[C-dom->Gfz.s1b]) * ddy;
-  real dwdz = 0.5 * (w[C+dom->Gfz.s2b] - w[C-dom->Gfz.s2b]) * ddz;
+  real dwdx = (w[C+1] - w[C-1]) * ddx;
+  real dwdy = (w[C+dom->Gfz.s1b] - w[C-dom->Gfz.s1b]) * ddy;
+  real dwdz = (w[C+dom->Gfz.s2b] - w[C-dom->Gfz.s2b]) * ddz;
   ww = w[C] + dwdx * (x - xx) + dwdy * (y - yy) + dwdz * (z - zz);
   // set wwnode equal to interfering particle w-velocity
   wwnode = parts[intnode].w;
@@ -619,11 +672,11 @@ __global__ void cuda_calc_forces(dom_struct *dom, part_struct *parts,
       + PI * mu * nu * N10 * (pnm_re[stride*pp + 1]
       + 6.*phinm_re[stride*pp + 1]);
 
-    parts[pp].Lx = rho_f * vol * parts[pp].r*parts[pp].r * parts[pp].oxdot
+    parts[pp].Lx = 0.4 * rho_f * vol * parts[pp].r*parts[pp].r * parts[pp].oxdot
       - 8. * PI * mu * nu * 2.*N11 * parts[pp].r * chinm_re[stride*pp + 2];
-    parts[pp].Ly = rho_f * vol * parts[pp].r*parts[pp].r * parts[pp].oydot
+    parts[pp].Ly = 0.4 * rho_f * vol * parts[pp].r*parts[pp].r * parts[pp].oydot
       + 8. * PI * mu * nu * 2.*N11 * parts[pp].r * chinm_im[stride*pp + 2];
-    parts[pp].Lz = rho_f * vol * parts[pp].r*parts[pp].r * parts[pp].ozdot
+    parts[pp].Lz = 0.4 * rho_f * vol * parts[pp].r*parts[pp].r * parts[pp].ozdot
       + 8. * PI * mu * nu * N10 * parts[pp].r * chinm_re[stride*pp + 1];
   }
 }

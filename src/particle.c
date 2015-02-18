@@ -191,7 +191,7 @@ void parts_show_config(void)
     printf("    E = %e\n", parts[i].E);
     printf("    sigma = %e\n", parts[i].sigma);
     printf("    order = %d\n", parts[i].order);
-    //printf("    rs = %e\n", parts[i].rs);
+    printf("    rs = %e\n", parts[i].rs);
     printf("    spring_k = %f\n", parts[i].spring_k);
     printf("    spring (x, y, z) = (%e %e %e)\n", parts[i].spring_x,
       parts[i].spring_y, parts[i].spring_z);
@@ -238,6 +238,11 @@ int parts_init(void)
       parts[i].ncoeff += j + 1;
     }
 
+    // initialize previous position
+    parts[i].x0 = parts[i].x;
+    parts[i].y0 = parts[i].y;
+    parts[i].z0 = parts[i].z;
+
     // initialize velocity and acceleration to zero (default: QUIESCENT)
     parts[i].u = 0.;
     parts[i].v = 0.;
@@ -248,6 +253,9 @@ int parts_init(void)
     parts[i].udot = 0.;
     parts[i].vdot = 0.;
     parts[i].wdot = 0.;
+    parts[i].udot0 = 0.;
+    parts[i].vdot0 = 0.;
+    parts[i].wdot0 = 0.;
     /* set initial position of particle reference basis to match the global
      * domain basis */
     parts[i].axx = 1.;
@@ -268,6 +276,9 @@ int parts_init(void)
     parts[i].oxdot = 0.;
     parts[i].oydot = 0.;
     parts[i].ozdot = 0.;
+    parts[i].oxdot0 = 0.;
+    parts[i].oydot0 = 0.;
+    parts[i].ozdot0 = 0.;
 
     if(init_cond == SHEAR) {
       // initialize SHEAR flow
@@ -282,6 +293,11 @@ int parts_init(void)
         parts[i].w = (bc.wEDm-bc.wWDm)*(parts[i].x-Dom.xs)/Dom.xl + bc.wWDm;
         parts[i].w += (bc.wNDm-bc.wSDm)*(parts[i].y-Dom.ys)/Dom.yl + bc.wSDm;
         parts[i].w0 = parts[i].w;
+
+        // initialize previous position
+        parts[i].x0 = parts[i].x - dt * parts[i].u;
+        parts[i].y0 = parts[i].y - dt * parts[i].v;
+        parts[i].z0 = parts[i].z - dt * parts[i].w;
       }
       if(parts[i].rotating) { // if rotating
         // set angular velocity according to (one-half of) the shear rate
@@ -291,6 +307,12 @@ int parts_init(void)
         parts[i].oy += 0.5*(bc.wEDm-bc.wWDm)/Dom.xl;
         parts[i].oz = 0.5*(bc.uNDm-bc.uSDm)/Dom.yl;
         parts[i].oz += 0.5*(bc.vEDm-bc.vWDm)/Dom.xl;
+        parts[i].ox0 = 0.5*(bc.vTDm-bc.vBDm)/Dom.zl;
+        parts[i].ox0 += 0.5*(bc.wNDm-bc.wSDm)/Dom.yl;
+        parts[i].oy0 = 0.5*(bc.uTDm-bc.uBDm)/Dom.zl;
+        parts[i].oy0 += 0.5*(bc.wEDm-bc.wWDm)/Dom.xl;
+        parts[i].oz0 = 0.5*(bc.uNDm-bc.uSDm)/Dom.yl;
+        parts[i].oz0 += 0.5*(bc.vEDm-bc.vWDm)/Dom.xl;
       }
     } else if(init_cond == CHANNEL) {
       // initialize CHANNEL flow
@@ -314,7 +336,14 @@ int parts_init(void)
           + 0.5/mu*gradP.zm*(y*y-(Dom.ys+Dom.ye)*y+Dom.ys*Dom.ye)
           * (bc.wS == DIRICHLET);
         parts[i].w0 = parts[i].w;
+
+        // initialize previous position
+        parts[i].x0 = parts[i].x - dt * parts[i].u;
+        parts[i].y0 = parts[i].y - dt * parts[i].v;
+        parts[i].z0 = parts[i].z - dt * parts[i].w;
       }
+
+
       // initialize no rotation component
     }
 

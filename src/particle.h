@@ -234,6 +234,9 @@ typedef struct part_struct {
   real x;
   real y;
   real z;
+  real x0;
+  real y0;
+  real z0;
   real u;
   real v;
   real w;
@@ -243,6 +246,9 @@ typedef struct part_struct {
   real udot;
   real vdot;
   real wdot;
+  real udot0;
+  real vdot0;
+  real wdot0;
   real axx;
   real axy;
   real axz;
@@ -261,6 +267,9 @@ typedef struct part_struct {
   real oxdot;
   real oydot;
   real ozdot;
+  real oxdot0;
+  real oydot0;
+  real ozdot0;
   real Fx;
   real Fy;
   real Fz;
@@ -306,6 +315,9 @@ typedef struct part_struct {
  *  * x -- the particle location component
  *  * y -- the particle location component
  *  * z -- the particle location component
+ *  * x0 -- the particle location component (previous timestep)
+ *  * y0 -- the particle location component (previous timestep)
+ *  * z0 -- the particle location component (previous timestep)
  *  * u -- linear velocity in x-direction
  *  * v -- linear velocity in y-direction
  *  * w -- linear velocity in z-direction

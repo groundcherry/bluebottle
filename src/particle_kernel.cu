@@ -1143,7 +1143,7 @@ __global__ void part_BC_w(real *w, int *phase, int *flag_w,
 
 __global__ void part_BC_p(real *p, real *p_rhs, int *phase, int *phase_shell,
   part_struct *parts, dom_struct *dom,
-  real mu, real nu, real dt, gradP_struct gradP, real rho_f, int stride,
+  real mu, real nu, real dt, real dt0, gradP_struct gradP, real rho_f, int stride,
   real *pnm_re00, real *pnm_im00, real *phinm_re00, real *phinm_im00,
   real *chinm_re00, real *chinm_im00,
   real *pnm_re, real *pnm_im, real *phinm_re, real *phinm_im,
@@ -1235,8 +1235,9 @@ __global__ void part_BC_p(real *p, real *p_rhs, int *phase, int *phase_shell,
       pp_tmp00 += 0.5 * rho_f * ocrossr2 + rho_f * accdotr;
       // write BC if flagged, otherwise leave alone
       p_rhs[C] = (real) phase_shell[CC] * p_rhs[C]
-        + (real) (1 - phase_shell[CC]) * ((0.5*(pp_tmp + pp_tmp00)-p[CC])
-        + 0.5*nu*dt*p_rhs[C]);
+        + (real) (1 - phase_shell[CC])
+        //* ((pp_tmp*(dt/(dt+dt0)) + pp_tmp00*(dt0/(dt+dt0)) - p[CC])
+        * (((pp_tmp) - p[CC]) + 0.5*nu*dt*p_rhs[C]);
 #endif
     }
   }
