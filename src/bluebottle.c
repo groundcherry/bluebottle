@@ -704,20 +704,24 @@ int main(int argc, char *argv[]) {
           // write a restart file and exit when the time is appropriate
           timestepwalltime = time(NULL);
           diffwalltime = difftime(timestepwalltime, startwalltime);
-          if(rec_restart_dt > 0) {
-            if((real)diffwalltime/60. > rec_restart_dt) {
-              printf("  Writing restart file (t = %e)...", ttime);
-              fflush(stdout);
-              cuda_dom_pull();
-              cuda_part_pull();
-              out_restart();
-              printf("done.               \n");
-              fflush(stdout);
-              rec_restart_ttime_out = rec_restart_ttime_out - rec_restart_dt;
-              startwalltime = time(NULL);
-              if(rec_restart_stop)
-                break; // exit!
-            }
+          int rest_com = (rec_restart_dt > 0)
+            && ((real)diffwalltime/60. > rec_restart_dt);
+
+          // communicate write restart with precursor domain
+          expd_comm_restart_write(np, rest_com);
+
+          if(rest_com) {
+            printf("  Writing restart file (t = %e)...", ttime);
+            fflush(stdout);
+            cuda_dom_pull();
+            cuda_part_pull();
+            out_restart();
+            printf("done.               \n");
+            fflush(stdout);
+            rec_restart_ttime_out = rec_restart_ttime_out - rec_restart_dt;
+            startwalltime = time(NULL);
+            if(rec_restart_stop)
+              break; // exit!
           }
 
           // check for blow-up condition
@@ -1007,22 +1011,21 @@ int main(int argc, char *argv[]) {
           rec_precursor_ttime_out = rec_precursor_ttime_out - rec_precursor_dt;
         }
       }
+
       // write a restart file and exit when the time is appropriate
-      timestepwalltime = time(NULL);
-      diffwalltime = difftime(timestepwalltime, startwalltime);
-      if(rec_restart_dt > 0) {
-        if((real)diffwalltime/60. > rec_restart_dt) {
-          printf("  Writing precursor restart file (t = %e)...", ttime);
-          fflush(stdout);
-          cuda_dom_pull();
-          out_restart_turb();
-          printf("done.               \n");
-          fflush(stdout);
-          rec_restart_ttime_out = rec_restart_ttime_out - rec_restart_dt;
-          startwalltime = time(NULL);
-          if(rec_restart_stop)
-            break; // exit!
-        }
+      int rest_com;
+      prec_comm_restart_write(np, &rest_com, rank, status);
+      if(rest_com) {
+        printf("  Writing precursor restart file (t = %e)...", ttime);
+        fflush(stdout);
+        cuda_dom_pull();
+        out_restart_turb();
+        printf("done.               \n");
+        fflush(stdout);
+        rec_restart_ttime_out = rec_restart_ttime_out - rec_restart_dt;
+        startwalltime = time(NULL);
+        if(rec_restart_stop)
+          break; // exit!
       }
     }
 

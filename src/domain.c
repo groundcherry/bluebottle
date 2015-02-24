@@ -3112,6 +3112,9 @@ void out_restart(void)
     fprintf(rest, "%e ", parts[i].x);
     fprintf(rest, "%e ", parts[i].y);
     fprintf(rest, "%e ", parts[i].z);
+    fprintf(rest, "%e ", parts[i].x0);
+    fprintf(rest, "%e ", parts[i].y0);
+    fprintf(rest, "%e ", parts[i].z0);
     fprintf(rest, "%e ", parts[i].u);
     fprintf(rest, "%e ", parts[i].v);
     fprintf(rest, "%e ", parts[i].w);
@@ -3121,6 +3124,9 @@ void out_restart(void)
     fprintf(rest, "%e ", parts[i].udot);
     fprintf(rest, "%e ", parts[i].vdot);
     fprintf(rest, "%e ", parts[i].wdot);
+    fprintf(rest, "%e ", parts[i].udot0);
+    fprintf(rest, "%e ", parts[i].vdot0);
+    fprintf(rest, "%e ", parts[i].wdot0);
     fprintf(rest, "%e ", parts[i].axx);
     fprintf(rest, "%e ", parts[i].axy);
     fprintf(rest, "%e ", parts[i].axz);
@@ -3139,6 +3145,9 @@ void out_restart(void)
     fprintf(rest, "%e ", parts[i].oxdot);
     fprintf(rest, "%e ", parts[i].oydot);
     fprintf(rest, "%e ", parts[i].ozdot);
+    fprintf(rest, "%e ", parts[i].oxdot0);
+    fprintf(rest, "%e ", parts[i].oydot0);
+    fprintf(rest, "%e ", parts[i].ozdot0);
     fprintf(rest, "%e ", parts[i].Fx);
     fprintf(rest, "%e ", parts[i].Fy);
     fprintf(rest, "%e ", parts[i].Fz);
@@ -3446,6 +3455,9 @@ void in_restart(void)
     fret = fscanf(infile, "%le ", &parts[i].x);
     fret = fscanf(infile, "%le ", &parts[i].y);
     fret = fscanf(infile, "%le ", &parts[i].z);
+    fret = fscanf(infile, "%le ", &parts[i].x0);
+    fret = fscanf(infile, "%le ", &parts[i].y0);
+    fret = fscanf(infile, "%le ", &parts[i].z0);
     fret = fscanf(infile, "%le ", &parts[i].u);
     fret = fscanf(infile, "%le ", &parts[i].v);
     fret = fscanf(infile, "%le ", &parts[i].w);
@@ -3455,6 +3467,9 @@ void in_restart(void)
     fret = fscanf(infile, "%le ", &parts[i].udot);
     fret = fscanf(infile, "%le ", &parts[i].vdot);
     fret = fscanf(infile, "%le ", &parts[i].wdot);
+    fret = fscanf(infile, "%le ", &parts[i].udot0);
+    fret = fscanf(infile, "%le ", &parts[i].vdot0);
+    fret = fscanf(infile, "%le ", &parts[i].wdot0);
     fret = fscanf(infile, "%le ", &parts[i].axx);
     fret = fscanf(infile, "%le ", &parts[i].axy);
     fret = fscanf(infile, "%le ", &parts[i].axz);
@@ -3473,6 +3488,9 @@ void in_restart(void)
     fret = fscanf(infile, "%le ", &parts[i].oxdot);
     fret = fscanf(infile, "%le ", &parts[i].oydot);
     fret = fscanf(infile, "%le ", &parts[i].ozdot);
+    fret = fscanf(infile, "%le ", &parts[i].oxdot0);
+    fret = fscanf(infile, "%le ", &parts[i].oydot0);
+    fret = fscanf(infile, "%le ", &parts[i].ozdot0);
     fret = fscanf(infile, "%le ", &parts[i].Fx);
     fret = fscanf(infile, "%le ", &parts[i].Fy);
     fret = fscanf(infile, "%le ", &parts[i].Fz);
@@ -3522,6 +3540,9 @@ void in_restart(void)
     fret = fscanf(infile, "%e ", &parts[i].x);
     fret = fscanf(infile, "%e ", &parts[i].y);
     fret = fscanf(infile, "%e ", &parts[i].z);
+    fret = fscanf(infile, "%e ", &parts[i].x0);
+    fret = fscanf(infile, "%e ", &parts[i].y0);
+    fret = fscanf(infile, "%e ", &parts[i].z0);
     fret = fscanf(infile, "%e ", &parts[i].u);
     fret = fscanf(infile, "%e ", &parts[i].v);
     fret = fscanf(infile, "%e ", &parts[i].w);
@@ -3531,6 +3552,9 @@ void in_restart(void)
     fret = fscanf(infile, "%e ", &parts[i].udot);
     fret = fscanf(infile, "%e ", &parts[i].vdot);
     fret = fscanf(infile, "%e ", &parts[i].wdot);
+    fret = fscanf(infile, "%e ", &parts[i].udot0);
+    fret = fscanf(infile, "%e ", &parts[i].vdot0);
+    fret = fscanf(infile, "%e ", &parts[i].wdot0);
     fret = fscanf(infile, "%e ", &parts[i].axx);
     fret = fscanf(infile, "%e ", &parts[i].axy);
     fret = fscanf(infile, "%e ", &parts[i].axz);
@@ -3549,6 +3573,9 @@ void in_restart(void)
     fret = fscanf(infile, "%e ", &parts[i].oxdot);
     fret = fscanf(infile, "%e ", &parts[i].oydot);
     fret = fscanf(infile, "%e ", &parts[i].ozdot);
+    fret = fscanf(infile, "%e ", &parts[i].oxdot0);
+    fret = fscanf(infile, "%e ", &parts[i].oydot0);
+    fret = fscanf(infile, "%e ", &parts[i].ozdot0);
     fret = fscanf(infile, "%e ", &parts[i].Fx);
     fret = fscanf(infile, "%e ", &parts[i].Fy);
     fret = fscanf(infile, "%e ", &parts[i].Fz);

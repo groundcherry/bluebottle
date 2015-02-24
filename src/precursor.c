@@ -485,3 +485,14 @@ void prec_compare_dt(int np, int rank, MPI_Status status)
     MPI_Recv(&dt, 1, MPI_DOUBLE, MASTER, rank, MPI_COMM_WORLD, &status);
   }
 }
+
+void expd_comm_restart_write(int np, int rest_com) {
+  if(np > 1)
+    MPI_Send(&rest_com, 1, MPI_INT, 1, 1, MPI_COMM_WORLD);
+}
+
+void prec_comm_restart_write(int np, int *rest_com, int rank,
+  MPI_Status status) {
+  if(np > 1)
+    MPI_Recv(rest_com, 1, MPI_INT, MASTER, rank, MPI_COMM_WORLD, &status);
+}

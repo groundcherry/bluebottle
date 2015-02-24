@@ -149,4 +149,37 @@ void prec_compare_dt(int np, int rank, MPI_Status status);
  ******
  */
 
+/****f* precursor/expd_comm_restart_write()
+ * NAME
+ *  expd_comm_restart_write()
+ * TYPE
+ */
+void expd_comm_restart_write(int np, int rest_com);
+/*
+ * FUNCTION
+ *  Send a flag to write a restart file to the turbulent precursor.
+ * ARGUMENTS
+ *  * np -- number of processors
+ *  * rest_com -- boolean-valued restart flag
+ ******
+ */
+
+/****f* precursor/prec_comm_restart_write()
+ * NAME
+ *  prec_comm_restart_write()
+ * TYPE
+ */
+void prec_comm_restart_write(int np, int *rest_com, int rank,
+  MPI_Status status);
+/*
+ * FUNCTION
+ *  Receive a flag to write a restart file to the turbulent precursor.
+ * ARGUMENTS
+ *  * np -- number of processors
+ *  * rest_com -- boolean-valued restart flag
+ *  * rank -- the MPI rank of this process
+ *  * status -- the MPI_Status for MPI_Recv
+ ******
+ */
+
 #endif
