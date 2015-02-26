@@ -202,9 +202,9 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   real pn = p[C+dom->Gcc.s1b];
   real pb = p[C-dom->Gcc.s2b];
   real pt = p[C+dom->Gcc.s2b];
-  real dpdx = (pe - pw) * ddx;
-  real dpdy = (pn - ps) * ddy;
-  real dpdz = (pt - pb) * ddz;
+  real dpdx = 0.5*(pe - pw) * ddx;
+  real dpdy = 0.5*(pn - ps) * ddy;
+  real dpdz = 0.5*(pt - pb) * ddz;
 
 // WITH NEW FLOW SOLVER, PARTICLES SEEM TO NOT LIKE THIS
 /*
@@ -304,9 +304,9 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   yy = (j-0.5) * dom->dy + dom->ys;
   zz = (k-0.5) * dom->dz + dom->zs;
   C = i + j*dom->Gfx.s1b + k*dom->Gfx.s2b;
-  real dudx = (u[C+1] - u[C-1]) * ddx;
-  real dudy = (u[C+dom->Gfx.s1b] - u[C-dom->Gfx.s1b]) * ddy;
-  real dudz = (u[C+dom->Gfx.s2b] - u[C-dom->Gfx.s2b]) * ddz;
+  real dudx = 0.5*(u[C+1] - u[C-1]) * ddx;
+  real dudy = 0.5*(u[C+dom->Gfx.s1b] - u[C-dom->Gfx.s1b]) * ddy;
+  real dudz = 0.5*(u[C+dom->Gfx.s2b] - u[C-dom->Gfx.s2b]) * ddz;
   uu = u[C] + dudx * (x - xx) + dudy * (y - yy) + dudz * (z - zz);
   // set uunode equal to interfering particle u-velocity
   uunode = parts[intnode].u;
@@ -349,9 +349,9 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   yy = (j-DOM_BUF) * dom->dy + dom->ys;
   zz = (k-0.5) * dom->dz + dom->zs;
   C = i + j*dom->Gfy.s1b + k*dom->Gfy.s2b;
-  real dvdx = (v[C+1] - v[C-1]) * ddx;
-  real dvdy = (v[C+dom->Gfy.s1b] - v[C-dom->Gfy.s1b]) * ddy;
-  real dvdz = (v[C+dom->Gfy.s2b] - v[C-dom->Gfy.s2b]) * ddz;
+  real dvdx = 0.5*(v[C+1] - v[C-1]) * ddx;
+  real dvdy = 0.5*(v[C+dom->Gfy.s1b] - v[C-dom->Gfy.s1b]) * ddy;
+  real dvdz = 0.5*(v[C+dom->Gfy.s2b] - v[C-dom->Gfy.s2b]) * ddz;
   vv = v[C] + dvdx * (x - xx) + dvdy * (y - yy) + dvdz * (z - zz);
   // set vvnode equal to interfering particle v-velocity
   vvnode = parts[intnode].v;
@@ -390,9 +390,9 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   yy = (j-0.5) * dom->dy + dom->ys;
   zz = (k-DOM_BUF) * dom->dz + dom->zs;
   C = i + j*dom->Gfz.s1b + k*dom->Gfz.s2b;
-  real dwdx = (w[C+1] - w[C-1]) * ddx;
-  real dwdy = (w[C+dom->Gfz.s1b] - w[C-dom->Gfz.s1b]) * ddy;
-  real dwdz = (w[C+dom->Gfz.s2b] - w[C-dom->Gfz.s2b]) * ddz;
+  real dwdx = 0.5*(w[C+1] - w[C-1]) * ddx;
+  real dwdy = 0.5*(w[C+dom->Gfz.s1b] - w[C-dom->Gfz.s1b]) * ddy;
+  real dwdz = 0.5*(w[C+dom->Gfz.s2b] - w[C-dom->Gfz.s2b]) * ddz;
   ww = w[C] + dwdx * (x - xx) + dwdy * (y - yy) + dwdz * (z - zz);
   // set wwnode equal to interfering particle w-velocity
   wwnode = parts[intnode].w;
