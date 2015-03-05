@@ -1739,7 +1739,7 @@ void cuda_quad_interp_test(void)
 
   // write computed solution
   printf("\n  Writing summarized solution to: out_%d.interp...", rec_paraview_stepnum_out);
-  char path[FILE_NAME_SIZE];
+  char path[FILE_NAME_SIZE] = "";
   sprintf(path, "%s/output/out_%d.interp", ROOT_DIR, rec_paraview_stepnum_out);
   FILE *file = fopen(path, "w");
   if(file == NULL) {

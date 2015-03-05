@@ -38,7 +38,7 @@ void domain_read_input(void)
   gpumem = 0;
 
   // open configuration file for reading
-  char fname[FILE_NAME_SIZE];
+  char fname[FILE_NAME_SIZE] = "";
   sprintf(fname, "%s/input/flow.config", ROOT_DIR);
   FILE *infile = fopen(fname, "r");
   if(infile == NULL) {
@@ -46,7 +46,7 @@ void domain_read_input(void)
     exit(EXIT_FAILURE);
   }
 
-  char buf[CHAR_BUF_SIZE];  // character read buffer
+  char buf[CHAR_BUF_SIZE] = "";  // character read buffer
 
   // read domain
   fret = fscanf(infile, "DOMAIN\n");
@@ -654,7 +654,7 @@ void turb_read_input(void)
   gpumem = 0;
 
   // open configuration file for reading
-  char fname[FILE_NAME_SIZE];
+  char fname[FILE_NAME_SIZE] = "";
   sprintf(fname, "%s/input/turb.config", ROOT_DIR);
   FILE *infile = fopen(fname, "r");
   if(infile == NULL) {
@@ -662,7 +662,7 @@ void turb_read_input(void)
     exit(EXIT_FAILURE);
   }
 
-  char buf[CHAR_BUF_SIZE];  // character read buffer
+  char buf[CHAR_BUF_SIZE] = "";  // character read buffer
 
   // read domain
   fret = fscanf(infile, "DOMAIN\n");
@@ -2973,7 +2973,7 @@ void out_restart(void)
   int i, j, k;  // iterators
 
   // create the file
-  char path[FILE_NAME_SIZE];
+  char path[FILE_NAME_SIZE] = "";
   sprintf(path, "%s/input/restart.config", ROOT_DIR);
   FILE *rest = fopen(path, "w");
   if(rest == NULL) {
@@ -3237,7 +3237,7 @@ void in_restart(void)
   int fret = 0;
   fret = fret; // prevent compiler warning
   // open configuration file for reading
-  char fname[FILE_NAME_SIZE];
+  char fname[FILE_NAME_SIZE] = "";
   sprintf(fname, "%s/input/restart.config", ROOT_DIR);
   FILE *infile = fopen(fname, "r");
   if(infile == NULL) {
@@ -3698,7 +3698,7 @@ void out_restart_turb(void)
   int i, j, k;  // iterators
 
   // create the file
-  char path[FILE_NAME_SIZE];
+  char path[FILE_NAME_SIZE] = "";
   sprintf(path, "%s/input/restart_turb.config", ROOT_DIR);
   FILE *rest = fopen(path, "w");
   if(rest == NULL) {
@@ -3837,7 +3837,7 @@ void in_restart_turb(void)
   int fret = 0;
   fret = fret; // prevent compiler warning
   // open configuration file for reading
-  char fname[FILE_NAME_SIZE];
+  char fname[FILE_NAME_SIZE] = "";
   sprintf(fname, "%s/input/restart_turb.config", ROOT_DIR);
   FILE *infile = fopen(fname, "r");
   if(infile == NULL) {

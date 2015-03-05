@@ -1239,7 +1239,7 @@ __global__ void BC_w_T_T(real *w, dom_struct *dom, real* bc)
 }
 
 __global__ void project_u(real *u_star, real *p, real rho_f, real dt,
-  real *u, dom_struct *dom, real ddx, int *flag_u)
+  real *u, dom_struct *dom, real ddx, int *flag_u, int *phase)
 {
   int tj = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
   int tk = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
@@ -1250,14 +1250,17 @@ __global__ void project_u(real *u_star, real *p, real rho_f, real dt,
         + tk*dom->Gfx._s2b])
         * ddx * (p[i + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b]
         - p[(i-1) + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b]);
-      u[i + tj*dom->Gfx._s1b + tk*dom->Gfx._s2b] = u_star[i + tj*dom->Gfx._s1b
-        + tk*dom->Gfx._s2b] - dt / rho_f * gradPhi;
+      // project velocity and set velocity inside particles equal to zero
+      u[i + tj*dom->Gfx._s1b + tk*dom->Gfx._s2b] = (u_star[i + tj*dom->Gfx._s1b
+        + tk*dom->Gfx._s2b] - dt / rho_f * gradPhi)
+        *((phase[(i-1) + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1)
+        &&(phase[i + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1));
     }
   }
 }
 
 __global__ void project_v(real *v_star, real *p, real rho_f, real dt,
-  real *v, dom_struct *dom, real ddy, int *flag_v)
+  real *v, dom_struct *dom, real ddy, int *flag_v, int *phase)
 {
   int tk = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
   int ti = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
@@ -1268,14 +1271,17 @@ __global__ void project_v(real *v_star, real *p, real rho_f, real dt,
         + tk*dom->Gfy._s2b])
         * ddy * (p[ti + j*dom->Gcc._s1b + tk*dom->Gcc._s2b]
         - p[ti + (j-1)*dom->Gcc._s1b + tk*dom->Gcc._s2b]);
-      v[ti + j*dom->Gfy._s1b + tk*dom->Gfy._s2b] = v_star[ti + j*dom->Gfy._s1b
-        + tk*dom->Gfy._s2b] - dt / rho_f * gradPhi;
+      // project velocity and set velocity inside particles equal to zero
+      v[ti + j*dom->Gfy._s1b + tk*dom->Gfy._s2b] = (v_star[ti + j*dom->Gfy._s1b
+        + tk*dom->Gfy._s2b] - dt / rho_f * gradPhi)
+        *((phase[ti + (j-1)*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1)
+        &&(phase[ti + j*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1));
     }
   }
 }
 
 __global__ void project_w(real *w_star, real *p, real rho_f, real dt,
-  real *w, dom_struct *dom, real ddz, int *flag_w)
+  real *w, dom_struct *dom, real ddz, int *flag_w, int *phase)
 {
   int ti = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
   int tj = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
@@ -1286,8 +1292,11 @@ __global__ void project_w(real *w_star, real *p, real rho_f, real dt,
         + k*dom->Gfz._s2b])
         * ddz * (p[ti + tj*dom->Gcc._s1b + k*dom->Gcc._s2b]
         - p[ti + tj*dom->Gcc._s1b + (k-1)*dom->Gcc._s2b]);
-      w[ti + tj*dom->Gfz._s1b + k*dom->Gfz._s2b] = w_star[ti + tj*dom->Gfz._s1b
-        + k*dom->Gfz._s2b] - dt / rho_f * gradPhi;
+      // project velocity and set velocity inside particles equal to zero
+      w[ti + tj*dom->Gfz._s1b + k*dom->Gfz._s2b] = (w_star[ti + tj*dom->Gfz._s1b
+        + k*dom->Gfz._s2b] - dt / rho_f * gradPhi)
+        *((phase[ti + tj*dom->Gcc._s1b + (k-1)*dom->Gcc._s2b] == -1)
+        &&(phase[ti + tj*dom->Gcc._s1b + k*dom->Gcc._s2b] == -1));
     }
   }
 }

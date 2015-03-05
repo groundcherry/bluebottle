@@ -3109,7 +3109,7 @@ void cuda_project(void)
     dim3 numBlocks_u(blocks_y, blocks_z);
 
     project_u<<<numBlocks_u, dimBlocks_u>>>(_u_star[dev], _p[dev],
-      rho_f, dt, _u[dev], _dom[dev], 1. / dom[dev].dx, _flag_u[dev]);
+      rho_f, dt, _u[dev], _dom[dev], 1. / dom[dev].dx, _flag_u[dev], _phase[dev]);
 
     // solve for v
     if(dom[dev].Gfy._kn < MAX_THREADS_DIM)
@@ -3129,7 +3129,7 @@ void cuda_project(void)
     dim3 numBlocks_v(blocks_z, blocks_x);
 
     project_v<<<numBlocks_v, dimBlocks_v>>>(_v_star[dev], _p[dev],
-      rho_f, dt, _v[dev], _dom[dev], 1. / dom[dev].dy, _flag_v[dev]);
+      rho_f, dt, _v[dev], _dom[dev], 1. / dom[dev].dy, _flag_v[dev], _phase[dev]);
 
     // solve for w
     if(dom[dev].Gfz._in < MAX_THREADS_DIM)
@@ -3149,7 +3149,7 @@ void cuda_project(void)
     dim3 numBlocks_w(blocks_x, blocks_y);
 
     project_w<<<numBlocks_w, dimBlocks_w>>>(_w_star[dev], _p[dev],
-      rho_f, dt, _w[dev], _dom[dev], 1. / dom[dev].dz, _flag_w[dev]);
+      rho_f, dt, _w[dev], _dom[dev], 1. / dom[dev].dz, _flag_w[dev], _phase[dev]);
   }
 }
 

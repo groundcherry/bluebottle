@@ -1356,7 +1356,7 @@ __global__ void BC_w_T_T(real *w, dom_struct *dom, real *bc);
  * USAGE
  */
 __global__ void project_u(real *u_star, real *p, real rho_f, real dt,
-  real *u, dom_struct *dom, real ddx, int *flag_u);
+  real *u, dom_struct *dom, real ddx, int *flag_u, int *phase);
 /*
  * FUNCTION
  *  Project the intermediate velocity u_star onto a divergence-free space via
@@ -1379,7 +1379,7 @@ __global__ void project_u(real *u_star, real *p, real rho_f, real dt,
  * USAGE
  */
 __global__ void project_v(real *v_star, real *p, real rho_f, real dt,
-  real *v, dom_struct *dom, real ddy, int *flag_v);
+  real *v, dom_struct *dom, real ddy, int *flag_v, int *phase);
 /*
  * FUNCTION
  *  Project the intermediate velocity v_star onto a divergence-free space via
@@ -1402,7 +1402,7 @@ __global__ void project_v(real *v_star, real *p, real rho_f, real dt,
  * USAGE
  */
 __global__ void project_w(real *w_star, real *p, real rho_f, real dt,
-  real *w, dom_struct *dom, real ddz, int *flag_w);
+  real *w, dom_struct *dom, real ddz, int *flag_w, int *phase);
 /*
  * FUNCTION
  *  Project the intermediate velocity w_star onto a divergence-free space via

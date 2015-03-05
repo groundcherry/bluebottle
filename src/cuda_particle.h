@@ -72,14 +72,13 @@ __global__ void reset_phase_shell(int *phase_shell, dom_struct *dom);
  *  reset_flag_u<<<>>>()
  * USAGE
  */
-__global__ void reset_flag_u(int *flag_u, dom_struct *dom, BC bc);
+__global__ void reset_flag_u(int *flag_u, dom_struct *dom);
 /*
  * FUNCTION
  *  Set all flag_u nodes to fluid (= 1).
  * ARGUMENTS
  *  * flag_u -- the device x-direction velocity flag array subdomain
  *  * dom -- the device subdomain
- *  * bc -- the boundary conditions
  ******
  */
 
@@ -88,14 +87,13 @@ __global__ void reset_flag_u(int *flag_u, dom_struct *dom, BC bc);
  *  reset_flag_v<<<>>>()
  * USAGE
  */
-__global__ void reset_flag_v(int *flag_v, dom_struct *dom, BC bc);
+__global__ void reset_flag_v(int *flag_v, dom_struct *dom);
 /*
  * FUNCTION
  *  Set all flag_v nodes to fluid (= 1).
  * ARGUMENTS
  *  * flag_v -- the device y-direction velocity flag array subdomain
  *  * dom -- the device subdomain
- *  * bc -- the boundary conditions
  ******
  */
 
@@ -104,14 +102,41 @@ __global__ void reset_flag_v(int *flag_v, dom_struct *dom, BC bc);
  *  reset_flag_w<<<>>>()
  * USAGE
  */
-__global__ void reset_flag_w(int *flag_w, dom_struct *dom, BC bc);
+__global__ void reset_flag_w(int *flag_w, dom_struct *dom);
 /*
  * FUNCTION
  *  Set all flag_w nodes to fluid (= 1).
  * ARGUMENTS
  *  * flag_w -- the device z-direction velocity flag array subdomain
  *  * dom -- the device subdomain
- *  * bc -- the boundary conditions
+ ******
+ */
+
+/****f* cuda_particle_kernel/build_phase<<<>>>()
+ * NAME
+ *  build_phase<<<>>>()
+ * USAGE
+ */
+__global__ void build_phase(int p, part_struct *parts, int *phase,
+  dom_struct *dom, real X, real Y, real Z,
+  int is, int ie, int js, int je, int ks, int ke);
+/*
+ * FUNCTION
+ *  Build the cage for particle p.  Flag the particles in phase.
+ * ARGUMENTS
+ *  * p -- the particle index on which to operate
+ *  * parts -- the device particle array subdomain
+ *  * phase -- the device phase array subdomain
+ *  * dom -- the device subdomain
+ *  * X -- the virtual position of the particle
+ *  * Y -- the virtual position of the particle
+ *  * Z -- the virtual position of the particle
+ *  * is -- start in x-direction
+ *  * ie -- end in x-direction
+ *  * js -- start in y-direction
+ *  * je -- end in y-direction
+ *  * ks -- start in z-direction
+ *  * ke -- end in z-direction
  ******
  */
 
@@ -141,531 +166,343 @@ __global__ void build_cage(int p, part_struct *parts, int *phase,
  ******
  */
 
-/****f* cuda_particle_kernel/cage_phases_periodic_W<<<>>>()
+/****f* cuda_particle_kernel/cage_phases_periodic_x<<<>>>()
  * NAME
- *  cage_phases_periodic_W<<<>>>()
+ *  cage_phases_periodic_x<<<>>>()
  * USAGE
  */
-__global__ void cage_phases_periodic_W(int *phase, int *phase_shell,
-  dom_struct *dom);
+__global__ void cage_phases_periodic_x(int *phase_type, dom_struct *dom);
 /*
  * FUNCTION
- *  Update domain W boundary phase and phase_shell for periodic conditions.
+ *  Update domain boundary phase type for periodic conditions in x
  * ARGUMENTS
- *  * phase -- the device phase array subdomain
- *  * phase_shell -- the device phase_shell array subdomain
+ *  * phase_type -- the device phase array subdomain: phase or phase_shell
  *  * dom -- the device subdomain
  ******
  */
 
-/****f* cuda_particle_kernel/cage_phases_periodic_E<<<>>>()
+/****f* cuda_particle_kernel/cage_phases_periodic_y<<<>>>()
  * NAME
- *  cage_phases_periodic_E<<<>>>()
+ *  cage_phases_periodic_y<<<>>>()
  * USAGE
  */
-__global__ void cage_phases_periodic_E(int *phase, int *phase_shell,
-  dom_struct *dom);
+__global__ void cage_phases_periodic_y(int *phase_type, dom_struct *dom);
 /*
  * FUNCTION
- *  Update domain E boundary phase and phase_shell for periodic conditions.
+ *  Update domain boundary phase type for periodic conditions in y
  * ARGUMENTS
- *  * phase -- the device phase array subdomain
- *  * phase_shell -- the device phase_shell array subdomain
+ *  * phase_type -- the device phase array subdomain: phase or phase_shell
  *  * dom -- the device subdomain
  ******
  */
 
-/****f* cuda_particle_kernel/cage_phases_periodic_S<<<>>>()
+/****f* cuda_particle_kernel/cage_phases_periodic_z<<<>>>()
  * NAME
- *  cage_phases_periodic_S<<<>>>()
+ *  cage_phases_periodic_z<<<>>>()
  * USAGE
  */
-__global__ void cage_phases_periodic_S(int *phase, int *phase_shell,
-  dom_struct *dom);
+__global__ void cage_phases_periodic_z(int *phase_type, dom_struct *dom);
 /*
  * FUNCTION
- *  Update domain S boundary phase and phase_shell for periodic conditions.
+ *  Update domain boundary phase type for periodic conditions in z
  * ARGUMENTS
- *  * phase -- the device phase array subdomain
- *  * phase_shell -- the device phase_shell array subdomain
+ *  * phase_type -- the device phase array subdomain: phase or phase_shell
  *  * dom -- the device subdomain
  ******
  */
 
-/****f* cuda_particle_kernel/cage_phases_periodic_N<<<>>>()
+/****f* cuda_particle_kernel/phase_shell_x<<<>>>()
  * NAME
- *  cage_phases_periodic_N<<<>>>()
+ *  phase_shell_x<<<>>>()
  * USAGE
  */
-__global__ void cage_phases_periodic_N(int *phase, int *phase_shell,
-  dom_struct *dom);
+__global__ void phase_shell_x(part_struct *parts,
+  dom_struct *dom, int *phase, int *phase_shell);
 /*
  * FUNCTION
- *  Update domain N boundary phase and phase_shell for periodic conditions.
+ *  Flag the boundaries of the particle for the x-direction
  * ARGUMENTS
- *  * phase -- the device phase array subdomain
- *  * phase_shell -- the device phase_shell array subdomain
+ *  * parts -- the device particle array subdomain
  *  * dom -- the device subdomain
+ *  * phase -- the phase array
  ******
  */
 
-/****f* cuda_particle_kernel/cage_phases_periodic_B<<<>>>()
+/****f* cuda_particle_kernel/phase_shell_y<<<>>>()
  * NAME
- *  cage_phases_periodic_B<<<>>>()
+ *  phase_shell_y<<<>>>()
  * USAGE
  */
-__global__ void cage_phases_periodic_B(int *phase, int *phase_shell,
-  dom_struct *dom);
+__global__ void phase_shell_y(part_struct *parts,
+  dom_struct *dom, int *phase, int *phase_shell);
 /*
  * FUNCTION
- *  Update domain B boundary phase and phase_shell for periodic conditions.
+ *  Flag the boundaries of the particle for the y-direction
  * ARGUMENTS
- *  * phase -- the device phase array subdomain
- *  * phase_shell -- the device phase_shell array subdomain
+ *  * parts -- the device particle array subdomain
  *  * dom -- the device subdomain
+ *  * phase -- the phase array
  ******
  */
 
-/****f* cuda_particle_kernel/cage_phases_periodic_T<<<>>>()
+/****f* cuda_particle_kernel/phase_shell_z<<<>>>()
  * NAME
- *  cage_phases_periodic_T<<<>>>()
+ *  phase_shell_z<<<>>>()
  * USAGE
  */
-__global__ void cage_phases_periodic_T(int *phase, int *phase_shell,
-  dom_struct *dom);
+__global__ void phase_shell_z(part_struct *parts,
+  dom_struct *dom, int *phase, int *phase_shell);
 /*
  * FUNCTION
- *  Update domain T boundary phase and phase_shell for periodic conditions.
- * ARGUMENTS
- *  * phase -- the device phase array subdomain
- *  * phase_shell -- the device phase_shell array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_u_1<<<>>>()
- * NAME
- *  cage_flag_u_1<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_u_1(int p, int *flag_u, part_struct *parts,
-  dom_struct *dom, int *phase, int *phase_shell,
-  int js, int je, int ks, int ke);
-/*
- * FUNCTION
- *  Flag the boundaries of the particle for the x-direction velocity. Step 1:
+ *  Flag the boundaries of the particle for the z-direction 
  *  flag outer cage nodes in each direction.
  * ARGUMENTS
- *  * p -- the particle index on which to operate
+ *  * parts -- the device particle array subdomain
+ *  * dom -- the device subdomain
+ *  * phase -- the phase array
+ ******
+ */
+
+/****f* cuda_particle_kernel/cage_flag_u_periodic_x<<<>>>()
+ * NAME
+ *  cage_flag_u_periodic_x<<<>>>()
+ * USAGE
+ */
+__global__ void cage_flag_u_periodic_x(int *flag_u, dom_struct *dom);
+/*
+ * FUNCTION
+ *  Update domain boundary flag_u for periodic conditions in x
+ * ARGUMENTS
+ *  * flag_u -- the device flag array subdomain
+ *  * dom -- the device subdomain
+ ******
+ */
+
+/****f* cuda_particle_kernel/cage_flag_u_periodic_y<<<>>>()
+ * NAME
+ *  cage_flag_u_periodic_y<<<>>>()
+ * USAGE
+ */
+__global__ void cage_flag_u_periodic_y(int *flag_u, dom_struct *dom);
+/*
+ * FUNCTION
+ *  Update domain boundary flag_u for periodic conditions in y
+ * ARGUMENTS
+ *  * flag_u -- the device flag array subdomain
+ *  * dom -- the device subdomain
+ ******
+ */
+
+/****f* cuda_particle_kernel/cage_flag_u_periodic_z<<<>>>()
+ * NAME
+ *  cage_flag_u_periodic_z<<<>>>()
+ * USAGE
+ */
+__global__ void cage_flag_u_periodic_z(int *flag_u, dom_struct *dom);
+/*
+ * FUNCTION
+ *  Update domain boundary flag_u for periodic conditions in z
+ * ARGUMENTS
+ *  * flag_u -- the device flag array subdomain
+ *  * dom -- the device subdomain
+ ******
+ */
+
+/****f* cuda_particle_kernel/cage_flag_v_periodic_x<<<>>>()
+ * NAME
+ *  cage_flag_v_periodic_x<<<>>>()
+ * USAGE
+ */
+__global__ void cage_flag_v_periodic_x(int *flag_v, dom_struct *dom);
+/*
+ * FUNCTION
+ *  Update domain boundary flag_v for periodic conditions in x
+ * ARGUMENTS
+ *  * flag_v -- the device flag array subdomain
+ *  * dom -- the device subdomain
+ ******
+ */
+
+/****f* cuda_particle_kernel/cage_flag_v_periodic_y<<<>>>()
+ * NAME
+ *  cage_flag_v_periodic_y<<<>>>()
+ * USAGE
+ */
+__global__ void cage_flag_v_periodic_y(int *flag_v, dom_struct *dom);
+/*
+ * FUNCTION
+ *  Update domain boundary flag_v for periodic conditions in y
+ * ARGUMENTS
+ *  * flag_v -- the device flag array subdomain
+ *  * dom -- the device subdomain
+ ******
+ */
+
+/****f* cuda_particle_kernel/cage_flag_v_periodic_z<<<>>>()
+ * NAME
+ *  cage_flag_v_periodic_z<<<>>>()
+ * USAGE
+ */
+__global__ void cage_flag_v_periodic_z(int *flag_v, dom_struct *dom);
+/*
+ * FUNCTION
+ *  Update domain boundary flag_v for periodic conditions in z
+ * ARGUMENTS
+ *  * flag_v -- the device flag array subdomain
+ *  * dom -- the device subdomain
+ ******
+ */
+
+/****f* cuda_particle_kernel/cage_flag_w_periodic_x<<<>>>()
+ * NAME
+ *  cage_flag_w_periodic_x<<<>>>()
+ * USAGE
+ */
+__global__ void cage_flag_w_periodic_x(int *flag_w, dom_struct *dom);
+/*
+ * FUNCTION
+ *  Update domain boundary flag_w for periodic conditions in x
+ * ARGUMENTS
+ *  * flag_w -- the device flag array subdomain
+ *  * dom -- the device subdomain
+ ******
+ */
+
+/****f* cuda_particle_kernel/cage_flag_w_periodic_y<<<>>>()
+ * NAME
+ *  cage_flag_w_periodic_y<<<>>>()
+ * USAGE
+ */
+__global__ void cage_flag_w_periodic_y(int *flag_w, dom_struct *dom);
+/*
+ * FUNCTION
+ *  Update domain boundary flag_w for periodic conditions in y
+ * ARGUMENTS
+ *  * flag_w -- the device flag array subdomain
+ *  * dom -- the device subdomain
+ ******
+ */
+
+/****f* cuda_particle_kernel/cage_flag_w_periodic_z<<<>>>()
+ * NAME
+ *  cage_flag_w_periodic_z<<<>>>()
+ * USAGE
+ */
+__global__ void cage_flag_w_periodic_z(int *flag_w, dom_struct *dom);
+/*
+ * FUNCTION
+ *  Update domain boundary flag_w for periodic conditions in z
+ * ARGUMENTS
+ *  * flag_w -- the device flag array subdomain
+ *  * dom -- the device subdomain
+ ******
+ */
+
+/****f* cuda_particle_kernel/cage_flag_u<<<>>>()
+ * NAME
+ *  cage_flag_u<<<>>>()
+ * USAGE
+ */
+__global__ void cage_flag_u(int *flag_u, part_struct *parts, dom_struct *dom,
+  int *phase, int *phase_shell);
+/*
+ * FUNCTION
+ *  Flag the boundaries of the particle for the x-direction velocity. 
+ *  If the phase changes
+ *  If the iterator moves from one shell component to another
+ * ARGUMENTS
  *  * flag_u -- the device flag array subdomain
  *  * parts -- the device particle array subdomain
  *  * dom -- the device subdomain
  *  * phase -- the phase array
- *  * js -- start in y-direction
- *  * je -- end in y-direction
- *  * ks -- start in z-direction
- *  * ke -- end in z-direction
+ *  * phase_shell -- the phase shell array
  ******
  */
 
-/****f* cuda_particle_kernel/cage_flag_v_1<<<>>>()
+/****f* cuda_particle_kernel/cage_flag_v<<<>>>()
  * NAME
- *  cage_flag_v_1<<<>>>()
+ *  cage_flag_v<<<>>>()
  * USAGE
  */
-__global__ void cage_flag_v_1(int p, int *flag_v, part_struct *parts,
-  dom_struct *dom, int *phase, int *phase_shell,
-  int is, int ie, int ks, int ke);
+__global__ void cage_flag_v(int *flag_v, part_struct *parts, dom_struct *dom, 
+  int *phase, int *phase_shell);
 /*
  * FUNCTION
- *  Flag the boundaries of the particle for the y-direction velocity. Step 1:
- *  flag outer cage nodes in each direction.
+ *  Flag the boundaries of the particle for the y-direction velocity.
+ *  If the phase changes
+ *  If the iterator moves from one shell component to another
  * ARGUMENTS
- *  * p -- the particle index on which to operate
  *  * flag_v -- the device flag array subdomain
  *  * parts -- the device particle array subdomain
  *  * dom -- the device subdomain
  *  * phase -- the phase array
- *  * is -- start in x-direction
- *  * ie -- end in x-direction
- *  * ks -- start in z-direction
- *  * ke -- end in z-direction
+ *  * phase_shell - the phase shell array
  ******
  */
 
-/****f* cuda_particle_kernel/cage_flag_w_1<<<>>>()
+/****f* cuda_particle_kernel/cage_flag_w<<<>>>()
  * NAME
- *  cage_flag_w_1<<<>>>()
+ *  cage_flag_w<<<>>>()
  * USAGE
  */
-__global__ void cage_flag_w_1(int p, int *flag_w, part_struct *parts,
-  dom_struct *dom, int *phase, int *phase_shell,
-  int is, int ie, int js, int je);
+__global__ void cage_flag_w(int *flag_w, part_struct *parts, dom_struct *dom, 
+  int *phase, int *phase_shell);
 /*
  * FUNCTION
- *  Flag the boundaries of the particle for the z-direction velocity. Step 1:
- *  flag outer cage nodes in each direction.
+ *  Flag the boundaries of the particle for the z-direction velocity.
+ *  If the phase changes
+ *  If the iterator moves from one shell component to another
  * ARGUMENTS
- *  * p -- the particle index on which to operate
  *  * flag_w -- the device flag array subdomain
  *  * parts -- the device particle array subdomain
  *  * dom -- the device subdomain
  *  * phase -- the phase array
- *  * is -- start in x-direction
- *  * ie -- end in x-direction
- *  * js -- start in y-direction
- *  * je -- end in y-direction
+ *  * phase_shell - the phase shell array
  ******
  */
 
-/****f* cuda_particle_kernel/cage_flag_u_periodic_W<<<>>>()
- * NAME
- *  cage_flag_u_periodic_W<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_u_periodic_W(int *flag_u, dom_struct *dom);
+/****f* cuda_particle_kernel/flag_external_u<<<>>>()
+  * NAME
+  *  flag_external_u<<<>>>()
+  * USAGE
+  */
+__global__ void flag_external_u(int *flag_u, dom_struct *dom);
 /*
  * FUNCTION
- *  Update domain W boundary flag_u for periodic conditions.
+ * flags the flag_u based on the bc
  * ARGUMENTS
- *  * flag_u -- the device flag array subdomain
+ *  * flag_u -- the device x-direction velocity flag array subdomain
  *  * dom -- the device subdomain
  ******
  */
 
-/****f* cuda_particle_kernel/cage_flag_u_periodic_E<<<>>>()
- * NAME
- *  cage_flag_u_periodic_E<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_u_periodic_E(int *flag_u, dom_struct *dom);
+/****f* cuda_particle_kernel/flag_external_v<<<>>>()
+  * NAME
+  *  flag_external_v<<<>>>()
+  * USAGE
+  */
+__global__ void flag_external_v(int *flag_v, dom_struct *dom);
 /*
  * FUNCTION
- *  Update domain E boundary flag_u for periodic conditions.
+ * flags the flag_v based on the bc
  * ARGUMENTS
- *  * flag_u -- the device flag array subdomain
+ *  * flag_v -- the device y-direction velocity flag array subdomain
  *  * dom -- the device subdomain
  ******
  */
 
-/****f* cuda_particle_kernel/cage_flag_u_periodic_S<<<>>>()
- * NAME
- *  cage_flag_u_periodic_S<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_u_periodic_S(int *flag_u, dom_struct *dom);
+/****f* cuda_particle_kernel/flag_external_w<<<>>>()
+  * NAME
+  *  flag_external_w<<<>>>()
+  * USAGE
+  */
+__global__ void flag_external_w(int *flag_w, dom_struct *dom);
 /*
  * FUNCTION
- *  Update domain S boundary flag_u for periodic conditions.
+ * flags the flag_w based on the bc
  * ARGUMENTS
- *  * flag_u -- the device flag array subdomain
+ *  * flag_w -- the device x-direction velocity flag array subdomain
  *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_u_periodic_N<<<>>>()
- * NAME
- *  cage_flag_u_periodic_N<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_u_periodic_N(int *flag_u, dom_struct *dom);
-/*
- * FUNCTION
- *  Update domain N boundary flag_u for periodic conditions.
- * ARGUMENTS
- *  * flag_u -- the device flag array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_u_periodic_B<<<>>>()
- * NAME
- *  cage_flag_u_periodic_B<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_u_periodic_B(int *flag_u, dom_struct *dom);
-/*
- * FUNCTION
- *  Update domain B boundary flag_u for periodic conditions.
- * ARGUMENTS
- *  * flag_u -- the device flag array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_u_periodic_T<<<>>>()
- * NAME
- *  cage_flag_u_periodic_T<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_u_periodic_T(int *flag_u, dom_struct *dom);
-/*
- * FUNCTION
- *  Update domain T boundary flag_u for periodic conditions.
- * ARGUMENTS
- *  * flag_u -- the device flag array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_v_periodic_W<<<>>>()
- * NAME
- *  cage_flag_v_periodic_W<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_v_periodic_W(int *flag_v, dom_struct *dom);
-/*
- * FUNCTION
- *  Update domain W boundary flag_v for periodic conditions.
- * ARGUMENTS
- *  * flag_v -- the device flag array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_v_periodic_E<<<>>>()
- * NAME
- *  cage_flag_v_periodic_E<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_v_periodic_E(int *flag_v, dom_struct *dom);
-/*
- * FUNCTION
- *  Update domain E boundary flag_v for periodic conditions.
- * ARGUMENTS
- *  * flag_v -- the device flag array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_v_periodic_S<<<>>>()
- * NAME
- *  cage_flag_v_periodic_S<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_v_periodic_S(int *flag_v, dom_struct *dom);
-/*
- * FUNCTION
- *  Update domain S boundary flag_v for periodic conditions.
- * ARGUMENTS
- *  * flag_v -- the device flag array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_v_periodic_N<<<>>>()
- * NAME
- *  cage_flag_v_periodic_N<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_v_periodic_N(int *flag_v, dom_struct *dom);
-/*
- * FUNCTION
- *  Update domain N boundary flag_v for periodic conditions.
- * ARGUMENTS
- *  * flag_v -- the device flag array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_v_periodic_B<<<>>>()
- * NAME
- *  cage_flag_v_periodic_B<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_v_periodic_B(int *flag_v, dom_struct *dom);
-/*
- * FUNCTION
- *  Update domain B boundary flag_v for periodic conditions.
- * ARGUMENTS
- *  * flag_v -- the device flag array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_v_periodic_T<<<>>>()
- * NAME
- *  cage_flag_v_periodic_T<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_v_periodic_T(int *flag_v, dom_struct *dom);
-/*
- * FUNCTION
- *  Update domain T boundary flag_v for periodic conditions.
- * ARGUMENTS
- *  * flag_v -- the device flag array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_w_periodic_W<<<>>>()
- * NAME
- *  cage_flag_w_periodic_W<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_w_periodic_W(int *flag_w, dom_struct *dom);
-/*
- * FUNCTION
- *  Update domain W boundary flag_w for periodic conditions.
- * ARGUMENTS
- *  * flag_w -- the device flag array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_w_periodic_E<<<>>>()
- * NAME
- *  cage_flag_w_periodic_E<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_w_periodic_E(int *flag_w, dom_struct *dom);
-/*
- * FUNCTION
- *  Update domain E boundary flag_w for periodic conditions.
- * ARGUMENTS
- *  * flag_w -- the device flag array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_w_periodic_S<<<>>>()
- * NAME
- *  cage_flag_w_periodic_S<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_w_periodic_S(int *flag_w, dom_struct *dom);
-/*
- * FUNCTION
- *  Update domain S boundary flag_w for periodic conditions.
- * ARGUMENTS
- *  * flag_w -- the device flag array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_w_periodic_N<<<>>>()
- * NAME
- *  cage_flag_w_periodic_N<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_w_periodic_N(int *flag_w, dom_struct *dom);
-/*
- * FUNCTION
- *  Update domain N boundary flag_w for periodic conditions.
- * ARGUMENTS
- *  * flag_w -- the device flag array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_w_periodic_B<<<>>>()
- * NAME
- *  cage_flag_w_periodic_B<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_w_periodic_B(int *flag_w, dom_struct *dom);
-/*
- * FUNCTION
- *  Update domain B boundary flag_w for periodic conditions.
- * ARGUMENTS
- *  * flag_w -- the device flag array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_w_periodic_T<<<>>>()
- * NAME
- *  cage_flag_w_periodic_T<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_w_periodic_T(int *flag_w, dom_struct *dom);
-/*
- * FUNCTION
- *  Update domain T boundary flag_w for periodic conditions.
- * ARGUMENTS
- *  * flag_w -- the device flag array subdomain
- *  * dom -- the device subdomain
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_u_2<<<>>>()
- * NAME
- *  cage_flag_u_2<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_u_2(int p, int *flag_u, int *flag_v, int *flag_w,
-  part_struct *parts, dom_struct *dom, int *phase,
-  int js, int je, int ks, int ke);
-/*
- * FUNCTION
- *  Flag the boundaries of the particle for the x-direction velocity. Step 2:
- *  if a cage cell has flags in another component, also flag this velocity.
- * ARGUMENTS
- *  * p -- the particle index on which to operate
- *  * flag_u -- the device flag array subdomain
- *  * flag_v -- the device flag array subdomain
- *  * flag_w -- the device flag array subdomain
- *  * parts -- the device particle array subdomain
- *  * dom -- the device subdomain
- *  * phase -- the phase array
- *  * js -- start in y-direction
- *  * je -- end in y-direction
- *  * ks -- start in z-direction
- *  * ke -- end in z-direction
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_v_2<<<>>>()
- * NAME
- *  cage_flag_v_2<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_v_2(int p, int *flag_u, int *flag_v, int *flag_w,
-  part_struct *parts, dom_struct *dom, int *phase,
-  int is, int ie, int ks, int ke);
-/*
- * FUNCTION
- *  Flag the boundaries of the particle for the y-direction velocity. Step 2:
- *  if a cage cell has flags in another component, also flag this velocity.
- * ARGUMENTS
- *  * p -- the particle index on which to operate
- *  * flag_u -- the device flag array subdomain
- *  * flag_v -- the device flag array subdomain
- *  * flag_w -- the device flag array subdomain
- *  * parts -- the device particle array subdomain
- *  * dom -- the device subdomain
- *  * phase -- the phase array
- *  * is -- start in x-direction
- *  * ie -- end in x-direction
- *  * ks -- start in z-direction
- *  * ke -- end in z-direction
- ******
- */
-
-/****f* cuda_particle_kernel/cage_flag_w_2<<<>>>()
- * NAME
- *  cage_flag_w_2<<<>>>()
- * USAGE
- */
-__global__ void cage_flag_w_2(int p, int *flag_u, int *flag_v, int *flag_w,
-  part_struct *parts, dom_struct *dom, int *phase,
-  int is, int ie, int js, int je);
-/*
- * FUNCTION
- *  Flag the boundaries of the particle for the z-direction velocity. Step 2:
- *  if a cage cell has flags in another component, also flag this velocity.
- * ARGUMENTS
- *  * p -- the particle index on which to operate
- *  * flag_u -- the device flag array subdomain
- *  * flag_v -- the device flag array subdomain
- *  * flag_w -- the device flag array subdomain
- *  * parts -- the device particle array subdomain
- *  * dom -- the device subdomain
- *  * phase -- the phase array
- *  * is -- start in x-direction
- *  * ie -- end in x-direction
- *  * js -- start in y-direction
- *  * je -- end in y-direction
  ******
  */
 

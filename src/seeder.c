@@ -557,7 +557,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
   printf("Writing part_seeder.input...");
   fflush(stdout);
   // write particle configuration to file
-  char fname[FILE_NAME_SIZE];
+  char fname[FILE_NAME_SIZE] = "";
   // open file for writing
   sprintf(fname, "%spart_seeder.input", INPUT_DIR);
   FILE *ofile = fopen(fname, "w");

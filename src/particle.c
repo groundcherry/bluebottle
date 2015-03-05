@@ -81,7 +81,7 @@ void parts_read_input(int turb)
   fret = fret; // prevent compiler warning
 
   // open configuration file for reading
-  char fname[FILE_NAME_SIZE];
+  char fname[FILE_NAME_SIZE] = "";
   sprintf(fname, "%s/input/part.config", ROOT_DIR);
   FILE *infile = fopen(fname, "r");
   if(infile == NULL) {
