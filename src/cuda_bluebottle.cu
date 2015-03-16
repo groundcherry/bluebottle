@@ -3171,14 +3171,22 @@ real cuda_find_dt(void)
     real v_max = find_max_mag(dom[dev].Gfy.s3b, _v[dev]);
     real w_max = find_max_mag(dom[dev].Gfz.s3b, _w[dev]);
 
+    real Umax = u_max;
+    if(v_max > Umax) Umax = v_max;
+    if(w_max > Umax) Umax = w_max;
+
+    real dx_min = dom[dev].dx;
+    if(dom[dev].dy < dx_min) dx_min = dom[dev].dy;
+    if(dom[dev].dz < dx_min) dx_min = dom[dev].dz;
+
 #ifndef IMPLICIT
-    dts[dev] = (u_max + 2. * nu / dom[dev].dx) / dom[dev].dx;
-    dts[dev] += (v_max + 2. * nu / dom[dev].dy) / dom[dev].dy;
-    dts[dev] += (w_max + 2. * nu / dom[dev].dz) / dom[dev].dz;
+    dts[dev] = (Umax + 2. * nu / dx_min) / dx_min;
+    //dts[dev] += (v_max + 2. * nu / dom[dev].dy) / dom[dev].dy;
+    //dts[dev] += (w_max + 2. * nu / dom[dev].dz) / dom[dev].dz;
 #else
-    dts[dev] = u_max / dom[dev].dx;
-    dts[dev] += v_max / dom[dev].dy;
-    dts[dev] += w_max / dom[dev].dz;
+    dts[dev] = Umax / dx_min;
+    //dts[dev] += v_max / dom[dev].dy;
+    //dts[dev] += w_max / dom[dev].dz;
 #endif
     dts[dev] = CFL / dts[dev];
   }

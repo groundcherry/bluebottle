@@ -1252,9 +1252,10 @@ __global__ void project_u(real *u_star, real *p, real rho_f, real dt,
         - p[(i-1) + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b]);
       // project velocity and set velocity inside particles equal to zero
       u[i + tj*dom->Gfx._s1b + tk*dom->Gfx._s2b] = (u_star[i + tj*dom->Gfx._s1b
-        + tk*dom->Gfx._s2b] - dt / rho_f * gradPhi)
-        *((phase[(i-1) + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1)
-        &&(phase[i + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1));
+        + tk*dom->Gfx._s2b] - dt / rho_f * gradPhi);
+        /** Zeroing the internal flow introduces strong force oscillations **/
+        //*((phase[(i-1) + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1)
+        //&&(phase[i + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1));
     }
   }
 }
@@ -1273,9 +1274,10 @@ __global__ void project_v(real *v_star, real *p, real rho_f, real dt,
         - p[ti + (j-1)*dom->Gcc._s1b + tk*dom->Gcc._s2b]);
       // project velocity and set velocity inside particles equal to zero
       v[ti + j*dom->Gfy._s1b + tk*dom->Gfy._s2b] = (v_star[ti + j*dom->Gfy._s1b
-        + tk*dom->Gfy._s2b] - dt / rho_f * gradPhi)
-        *((phase[ti + (j-1)*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1)
-        &&(phase[ti + j*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1));
+        + tk*dom->Gfy._s2b] - dt / rho_f * gradPhi);
+        /** Zeroing the internal flow introduces strong force oscillations **/
+        //*((phase[ti + (j-1)*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1)
+        //&&(phase[ti + j*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1));
     }
   }
 }
@@ -1294,9 +1296,10 @@ __global__ void project_w(real *w_star, real *p, real rho_f, real dt,
         - p[ti + tj*dom->Gcc._s1b + (k-1)*dom->Gcc._s2b]);
       // project velocity and set velocity inside particles equal to zero
       w[ti + tj*dom->Gfz._s1b + k*dom->Gfz._s2b] = (w_star[ti + tj*dom->Gfz._s1b
-        + k*dom->Gfz._s2b] - dt / rho_f * gradPhi)
-        *((phase[ti + tj*dom->Gcc._s1b + (k-1)*dom->Gcc._s2b] == -1)
-        &&(phase[ti + tj*dom->Gcc._s1b + k*dom->Gcc._s2b] == -1));
+        + k*dom->Gfz._s2b] - dt / rho_f * gradPhi);
+        /** Zeroing the internal flow introduces strong force oscillations **/
+        //*((phase[ti + tj*dom->Gcc._s1b + (k-1)*dom->Gcc._s2b] == -1)
+        //&&(phase[ti + tj*dom->Gcc._s1b + k*dom->Gcc._s2b] == -1));
     }
   }
 }
@@ -2657,6 +2660,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLz += (bc.uW == DIRICHLET) * Loz;
     }
     if(h < 0) {
+      Un = parts[i].u - bc.uWD;
       ah = h;
       lnah = 0;
       /** for now, use particle material as wall materal in second V term **/

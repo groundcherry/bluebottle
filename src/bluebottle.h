@@ -66,7 +66,7 @@
  *  DIV_ST
  * TYPE
  */
-#define DIV_ST 1e-7
+#define DIV_ST 1e-10
 /*
  * PURPOSE
  *  Define a value to use for fudging the value of theta when a division by

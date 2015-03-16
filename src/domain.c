@@ -2132,9 +2132,13 @@ int domain_init(void)
   }
 
   // initialize some variables
-  dt = 2. * nu / (Dom.dx * Dom.dx);
-  dt += 2. * nu / (Dom.dy * Dom.dy);
-  dt += 2. * nu / (Dom.dz * Dom.dz);
+  real dx_min = Dom.dx;
+  if(Dom.dy < dx_min) dx_min = Dom.dy;
+  if(Dom.dz < dx_min) dx_min = Dom.dz;
+
+  dt = 2. * nu / (dx_min * dx_min);
+  //dt += 2. * nu / (Dom.dy * Dom.dy);
+  //dt += 2. * nu / (Dom.dz * Dom.dz);
   dt = CFL / dt;
   dt0 = -1.;
   stepnum = 0;
