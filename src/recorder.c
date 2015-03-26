@@ -52,7 +52,7 @@ void recorder_read_config(void)
   rec_restart_stop = 0;
 
   // read the config file
-  char fname[FILE_NAME_SIZE];
+  char fname[FILE_NAME_SIZE] = "";
   sprintf(fname, "%s/input/record.config", ROOT_DIR);
   FILE *infile = fopen(fname, "r");
   if(infile == NULL) {
@@ -60,7 +60,7 @@ void recorder_read_config(void)
     exit(EXIT_FAILURE);
   }
 
-  char buf[CHAR_BUF_SIZE];  // character read buffer
+  char buf[CHAR_BUF_SIZE] = "";  // character read buffer
 
   /** list of recognized output configurations **/
   char ***configs;
@@ -310,7 +310,7 @@ void recorder_read_config(void)
 void cgns_grid(void)
 {
   // create the file
-  char fname[FILE_NAME_SIZE];
+  char fname[FILE_NAME_SIZE] = "";
   sprintf(fname, "%s/output/%s", ROOT_DIR, "grid.cgns");
   int fn;
   int bn;
@@ -363,16 +363,16 @@ void cgns_grid(void)
 void cgns_flow_field(real dtout)
 {
   // create the solution file
-  char fname[FILE_NAME_SIZE];
-  char fname2[FILE_NAME_SIZE];
-  char fnameall[FILE_NAME_SIZE];
-  char fnameall2[FILE_NAME_SIZE];
-  char gname[FILE_NAME_SIZE];
-  char gnameall[FILE_NAME_SIZE];
+  char fname[FILE_NAME_SIZE] = "";
+  char fname2[FILE_NAME_SIZE] = "";
+  char fnameall[FILE_NAME_SIZE] = "";
+  char fnameall2[FILE_NAME_SIZE] = "";
+  char gname[FILE_NAME_SIZE] = "";
+  char gnameall[FILE_NAME_SIZE] = "";
   real tout = ttime; //  = rec_flow_field_stepnum_out * dtout;
-  char format[CHAR_BUF_SIZE];
-  char snodename[CHAR_BUF_SIZE];
-  char snodenameall[CHAR_BUF_SIZE];
+  char format[CHAR_BUF_SIZE] = "";
+  char snodename[CHAR_BUF_SIZE] = "";
+  char snodenameall[CHAR_BUF_SIZE] = "";
   int sigfigs = ceil(log10(1. / dtout));
   if(sigfigs < 1) sigfigs = 1;
   sprintf(format, "%%.%df", sigfigs);
@@ -595,12 +595,12 @@ void cgns_particles(real dtout)
 {
   if(nparts > 0) {
     // create the solution file
-    char fname[FILE_NAME_SIZE];
-    char fname2[FILE_NAME_SIZE];
-    char fnameall[FILE_NAME_SIZE];
-    char fnameall2[FILE_NAME_SIZE];
+    char fname[FILE_NAME_SIZE] = "";
+    char fname2[FILE_NAME_SIZE] = "";
+    char fnameall[FILE_NAME_SIZE] = "";
+    char fnameall2[FILE_NAME_SIZE] = "";
     real tout = ttime; // = rec_particle_stepnum_out * dtout;
-    char format[CHAR_BUF_SIZE];
+    char format[CHAR_BUF_SIZE] = "";
     int sigfigs = ceil(log10(1. / dtout));
     if(sigfigs < 1) sigfigs = 1;
     sprintf(format, "%%.%df", sigfigs);
@@ -1553,7 +1553,7 @@ void cgns_particles(real dtout)
 void recorder_bicgstab_init(char *name)
 {
   // create the file
-  char path[FILE_NAME_SIZE];
+  char path[FILE_NAME_SIZE] = "";
   sprintf(path, "%s/record/%s", ROOT_DIR, name);
   FILE *rec = fopen(path, "w");
   if(rec == NULL) {
@@ -1574,7 +1574,7 @@ void recorder_bicgstab_init(char *name)
 void recorder_lamb_init(char *name)
 {
   // create the file
-  char path[FILE_NAME_SIZE];
+  char path[FILE_NAME_SIZE] = "";
   sprintf(path, "%s/record/%s", ROOT_DIR, name);
   FILE *rec = fopen(path, "w");
   if(rec == NULL) {
@@ -1589,7 +1589,7 @@ void recorder_lamb_init(char *name)
 void recorder_bicgstab(char *name, int niter, real resid)
 {
   // open the file
-  char path[FILE_NAME_SIZE];
+  char path[FILE_NAME_SIZE] = "";
   sprintf(path, "%s/record/%s", ROOT_DIR, name);
   FILE *rec = fopen(path, "r+");
 
@@ -1610,7 +1610,7 @@ void recorder_bicgstab(char *name, int niter, real resid)
 void recorder_lamb(char *name, int iter)
 {
   // open the file
-  char path[FILE_NAME_SIZE];
+  char path[FILE_NAME_SIZE] = "";
   sprintf(path, "%s/record/%s", ROOT_DIR, name);
   FILE *rec = fopen(path, "r+");
 
@@ -1654,7 +1654,7 @@ void recorder_lamb(char *name, int iter)
 void recorder_cfl_init(char *name)
 {
   // create the file
-  char path[FILE_NAME_SIZE];
+  char path[FILE_NAME_SIZE] = "";
   sprintf(path, "%s/record/%s", ROOT_DIR, name);
   FILE *rec = fopen(path, "w");
   if(rec == NULL) {
@@ -1674,7 +1674,7 @@ void recorder_cfl_init(char *name)
 void recorder_cfl(char *name, real cfl)
 {
   // open the file
-  char path[FILE_NAME_SIZE];
+  char path[FILE_NAME_SIZE] = "";
   sprintf(path, "%s/record/%s", ROOT_DIR, name);
   FILE *rec = fopen(path, "r+");
 

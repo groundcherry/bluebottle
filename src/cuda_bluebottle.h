@@ -1356,7 +1356,7 @@ __global__ void BC_w_T_T(real *w, dom_struct *dom, real *bc);
  * USAGE
  */
 __global__ void project_u(real *u_star, real *p, real rho_f, real dt,
-  real *u, dom_struct *dom, real ddx, int *flag_u);
+  real *u, dom_struct *dom, real ddx, int *flag_u, int *phase);
 /*
  * FUNCTION
  *  Project the intermediate velocity u_star onto a divergence-free space via
@@ -1379,7 +1379,7 @@ __global__ void project_u(real *u_star, real *p, real rho_f, real dt,
  * USAGE
  */
 __global__ void project_v(real *v_star, real *p, real rho_f, real dt,
-  real *v, dom_struct *dom, real ddy, int *flag_v);
+  real *v, dom_struct *dom, real ddy, int *flag_v, int *phase);
 /*
  * FUNCTION
  *  Project the intermediate velocity v_star onto a divergence-free space via
@@ -1402,7 +1402,7 @@ __global__ void project_v(real *v_star, real *p, real rho_f, real dt,
  * USAGE
  */
 __global__ void project_w(real *w_star, real *p, real rho_f, real dt,
-  real *w, dom_struct *dom, real ddz, int *flag_w);
+  real *w, dom_struct *dom, real ddz, int *flag_w, int *phase);
 /*
  * FUNCTION
  *  Project the intermediate velocity w_star onto a divergence-free space via
@@ -2417,6 +2417,25 @@ __global__ void energy_multiply(real *u_co, real *v_co, real *w_co, real *co,
  *  * v_co -- colocated v-velocity field
  *  * w_co -- colocated w-velocity field
  *  * co -- colocated result field
+ ******
+ */
+
+/****f* bluebottle_kernel/ab_int<<<>>>()
+ * NAME
+ *  ab_int<<<>>>()
+ * TYPE
+ */
+__device__ real ab_int(real dt0, real dt, real f0, real df0, real df);
+/* PURPOSE
+ *  CUDA device kernel to apply time-variable Adams-Bashforth integration.
+ * ARGUMENTS
+ *  * dt0 -- previous time step size
+ *  * dt -- current time step size
+ *  * f0 -- function value at previous time level
+ *  * df0 -- function derivative at previous time level
+ *  * df -- function derivative at current time level
+ * OUTPUT
+ *  * f -- function value at future time level
  ******
  */
 

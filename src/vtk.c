@@ -25,7 +25,7 @@
 
 void init_VTK(void)
 {
-  char fname[FILE_NAME_SIZE];
+  char fname[FILE_NAME_SIZE] = "";
 
   // open PVD file for writing
   sprintf(fname, "%sout.pvd", OUTPUT_DIR);
@@ -47,10 +47,10 @@ void init_VTK(void)
 
 void out_VTK(void)
 {
-  char fname_pvd[FILE_NAME_SIZE]; // pvd filename
-  char fname_pvtr[FILE_NAME_SIZE]; // pvtr filename
-  char fname_vtp[FILE_NAME_SIZE]; // vtp filename
-  char fnamenodes_vtp[FILE_NAME_SIZE]; // vtp filename
+  char fname_pvd[FILE_NAME_SIZE] = ""; // pvd filename
+  char fname_pvtr[FILE_NAME_SIZE] = ""; // pvtr filename
+  char fname_vtp[FILE_NAME_SIZE] = ""; // vtp filename
+  char fnamenodes_vtp[FILE_NAME_SIZE] = ""; // vtp filename
 
   sprintf(fname_pvd, "%sout.pvd", OUTPUT_DIR);
   sprintf(fname_pvtr, "out_%d.pvtr", rec_paraview_stepnum_out);
@@ -79,8 +79,8 @@ void out_VTK(void)
 void dom_out_VTK(void)
 {
   int i, j, k, l; // iterators
-  char fname[FILE_NAME_SIZE]; // output filename
-  char fname_dom[FILE_NAME_SIZE]; // subdomain filename
+  char fname[FILE_NAME_SIZE] = ""; // output filename
+  char fname_dom[FILE_NAME_SIZE] = ""; // subdomain filename
   int C;  // cell center index
   int Cx;  // cell center index for interpolation
   int Cy;  // cell center index for interpolation
@@ -319,7 +319,7 @@ void dom_out_VTK(void)
 
 void init_VTK_turb(void)
 {
-  char fname[FILE_NAME_SIZE];
+  char fname[FILE_NAME_SIZE] = "";
 
   // open PVD file for writing
   sprintf(fname, "%sout_turb.pvd", OUTPUT_DIR);
@@ -341,8 +341,8 @@ void init_VTK_turb(void)
 
 void out_VTK_turb(void)
 {
-  char fname_pvd[FILE_NAME_SIZE]; // pvd filename
-  char fname_pvtr[FILE_NAME_SIZE]; // pvtr filename
+  char fname_pvd[FILE_NAME_SIZE] = ""; // pvd filename
+  char fname_pvtr[FILE_NAME_SIZE] = ""; // pvtr filename
 
   sprintf(fname_pvd, "%sout_turb.pvd", OUTPUT_DIR);
   sprintf(fname_pvtr, "out_turb_%d.pvtr", rec_precursor_stepnum_out);
@@ -363,8 +363,8 @@ void out_VTK_turb(void)
 void dom_out_VTK_turb(void)
 {
   int i, j, k, l; // iterators
-  char fname[FILE_NAME_SIZE]; // output filename
-  char fname_dom[FILE_NAME_SIZE]; // subdomain filename
+  char fname[FILE_NAME_SIZE] = ""; // output filename
+  char fname_dom[FILE_NAME_SIZE] = ""; // subdomain filename
   int C;  // cell center index
   int Cx;  // cell center index for interpolation
   int Cy;  // cell center index for interpolation
@@ -603,7 +603,7 @@ void dom_out_VTK_turb(void)
 
 void init_VTK_ghost(void)
 {
-  char fname[FILE_NAME_SIZE];
+  char fname[FILE_NAME_SIZE] = "";
 
   // open PVD file for writing
   sprintf(fname, "%sout_ghost.pvd", OUTPUT_DIR);
@@ -625,9 +625,9 @@ void init_VTK_ghost(void)
 
 void out_VTK_ghost(void)
 {
-  char fname_pvd[FILE_NAME_SIZE]; // pvd filename
-  char fname_pvtr[FILE_NAME_SIZE]; // pvtr filename
-  char fname_vtp[FILE_NAME_SIZE]; // vtp filename
+  char fname_pvd[FILE_NAME_SIZE] = ""; // pvd filename
+  char fname_pvtr[FILE_NAME_SIZE] = ""; // pvtr filename
+  char fname_vtp[FILE_NAME_SIZE] = ""; // vtp filename
 
   sprintf(fname_pvd, "%sout_ghost.pvd", OUTPUT_DIR);
   sprintf(fname_pvtr, "out_ghost_%d.pvtr", rec_paraview_stepnum_out);
@@ -652,8 +652,8 @@ void out_VTK_ghost(void)
 void dom_out_VTK_ghost(void)
 {
   int i, j, k, l; // iterators
-  char fname[FILE_NAME_SIZE]; // output filename
-  char fname_dom[FILE_NAME_SIZE]; // subdomain filename
+  char fname[FILE_NAME_SIZE] = ""; // output filename
+  char fname_dom[FILE_NAME_SIZE] = ""; // subdomain filename
   int C;  // cell center index
   int Cx;  // cell center index for interpolation
   int Cy;  // cell center index for interpolation
@@ -936,7 +936,7 @@ void dom_out_VTK_ghost(void)
 void part_out_VTK(void)
 {
   int i; // iterator
-  char fname[FILE_NAME_SIZE]; // output filename
+  char fname[FILE_NAME_SIZE] = ""; // output filename
   int nparts_plot = 0;    // the number of particles to plot; may be greater
                           // may be greater than nparts if particles straddle
 
@@ -2392,7 +2392,7 @@ void part_out_VTK(void)
 void quadnodes_out_VTK(void)
 {
   int i, j; // iterator
-  char fname[FILE_NAME_SIZE]; // output filename
+  char fname[FILE_NAME_SIZE] = ""; // output filename
   int nparts_plot = 0;    // the number of particles to plot; may be greater
                           // may be greater than nparts if particles straddle
 

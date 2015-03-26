@@ -464,7 +464,7 @@ int main(int argc, char *argv[]) {
         fflush(stdout);
 
         // get initial dt; this is an extra check for the SHEAR initialization
-        //dt = cuda_find_dt();
+        dt = cuda_find_dt();
 
         // share this with the precursor domain
         expd_compare_dt(np, status);
