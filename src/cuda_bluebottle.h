@@ -2420,4 +2420,23 @@ __global__ void energy_multiply(real *u_co, real *v_co, real *w_co, real *co,
  ******
  */
 
+/****f* bluebottle_kernel/ab_int<<<>>>()
+ * NAME
+ *  ab_int<<<>>>()
+ * TYPE
+ */
+__device__ real ab_int(real dt0, real dt, real f0, real df0, real df);
+/* PURPOSE
+ *  CUDA device kernel to apply time-variable Adams-Bashforth integration.
+ * ARGUMENTS
+ *  * dt0 -- previous time step size
+ *  * dt -- current time step size
+ *  * f0 -- function value at previous time level
+ *  * df0 -- function derivative at previous time level
+ *  * df -- function derivative at current time level
+ * OUTPUT
+ *  * f -- function value at future time level
+ ******
+ */
+
 #endif

@@ -318,17 +318,17 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
             + (parts[part].nodes[node] == -14)*bc.uBD
             + (parts[part].nodes[node] == -15)*bc.uTD;
   // switch to particle rest frame
-  real rs2 = parts[part].rs*parts[part].rs;
-  real a2 = parts[part].r*parts[part].r;
+  real rs3 = parts[part].rs*parts[part].rs*parts[part].rs;
+  real rs5 = rs3*parts[part].rs*parts[part].rs;
+  real a5 = parts[part].r*parts[part].r*parts[part].r*parts[part].r*parts[part].r;
   real ocrossr_x = oy*zp - oz*yp;
   real odotcrossr_x = oydot*zp - ozdot*yp;
   uu -= parts[part].u + ocrossr_x;
-  uu -= 0.1/nu *(rs2-a2) * odotcrossr_x;
+  uu -= 0.1/nu *(rs5-a5)/rs3 * odotcrossr_x;
   uunode -= parts[part].u + ocrossr_x;
-  uunode -= 0.1/nu *(rs2-a2) * odotcrossr_x;
+  uunode -= 0.1/nu *(rs5-a5)/rs3 * odotcrossr_x;
   uuwall -= parts[part].u + ocrossr_x;
-  //uuwall -= 0.1 / nu / rs3 * (rs5 - r5) * odotcrossr_x;
-  uuwall -= 0.1/nu *(rs2-a2) * odotcrossr_x;
+  uuwall -= 0.1/nu *(rs5-a5)/rs3 * odotcrossr_x;
   // set actual node value based on whether it is interfered with
   uu = (parts[part].nodes[node]==-1)*uu
     + (parts[part].nodes[node]!=part)*(parts[part].nodes[node]>-1)*uunode
@@ -366,11 +366,11 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   real ocrossr_y = -(ox*zp - oz*xp);
   real odotcrossr_y = -(oxdot*zp - ozdot*xp);
   vv -= parts[part].v + ocrossr_y;
-  vv -= 0.1/nu *(rs2-a2) * odotcrossr_y;
+  vv -= 0.1/nu *(rs5-a5)/rs3 * odotcrossr_y;
   vvnode -= parts[part].v + ocrossr_y;
-  vvnode -= 0.1/nu *(rs2-a2) * odotcrossr_y;
+  vvnode -= 0.1/nu *(rs5-a5)/rs3 * odotcrossr_y;
   vvwall -= parts[part].v + ocrossr_y;
-  vvwall -= 0.1/nu *(rs2-a2) * odotcrossr_y;
+  vvwall -= 0.1/nu *(rs5-a5)/rs3 * odotcrossr_y;
   // set actual node value based on whether it is interfered with
   vv = (parts[part].nodes[node]==-1)*vv
     + (parts[part].nodes[node]!=part)*(parts[part].nodes[node]>-1)*vvnode
@@ -407,11 +407,11 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   real ocrossr_z = ox*yp - oy*xp;
   real odotcrossr_z = oxdot*yp - oydot*xp;
   ww -= parts[part].w + ocrossr_z;
-  ww -= 0.1/nu *(rs2-a2) * odotcrossr_z;
+  ww -= 0.1/nu *(rs5-a5)/rs3 * odotcrossr_z;
   wwnode -= parts[part].w + ocrossr_z;
-  wwnode -= 0.1/nu *(rs2-a2) * odotcrossr_z;
+  wwnode -= 0.1/nu *(rs5-a5)/rs3 * odotcrossr_z;
   wwwall -= parts[part].w + ocrossr_z;
-  wwwall -= 0.1/nu *(rs2-a2) * odotcrossr_z;
+  wwwall -= 0.1/nu *(rs5-a5)/rs3 * odotcrossr_z;
   // set actual node value based on whether it is interfered with
   ww = (parts[part].nodes[node]==-1)*ww
     + (parts[part].nodes[node]!=part)*(parts[part].nodes[node]>-1)*wwnode
@@ -672,11 +672,11 @@ __global__ void cuda_calc_forces(dom_struct *dom, part_struct *parts,
       + PI * mu * nu * N10 * (pnm_re[stride*pp + 1]
       + 6.*phinm_re[stride*pp + 1]);
 
-    parts[pp].Lx = 0.4 * rho_f * vol * parts[pp].r*parts[pp].r * parts[pp].oxdot
+    parts[pp].Lx = rho_f * vol * parts[pp].r*parts[pp].r * parts[pp].oxdot
       - 8. * PI * mu * nu * 2.*N11 * parts[pp].r * chinm_re[stride*pp + 2];
-    parts[pp].Ly = 0.4 * rho_f * vol * parts[pp].r*parts[pp].r * parts[pp].oydot
+    parts[pp].Ly = rho_f * vol * parts[pp].r*parts[pp].r * parts[pp].oydot
       + 8. * PI * mu * nu * 2.*N11 * parts[pp].r * chinm_im[stride*pp + 2];
-    parts[pp].Lz = 0.4 * rho_f * vol * parts[pp].r*parts[pp].r * parts[pp].ozdot
+    parts[pp].Lz = rho_f * vol * parts[pp].r*parts[pp].r * parts[pp].ozdot
       + 8. * PI * mu * nu * N10 * parts[pp].r * chinm_re[stride*pp + 1];
   }
 }

@@ -3171,20 +3171,22 @@ real cuda_find_dt(void)
     real v_max = find_max_mag(dom[dev].Gfy.s3b, _v[dev]);
     real w_max = find_max_mag(dom[dev].Gfz.s3b, _w[dev]);
 
-    real Umax = u_max;
-    if(v_max > Umax) Umax = v_max;
-    if(w_max > Umax) Umax = w_max;
-
-    real dx_min = dom[dev].dx;
-    if(dom[dev].dy < dx_min) dx_min = dom[dev].dy;
-    if(dom[dev].dz < dx_min) dx_min = dom[dev].dz;
-
 #ifndef IMPLICIT
-    dts[dev] = (Umax + 2. * nu / dx_min) / dx_min;
-    //dts[dev] += (v_max + 2. * nu / dom[dev].dy) / dom[dev].dy;
-    //dts[dev] += (w_max + 2. * nu / dom[dev].dz) / dom[dev].dz;
+    real max = u_max / dom[dev].dx + 2.*nu/dom[dev].dx/dom[dev].dx;
+    real tmp = v_max / dom[dev].dy + 2.*nu/dom[dev].dy/dom[dev].dy;
+    if(tmp > max) max = tmp;
+    tmp = w_max / dom[dev].dz + 2.*nu/dom[dev].dz/dom[dev].dz;
+    if(w_max > max) max = tmp;
+
+    dts[dev] = max;
 #else
-    dts[dev] = Umax / dx_min;
+    real max = u_max / dom[dev].dx;
+    real tmp = v_max / dom[dev].dy;
+    if(tmp > max) max = tmp;
+    tmp = w_max / dom[dev].dz;
+    if(w_max > max) max = tmp;
+
+    dts[dev] = max;
     //dts[dev] += v_max / dom[dev].dy;
     //dts[dev] += w_max / dom[dev].dz;
 #endif
@@ -3200,7 +3202,7 @@ real cuda_find_dt(void)
   free(dts);
 
 #ifdef IMPLICIT
-  if(min > 1.1*dt) min = 1.1*dt;
+  if(min > 1.5*dt) min = 1.5*dt;
 #endif
 
   return min;

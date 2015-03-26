@@ -301,18 +301,15 @@ int parts_init(void)
       }
       if(parts[i].rotating) { // if rotating
         // set angular velocity according to (one-half of) the shear rate
-        parts[i].ox = 0.5*(bc.vTDm-bc.vBDm)/Dom.zl;
+        parts[i].ox = -0.5*(bc.vTDm-bc.vBDm)/Dom.zl;
         parts[i].ox += 0.5*(bc.wNDm-bc.wSDm)/Dom.yl;
         parts[i].oy = 0.5*(bc.uTDm-bc.uBDm)/Dom.zl;
-        parts[i].oy += 0.5*(bc.wEDm-bc.wWDm)/Dom.xl;
-        parts[i].oz = 0.5*(bc.uNDm-bc.uSDm)/Dom.yl;
+        parts[i].oy += -0.5*(bc.wEDm-bc.wWDm)/Dom.xl;
+        parts[i].oz = -0.5*(bc.uNDm-bc.uSDm)/Dom.yl;
         parts[i].oz += 0.5*(bc.vEDm-bc.vWDm)/Dom.xl;
-        parts[i].ox0 = 0.5*(bc.vTDm-bc.vBDm)/Dom.zl;
-        parts[i].ox0 += 0.5*(bc.wNDm-bc.wSDm)/Dom.yl;
-        parts[i].oy0 = 0.5*(bc.uTDm-bc.uBDm)/Dom.zl;
-        parts[i].oy0 += 0.5*(bc.wEDm-bc.wWDm)/Dom.xl;
-        parts[i].oz0 = 0.5*(bc.uNDm-bc.uSDm)/Dom.yl;
-        parts[i].oz0 += 0.5*(bc.vEDm-bc.vWDm)/Dom.xl;
+        parts[i].ox0 = parts[i].ox;
+        parts[i].oy0 = parts[i].oy;
+        parts[i].oz0 = parts[i].oz;
       }
     } else if(init_cond == CHANNEL) {
       // initialize CHANNEL flow
