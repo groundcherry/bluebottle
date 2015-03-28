@@ -2234,14 +2234,24 @@ __global__ void move_parts_a(dom_struct *dom, part_struct *parts, int nparts,
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.z;
 
       // update linear velocities
-      parts[pp].u = ab_int(dt0, dt, parts[pp].u0, parts[pp].udot0,
-        parts[pp].udot);
-      parts[pp].v = ab_int(dt0, dt, parts[pp].v0, parts[pp].vdot0,  
-        parts[pp].vdot);
-      parts[pp].w = ab_int(dt0, dt, parts[pp].w0, parts[pp].wdot0,
-        parts[pp].wdot);
+      parts[pp].u = parts[pp].u0 + 0.5*dt*(parts[pp].udot + parts[pp].udot0);
+      parts[pp].v = parts[pp].v0 + 0.5*dt*(parts[pp].vdot + parts[pp].vdot0);
+      parts[pp].w = parts[pp].w0 + 0.5*dt*(parts[pp].wdot + parts[pp].wdot0);
 
-      // do not update position
+      // update position (trapezoidal rule)
+      parts[pp].x = parts[pp].x0 + 0.5*dt*(parts[pp].u + parts[pp].u0);
+      if(parts[pp].x < dom->xs) parts[pp].x = parts[pp].x + dom->xl;
+      else if(parts[pp].x > dom->xe) parts[pp].x = parts[pp].x - dom->xl;
+
+      parts[pp].y = parts[pp].y0 + 0.5*dt*(parts[pp].v + parts[pp].v0);
+      if(parts[pp].y < dom->ys) parts[pp].y = parts[pp].y + dom->yl;
+      else if(parts[pp].y > dom->ye) parts[pp].y = parts[pp].y - dom->yl;
+
+      parts[pp].z = parts[pp].z0 + 0.5*dt*(parts[pp].w + parts[pp].w0);
+      if(parts[pp].z < dom->zs) parts[pp].z = parts[pp].z + dom->zl;
+      else if(parts[pp].z > dom->ze) parts[pp].z = parts[pp].z - dom->zl;
+
+
     }
     if(parts[pp].rotating) {
       // update angular accelerations
@@ -2251,12 +2261,9 @@ __global__ void move_parts_a(dom_struct *dom, part_struct *parts, int nparts,
       parts[pp].ozdot = (parts[pp].Lz + parts[pp].iLz + parts[pp].aLz) / I;
 
       // update angular velocities
-      parts[pp].ox = ab_int(dt0, dt, parts[pp].ox0, parts[pp].oxdot0,
-        parts[pp].oxdot);
-      parts[pp].oy = ab_int(dt0, dt, parts[pp].oy0, parts[pp].oydot0,
-        parts[pp].oydot);
-      parts[pp].oz = ab_int(dt0, dt, parts[pp].oz0, parts[pp].ozdot0,
-        parts[pp].ozdot);
+      parts[pp].ox = parts[pp].ox0 + 0.5*dt*(parts[pp].oxdot + parts[pp].oxdot0);
+      parts[pp].oy = parts[pp].oy0 + 0.5*dt*(parts[pp].oydot + parts[pp].oydot0);
+      parts[pp].oz = parts[pp].oz0 + 0.5*dt*(parts[pp].ozdot + parts[pp].ozdot0);
     }
   }
 }
@@ -2281,23 +2288,20 @@ __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.z;
 
       // update linear velocities
-      parts[pp].u = ab_int(dt0, dt, parts[pp].u0, parts[pp].udot0,
-        parts[pp].udot);
-      parts[pp].v = ab_int(dt0, dt, parts[pp].v0, parts[pp].vdot0,
-        parts[pp].vdot);
-      parts[pp].w = ab_int(dt0, dt, parts[pp].w0, parts[pp].wdot0,
-        parts[pp].wdot);
+      parts[pp].u = parts[pp].u0 + 0.5*dt*(parts[pp].udot + parts[pp].udot0);
+      parts[pp].v = parts[pp].v0 + 0.5*dt*(parts[pp].vdot + parts[pp].vdot0);
+      parts[pp].w = parts[pp].w0 + 0.5*dt*(parts[pp].wdot + parts[pp].wdot0);
 
-      // update position
-      parts[pp].x = ab_int(dt0, dt, parts[pp].x, parts[pp].u0, parts[pp].u);
+      // update position (trapezoidal rule)
+      parts[pp].x = parts[pp].x0 + 0.5*dt*(parts[pp].u + parts[pp].u0);
       if(parts[pp].x < dom->xs) parts[pp].x = parts[pp].x + dom->xl;
       else if(parts[pp].x > dom->xe) parts[pp].x = parts[pp].x - dom->xl;
 
-      parts[pp].y = ab_int(dt0, dt, parts[pp].y, parts[pp].v0, parts[pp].v);
+      parts[pp].y = parts[pp].y0 + 0.5*dt*(parts[pp].v + parts[pp].v0);
       if(parts[pp].y < dom->ys) parts[pp].y = parts[pp].y + dom->yl;
       else if(parts[pp].y > dom->ye) parts[pp].y = parts[pp].y - dom->yl;
 
-      parts[pp].z = ab_int(dt0, dt, parts[pp].z, parts[pp].w0, parts[pp].w);
+      parts[pp].z = parts[pp].z0 + 0.5*dt*(parts[pp].w + parts[pp].w0);
       if(parts[pp].z < dom->zs) parts[pp].z = parts[pp].z + dom->zl;
       else if(parts[pp].z > dom->ze) parts[pp].z = parts[pp].z - dom->zl;
 
@@ -2320,12 +2324,9 @@ __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
       parts[pp].ozdot = (parts[pp].Lz + parts[pp].iLz + parts[pp].aLz) / I;
 
       // update angular velocities
-      parts[pp].ox = ab_int(dt0, dt, parts[pp].ox0, parts[pp].oxdot0,
-        parts[pp].oxdot);
-      parts[pp].oy = ab_int(dt0, dt, parts[pp].oy0, parts[pp].oydot0,
-        parts[pp].oydot);
-      parts[pp].oz = ab_int(dt0, dt, parts[pp].oz0, parts[pp].ozdot0,
-        parts[pp].ozdot);
+      parts[pp].ox = parts[pp].ox0 + 0.5*dt*(parts[pp].oxdot + parts[pp].oxdot0);
+      parts[pp].oy = parts[pp].oy0 + 0.5*dt*(parts[pp].oydot + parts[pp].oydot0);
+      parts[pp].oz = parts[pp].oz0 + 0.5*dt*(parts[pp].ozdot + parts[pp].ozdot0);
 
       /* update basis vectors */
       // calculate rotation magnitude (trapezoidal rule)

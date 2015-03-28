@@ -424,10 +424,17 @@ __global__ void cage_flag_u(int *flag_u, part_struct *parts, dom_struct *dom,
       W = (i-1) + tj*dom->Gcc.s1b + tk*dom->Gcc.s2b;
       E = i + tj*dom->Gcc.s1b + tk*dom->Gcc.s2b;
 
+#ifdef STEPS
+      flag_u[i + tj*dom->Gfx._s1b + tk*dom->Gfx._s2b] = 
+        1 - ((phase[W] < 0 && phase[E] > -1) 
+            || (phase[W] > -1 && phase[E] < 0)
+            || ((phase_shell[W] < 1 && phase_shell[E] < 1)));
+#else
       flag_u[i + tj*dom->Gfx._s1b + tk*dom->Gfx._s2b] = 
         1 - 2*((phase[W] < 0 && phase[E] > -1) 
             || (phase[W] > -1 && phase[E] < 0)
             || ((phase_shell[W] < 1 && phase_shell[E] < 1)));
+#endif
     }
   }
 }
@@ -446,11 +453,18 @@ __global__ void cage_flag_v(int *flag_v, part_struct *parts, dom_struct *dom,
       S = ti + (j-1)*dom->Gcc.s1b + tk*dom->Gcc.s2b;
       N = ti + j*dom->Gcc.s1b + tk*dom->Gcc.s2b;
 
+#ifdef STEPS
+      flag_v[ti + j*dom->Gfy._s1b + tk*dom->Gfy._s2b] = 
+        1 - ((phase[S] < 0 && phase[N] > -1)
+            || (phase[S] > -1 && phase[N] < 0)
+            || ((phase_shell[S] < 1 && phase_shell[N] < 1))); 
+#else
       flag_v[ti + j*dom->Gfy._s1b + tk*dom->Gfy._s2b] = 
         1 - 2*((phase[S] < 0 && phase[N] > -1)
             || (phase[S] > -1 && phase[N] < 0)
             || ((phase_shell[S] < 1 && phase_shell[N] < 1))); 
-   }
+#endif
+    }
   }
 }
 
@@ -468,10 +482,17 @@ __global__ void cage_flag_w(int *flag_w, part_struct *parts, dom_struct *dom,
       B = ti + tj*dom->Gcc.s1b + (k-1)*dom->Gcc.s2b;
       T = ti + tj*dom->Gcc.s1b + k*dom->Gcc.s2b;
 
+#ifdef STEPS
+      flag_w[ti + tj*dom->Gfz._s1b + k*dom->Gfz._s2b] = 
+        1 - (phase[B] < 0 && phase[T] > -1)
+            || (phase[B] > -1 && phase[T] < 0)
+            || ((phase_shell[B] < 1 && phase_shell[T] < 1)));
+#else
       flag_w[ti + tj*dom->Gfz._s1b + k*dom->Gfz._s2b] = 
         1 - 2*((phase[B] < 0 && phase[T] > -1)
             || (phase[B] > -1 && phase[T] < 0)
             || ((phase_shell[B] < 1 && phase_shell[T] < 1)));
+#endif
 
     }
   }
