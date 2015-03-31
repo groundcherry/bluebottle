@@ -2238,20 +2238,7 @@ __global__ void move_parts_a(dom_struct *dom, part_struct *parts, int nparts,
       parts[pp].v = parts[pp].v0 + 0.5*dt*(parts[pp].vdot + parts[pp].vdot0);
       parts[pp].w = parts[pp].w0 + 0.5*dt*(parts[pp].wdot + parts[pp].wdot0);
 
-      // update position (trapezoidal rule)
-      parts[pp].x = parts[pp].x0 + 0.5*dt*(parts[pp].u + parts[pp].u0);
-      if(parts[pp].x < dom->xs) parts[pp].x = parts[pp].x + dom->xl;
-      else if(parts[pp].x > dom->xe) parts[pp].x = parts[pp].x - dom->xl;
-
-      parts[pp].y = parts[pp].y0 + 0.5*dt*(parts[pp].v + parts[pp].v0);
-      if(parts[pp].y < dom->ys) parts[pp].y = parts[pp].y + dom->yl;
-      else if(parts[pp].y > dom->ye) parts[pp].y = parts[pp].y - dom->yl;
-
-      parts[pp].z = parts[pp].z0 + 0.5*dt*(parts[pp].w + parts[pp].w0);
-      if(parts[pp].z < dom->zs) parts[pp].z = parts[pp].z + dom->zl;
-      else if(parts[pp].z > dom->ze) parts[pp].z = parts[pp].z - dom->zl;
-
-
+      // do not update position
     }
     if(parts[pp].rotating) {
       // update angular accelerations
