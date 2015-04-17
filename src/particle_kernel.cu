@@ -937,6 +937,7 @@ __global__ void part_BC_p(real *p, real *p_rhs, int *phase, int *phase_shell,
         + (real) (1 - phase_shell[CC])
         //* ((pp_tmp*(dt/(dt+dt0)) + pp_tmp00*(dt0/(dt+dt0)) - p[CC])
         * (((pp_tmp) - p[CC]) + 0.5*nu*dt*p_rhs[C]);
+      p_rhs[C] = (real) (phase[CC] < 0 && phase_shell[CC]) * p_rhs[C];
 #endif
     }
   }

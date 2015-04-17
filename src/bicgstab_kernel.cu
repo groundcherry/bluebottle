@@ -1836,7 +1836,7 @@ __global__ void coeffs_particle(dom_struct *dom, int pitch, real *values,
     for(i = dom->Gcc.is-DOM_BUF; i < dom->Gcc.ie-DOM_BUF; i++) {
       C = i + tj*dom->Gcc.s1 + tk*dom->Gcc.s2;
       CC = (i+DOM_BUF) + (tj+DOM_BUF)*dom->Gcc.s1b + (tk+DOM_BUF)*dom->Gcc.s2b;
-      if(phase_shell[CC] < 1) {
+      if(phase_shell[CC] > -1) {
         values[C + 0*pitch] =  0.;
         values[C + 1*pitch] =  0.;
         values[C + 2*pitch] =  0.;

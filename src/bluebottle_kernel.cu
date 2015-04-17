@@ -1250,12 +1250,8 @@ __global__ void project_u(real *u_star, real *p, real rho_f, real dt,
         + tk*dom->Gfx._s2b])
         * ddx * (p[i + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b]
         - p[(i-1) + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b]);
-      // project velocity and set velocity inside particles equal to zero
       u[i + tj*dom->Gfx._s1b + tk*dom->Gfx._s2b] = (u_star[i + tj*dom->Gfx._s1b
         + tk*dom->Gfx._s2b] - dt / rho_f * gradPhi);
-        /** Zeroing the internal flow introduces strong force oscillations **/
-        //*((phase[(i-1) + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1)
-        //&&(phase[i + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1));
     }
   }
 }
@@ -1272,12 +1268,8 @@ __global__ void project_v(real *v_star, real *p, real rho_f, real dt,
         + tk*dom->Gfy._s2b])
         * ddy * (p[ti + j*dom->Gcc._s1b + tk*dom->Gcc._s2b]
         - p[ti + (j-1)*dom->Gcc._s1b + tk*dom->Gcc._s2b]);
-      // project velocity and set velocity inside particles equal to zero
       v[ti + j*dom->Gfy._s1b + tk*dom->Gfy._s2b] = (v_star[ti + j*dom->Gfy._s1b
         + tk*dom->Gfy._s2b] - dt / rho_f * gradPhi);
-        /** Zeroing the internal flow introduces strong force oscillations **/
-        //*((phase[ti + (j-1)*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1)
-        //&&(phase[ti + j*dom->Gcc._s1b + tk*dom->Gcc._s2b] == -1));
     }
   }
 }
@@ -1294,12 +1286,8 @@ __global__ void project_w(real *w_star, real *p, real rho_f, real dt,
         + k*dom->Gfz._s2b])
         * ddz * (p[ti + tj*dom->Gcc._s1b + k*dom->Gcc._s2b]
         - p[ti + tj*dom->Gcc._s1b + (k-1)*dom->Gcc._s2b]);
-      // project velocity and set velocity inside particles equal to zero
       w[ti + tj*dom->Gfz._s1b + k*dom->Gfz._s2b] = (w_star[ti + tj*dom->Gfz._s1b
         + k*dom->Gfz._s2b] - dt / rho_f * gradPhi);
-        /** Zeroing the internal flow introduces strong force oscillations **/
-        //*((phase[ti + tj*dom->Gcc._s1b + (k-1)*dom->Gcc._s2b] == -1)
-        //&&(phase[ti + tj*dom->Gcc._s1b + k*dom->Gcc._s2b] == -1));
     }
   }
 }
@@ -1326,8 +1314,8 @@ __global__ void update_p_laplacian(real *Lp, real *p, dom_struct *dom)
   }
 }
 
-__global__ void update_p(real *Lp, real *p0, real *p, dom_struct *dom,
-  real nu, real dt)
+__global__ void update_p(real *Lp, real *p0, real *p, real *phi,
+  dom_struct *dom, real nu, real dt, int *phase)
 {
   int tj = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
   int tk = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
@@ -1335,7 +1323,7 @@ __global__ void update_p(real *Lp, real *p0, real *p, dom_struct *dom,
   if(tj < dom->Gcc._je && tk < dom->Gcc._ke) {
     for(int i = dom->Gcc._is; i < dom->Gcc._ie; i++) {
       int C = i + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b;
-      p[C] = p0[C] + p[C] - 0.5*nu*dt*Lp[C];
+      p[C] = (phase[C] < 0) * (p0[C] + phi[C] - 0.5*nu*dt*Lp[C]);
     }
   }
 }
@@ -1507,7 +1495,7 @@ __global__ void copy_w_fluid(real *w_noghost, real *w_ghost, int *phase, dom_str
 __global__ void u_star_2(real rho_f, real nu,
   real *u0, real *v0, real *w0, real *p, real *f,
   real *diff0, real *conv0, real *diff, real *conv, real *u_star,
-  dom_struct *dom, real dt0, real dt)
+  dom_struct *dom, real dt0, real dt, int *phase)
 {
   // create shared memory
   // no reason to load pressure into shared memory, but leaving it in global
@@ -1646,6 +1634,11 @@ __global__ void u_star_2(real rho_f, real nu,
 
       // velocity term sums into right-hand side
       s_u_star[tj + tk*blockDim.x] += u111;
+
+      // zero contribution inside particles
+      s_u_star[tj + tk*blockDim.x] *=
+        (phase[(i-1) + j*dom->Gcc._s1b + k*dom->Gcc._s2b] < 0
+        && phase[i + j*dom->Gcc._s1b + k*dom->Gcc._s2b] < 0);
     }
 
     // make sure all threads complete computations
@@ -1669,7 +1662,7 @@ __global__ void u_star_2(real rho_f, real nu,
 __global__ void v_star_2(real rho_f, real nu,
   real *u0, real *v0, real *w0, real *p, real *f,
   real *diff0, real *conv0, real *diff, real *conv, real *v_star,
-  dom_struct *dom, real dt0, real dt)
+  dom_struct *dom, real dt0, real dt, int *phase)
 {
   // create shared memory
   // no reason to load pressure into shared memory, but leaving it in global
@@ -1806,6 +1799,11 @@ __global__ void v_star_2(real rho_f, real nu,
 
       // velocity term sums into right-hand side
       s_v_star[tk + ti*blockDim.x] += v111;
+
+      // zero contribution inside particles
+      s_v_star[tk + ti*blockDim.x] *=
+        (phase[i + (j-1)*dom->Gcc._s1b + k*dom->Gcc._s2b] < 0
+        && phase[i + j*dom->Gcc._s1b + k*dom->Gcc._s2b] < 0);
     }
 
     // make sure all threads complete computations
@@ -1829,7 +1827,7 @@ __global__ void v_star_2(real rho_f, real nu,
 __global__ void w_star_2(real rho_f, real nu,
   real *u0, real *v0, real *w0, real *p, real *f,
   real *diff0, real *conv0, real *diff, real *conv, real *w_star,
-  dom_struct *dom, real dt0, real dt)
+  dom_struct *dom, real dt0, real dt, int *phase)
 {
   // create shared memory
   // no reason to load pressure into shared memory, but leaving it in global
@@ -1966,6 +1964,11 @@ __global__ void w_star_2(real rho_f, real nu,
 
       // velocity term sums into right-hand side
       s_w_star[ti + tj*blockDim.x] += w111;
+
+      // zero contribution inside particles
+      s_w_star[ti + tj*blockDim.x] *=
+        (phase[i + j*dom->Gcc._s1b + (k-1)*dom->Gcc._s2b] < 0
+        && phase[i + j*dom->Gcc._s1b + k*dom->Gcc._s2b] < 0);
     }
 
     // make sure all threads complete computations
@@ -2380,10 +2383,11 @@ __global__ void collision_init(part_struct *parts, int nparts)
 
 __global__ void collision_parts(part_struct *parts, int i,
   dom_struct *dom, real eps, real *forces, real *moments, int nparts, real mu,
-  BC bc)
+  BC bc, int *COLLIDE)
 {
   int j = threadIdx.x + blockIdx.x*blockDim.x;
 
+  *COLLIDE = 0;
   if(j < nparts) {
     // clear out temporary array
     forces[    j*3] = 0;
@@ -2397,7 +2401,7 @@ __global__ void collision_parts(part_struct *parts, int i,
       real ai = parts[i].r;
       real aj = parts[j].r;
       real B = aj / ai;
-      real hN = 4.*(parts[i].rs - parts[i].r + parts[j].rs - parts[j].r);
+      real hN = parts[i].r;
 
       real ux, uy, uz;
       real rx, rx1, rx2, ry, ry1, ry2, rz, rz1, rz2, r;
@@ -2529,7 +2533,7 @@ __global__ void collision_parts(part_struct *parts, int i,
       if(h < hN && h > 0) {
         if(h < eps*parts[i].r) h = eps*parts[i].r;
         ah = ai/h - ai/hN;
-        lnah = log(ai/h);
+        lnah = log(hN/h);
         Fnx = -1. * B*B / (opB*opB) * ah - (1.+7.*B+B*B)/(5.*opB*opB*opB)*lnah;
         Fny = Fnx;
         Fnz = Fnx;
@@ -2569,9 +2573,15 @@ __global__ void collision_parts(part_struct *parts, int i,
         lnah = 0;
         real denom = 0.75*((1-parts[i].sigma*parts[i].sigma)/parts[i].E
           + (1-parts[j].sigma*parts[j].sigma)/parts[j].E)*sqrt(1./ai + 1./aj);
-        Fnx = sqrt(-h*h*h)/denom*nx;
-        Fny = sqrt(-h*h*h)/denom*ny;
-        Fnz = sqrt(-h*h*h)/denom*nz;
+          
+        Fnx = (sqrt(-h*h*h)/denom
+          - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*unx)*nx;
+        Fny = (sqrt(-h*h*h)/denom
+          - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*uny)*ny;
+        Fnz = (sqrt(-h*h*h)/denom
+          - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*unz)*nz;
+
+      *COLLIDE = 1;
       }
 
       forces[    j*3] = Fnx + Ftx;
@@ -2598,11 +2608,12 @@ __global__ void collision_parts(part_struct *parts, int i,
 }
 
 __global__ void collision_walls(dom_struct *dom, part_struct *parts,
-  int nparts, BC bc, real eps, real mu)
+  int nparts, BC bc, real eps, real mu, int *COLLIDE)
 {
   int i = threadIdx.x + blockIdx.x*blockDim.x;
   /**** parallelize this further by using a CUDA block for each wall ****/
 
+  *COLLIDE = 0;
   if(i < nparts) {
     real dx = 0;
     real dy = 0;
@@ -2612,7 +2623,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
     real ai = parts[i].r;
     real h = 0;
-    real hN = 4.*(parts[i].rs - parts[i].r);
+    real hN = parts[i].r;
     real ah, lnah;
 
     real Fnx, Fny, Fnz, Ftx, Fty, Ftz;
@@ -2624,7 +2635,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
-      lnah = log(ai/h);
+      lnah = log(hN/h);
 
       Un = parts[i].u - bc.uWD;
       Utx = 0.;
@@ -2667,7 +2678,10 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       /** for now, use particle material as wall materal in second V term **/
       real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFx += (bc.uW == DIRICHLET) * sqrt(-ah*ah*ah)/denom;
+      parts[i].iFx += (bc.uW == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
+        - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
+
+      *COLLIDE = (bc.uW == DIRICHLET);
     }
 
     // east wall
@@ -2676,7 +2690,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
-      lnah = log(ai/h);
+      lnah = log(hN/h);
 
       Un = parts[i].u - bc.uED;
       Utx = 0.;
@@ -2713,12 +2727,16 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLz += (bc.uE == DIRICHLET) * Loz;
     } 
     if(h < 0) {
+      Un = parts[i].u - bc.uED;
       ah = h;
       lnah = 0;
       /** for now, use particle material as wall materal in second V term **/
       real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFx -= (bc.uE == DIRICHLET) * sqrt(-ah*ah*ah)/denom;
+      parts[i].iFx -= (bc.uE == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
+        - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
+
+      *COLLIDE = (bc.uE == DIRICHLET);
     }
 
     // south wall
@@ -2727,7 +2745,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
-      lnah = log(ai/h);
+      lnah = log(hN/h);
 
       Un = parts[i].v - bc.vSD;
       Utx = parts[i].u - bc.uSD;
@@ -2764,12 +2782,16 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLz += (bc.vS == DIRICHLET) * Loz;
     }
     if(h < 0) {
+      Un = parts[i].v - bc.vSD;
       ah = h;
       lnah = 0;
       /** for now, use particle material as wall materal in second V term **/
       real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFy += (bc.vS == DIRICHLET) * sqrt(-ah*ah*ah)/denom;
+      parts[i].iFy += (bc.vS == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
+        - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
+
+      *COLLIDE = (bc.vS == DIRICHLET);
     }
 
     // north wall
@@ -2778,7 +2800,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
-      lnah = log(ai/h);
+      lnah = log(hN/h);
 
       Un = parts[i].v - bc.vND;
       Utx = parts[i].u - bc.uND;
@@ -2815,12 +2837,16 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLz += (bc.vN == DIRICHLET) * Loz;
     }
     if(h < 0) {
+      Un = parts[i].v - bc.vND;
       ah = h;
       lnah = 0;
       /** for now, use particle material as wall materal in second V term **/
       real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFy -= (bc.vN == DIRICHLET) * sqrt(-ah*ah*ah)/denom;
+      parts[i].iFy -= (bc.vN == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
+        - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
+
+      *COLLIDE = (bc.vN == DIRICHLET);
     }
 
     // bottom wall
@@ -2829,7 +2855,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
-      lnah = log(ai/h);
+      lnah = log(hN/h);
 
       Un = parts[i].w - bc.wBD;
       Utx = parts[i].u - bc.uBD;
@@ -2866,12 +2892,16 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLz += (bc.wB == DIRICHLET) * Loz;
     }
     if(h < 0) {
+      Un = parts[i].w - bc.wBD;
       ah = h;
       lnah = 0;
       // for now, use particle material as wall materal in second V term //
       real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFz += (bc.wB == DIRICHLET) * sqrt(-ah*ah*ah)/denom;
+      parts[i].iFz += (bc.wB == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
+        - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
+
+      *COLLIDE = (bc.wB == DIRICHLET);
     }
 
     // top wall
@@ -2880,7 +2910,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
-      lnah = log(ai/h);
+      lnah = log(hN/h);
 
       Un = parts[i].w - bc.wTD;
       Utx = parts[i].u - bc.uTD;
@@ -2917,59 +2947,17 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLz += (bc.wT == DIRICHLET) * Loz;
     }
     if(h < 0) {
+      Un = parts[i].w - bc.wTD;
       ah = h;
       lnah = 0;
       // for now, use particle material as wall materal in second V term //
       real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFz -= (bc.wT == DIRICHLET) * sqrt(-ah*ah*ah)/denom;
-    }
-/*
-    // south wall
-    h = parts[i].y - (dom->ys + 1.5*parts[i].r);
-    if(h < 0) {
-      ah = 0;
-      lnah = 0;
-      // for now, use particle material as wall materal in second V term //
-      real denom = 0.75*((1-parts[i].sigma*parts[i].sigma)/parts[i].E
-        + (1-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFy += (bc.vS == DIRICHLET) * sqrt(-h*h*h)/denom;
-    }
+      parts[i].iFz -= (bc.wT == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
+        - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
 
-    // north wall
-    h = parts[i].y - (dom->ye - 1.5*parts[i].r);
-    if(h < 0) {
-      ah = 0;
-      lnah = 0;
-      // for now, use particle material as wall materal in second V term //
-      real denom = 0.75*((1-parts[i].sigma*parts[i].sigma)/parts[i].E
-        + (1-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFy += -(bc.vN == DIRICHLET) * sqrt(-h*h*h)/denom;
+      *COLLIDE = (bc.wT == DIRICHLET);
     }
-*/
-/*
-    // bottom wall
-    h = parts[i].z - (dom->zs + 3.*parts[i].r);
-    if(h < 0) {
-      ah = 0;
-      lnah = 0;
-      // for now, use particle material as wall materal in second V term //
-      real denom = 0.75*((1-parts[i].sigma*parts[i].sigma)/parts[i].E
-        + (1-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFz += (bc.wB == DIRICHLET) * sqrt(-h*h*h)/denom;
-    }
-
-    // top wall
-    h = parts[i].z - (dom->ze - 3.*parts[i].r);
-    if(h < 0) {
-      ah = 0;
-      lnah = 0;
-      // for now, use particle material as wall materal in second V term //
-      real denom = 0.75*((1-parts[i].sigma*parts[i].sigma)/parts[i].E
-        + (1-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFz += -(bc.wT == DIRICHLET) * sqrt(-h*h*h)/denom;
-    }
-*/
   }
 }
 
@@ -2993,21 +2981,10 @@ __global__ void spring_parts(part_struct *parts, int nparts)
     real dx = parts[i].x-parts[i].spring_x-lx;
     real dy = parts[i].y-parts[i].spring_y-ly;
     real dz = parts[i].z-parts[i].spring_z-lz;
-//printf("\n(lx, ly, lz) = (%e, %e, %e)   l = %e\n", lx, ly, lz, l);
-//printf("\n(dx, dy, dz) = (%e, %e, %e)\n", dx, dy, dz);
-    //real dx = parts[i].x-parts[i].spring_x;
-    //real dy = parts[i].y-parts[i].spring_y;
-    //real dz = parts[i].z-parts[i].spring_z;
 
-    if(dx > 0.) {
-      parts[i].kFx = - parts[i].spring_k * dx;
-      parts[i].kFy = - parts[i].spring_k * dy;
-      parts[i].kFz = - parts[i].spring_k * dz;
-    } else {
-      parts[i].kFx = 0.;
-      parts[i].kFy = 0.;
-      parts[i].kFz = 0.;
-    }
+    parts[i].kFx = - parts[i].spring_k * dx;
+    parts[i].kFy = - parts[i].spring_k * dy;
+    parts[i].kFz = - parts[i].spring_k * dz;
   }
 }
 

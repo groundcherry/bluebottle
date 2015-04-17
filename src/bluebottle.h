@@ -421,6 +421,7 @@ extern dom_struct Dom;
  */
 
 extern real *p0;
+extern real *phi;
 
 /****v* bluebottle/p
  * NAME
@@ -436,6 +437,7 @@ extern real *p;
  */
 
 extern real **_p0;
+extern real **_phi;
 
 /****v* bluebottle/_p
  * NAME
@@ -2336,6 +2338,7 @@ void cuda_solvability(void);
  * USAGE
  */
 void cuda_dom_BC_p(void);
+void cuda_dom_BC_phi(void);
 /*
  * FUNCTION
  *  Enforce zero normal gradient boundary conditions on projected pressure.
@@ -2907,7 +2910,9 @@ extern real Kd;
  * PURPOSE
  *  PID controller derivative gain.
  ******
- */
+:*/
+
+extern int COLLIDE;
 
 /****f* bluebottle/cuda_compute_energy()
  * NAME

@@ -33,9 +33,11 @@ dom_struct **_dom;
 dom_struct Dom;
 real *p0;
 real *p;
+real *phi;
 //real *divU;
 real **_p0;
 real **_p;
+real **_phi;
 //real **_divU;
 real *u;
 real *u0;
@@ -163,11 +165,15 @@ real Kp;
 real Ki;
 real Kd;
 
+int COLLIDE;
+
 int main(int argc, char *argv[]) {
 
   int np = 0;     // number of MPI processes
   int rank = 0;   // number assigned to this MPI process
   int restart_stop = 0; // boolean to determine when to stop restart loop
+
+COLLIDE = 0;
 
   // set up MPI
   MPI_Init(&argc, &argv);
@@ -546,11 +552,22 @@ int main(int argc, char *argv[]) {
 
           int iter = 0;
           real iter_err = FLT_MAX;
+
+          COLLIDE = 0;
+
           while(iter_err > lamb_residual) {  // iterate for Lamb's coefficients
             #ifndef BATCHRUN
               printf("  Iteration %d: ", iter);
               fflush(stdout);
             #endif
+
+            if(COLLIDE) {
+              lamb_residual = 1e-1;
+              lamb_relax = 0.1;
+            } else {
+              lamb_residual = 1e-2;
+              lamb_relax = 1.0;
+            }
 
             // solve for U_star
             #ifndef IMPLICIT
@@ -574,7 +591,7 @@ int main(int argc, char *argv[]) {
             cuda_dom_BC_star();
             // solve for pressure
             cuda_PP_bicgstab(rank);
-            cuda_dom_BC_p();
+            cuda_dom_BC_phi();
             // solve for U
             cuda_project();
             // apply boundary conditions to field variables
@@ -584,6 +601,9 @@ int main(int argc, char *argv[]) {
             cuda_dom_BC();
             // update pressure
             cuda_update_p();
+            if(nparts > 0) {
+              cuda_part_BC();
+            }
             cuda_dom_BC_p();
 
             // update Lamb's coefficients

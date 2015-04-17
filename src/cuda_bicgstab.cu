@@ -717,9 +717,6 @@ void cuda_PP_bicgstab(int rank)
       cuda_part_BC_p(dev);
     }
 
-    // create temporary U* without ghost cells for bicgstab result
-    cusp::array1d<real, cusp::device_memory> p_tmp(dom[dev].Gcc.s3, 0.);
-
     // create CUSP diagonal matrix for p
     cusp::dia_matrix<int, real, cusp::device_memory> *_A_p;
     _A_p = new cusp::dia_matrix<int, real, cusp::device_memory>
@@ -807,7 +804,18 @@ void cuda_PP_bicgstab(int rank)
         _flag_w[dev]);
 
     coeffs_particle<<<numBlocks_x, dimBlocks_x>>>(_dom[dev], _A_p->values.pitch,
-      thrust::raw_pointer_cast(&_A_p->values.values[0]), _phase_shell[dev]);
+      thrust::raw_pointer_cast(&_A_p->values.values[0]), _phase[dev]);
+
+    // copy p0 to array without ghost cells and use it as an initial guess and solution space
+    real *_phinoghost;
+    checkCudaErrors(cudaMalloc((void**) &_phinoghost,
+      sizeof(real)*dom[dev].Gcc.s3b));
+    copy_p_noghost<<<numBlocks_x, dimBlocks_x>>>(_phinoghost, _phi[dev],
+      _dom[dev]);
+    thrust::device_ptr<real> _ptr_p_sol(_phinoghost);
+    cusp::array1d<real, cusp::device_memory> *_p_sol;
+    _p_sol = new cusp::array1d<real, cusp::device_memory>(_ptr_p_sol,
+      _ptr_p_sol + dom[dev].Gcc._s3);
 
     // create CUSP pointer to right-hand side
     thrust::device_ptr<real> _ptr_p(_rhs_p[dev]);
@@ -820,24 +828,12 @@ void cuda_PP_bicgstab(int rank)
     if(norm == 0)
       norm = 1.;
     cusp::blas::scal(*_pp, 1. / norm);
+    cusp::blas::scal(*_p_sol, 1. / norm);
 
-/*
-cusp::array1d<real, cusp::host_memory> PP = *_pp;
-cusp::blas::scal(PP, norm);
-//cusp::print(PP);
-real ppsum = 0.;
-for(int s = 0; s < dom[dev].Gcc.s3; s++) {
-  ppsum += PP[s]*dom[dev].dx*dom[dev].dy*dom[dev].dz;
-}
-
-printf("PPSUM_1 = %e\n", ppsum*norm*dt/rho_f);
-*/
-
-    // call BiCGSTAB to solve for p_tmp
+    // call BiCGSTAB to solve for p_sol
     cusp::convergence_monitor<real> monitor(*_pp, pp_max_iter, pp_residual);
     cusp::precond::diagonal<real, cusp::device_memory> M(*_A_p);
-    cusp::krylov::bicgstab(*_A_p, p_tmp, *_pp, monitor, M);
-    //cusp::krylov::cg(*_A_p, p_tmp, *_pp, monitor, M);
+    cusp::krylov::bicgstab(*_A_p, *_p_sol, *_pp, monitor, M);
     // write convergence data to file
     if(rank == 0)
       recorder_bicgstab("solver_flow.rec", monitor.iteration_count(),
@@ -851,21 +847,23 @@ printf("PPSUM_1 = %e\n", ppsum*norm*dt/rho_f);
     }
 
     // unnormalize the solution
-    cusp::blas::scal(p_tmp, norm);
+    cusp::blas::scal(*_p_sol, norm);
 
     // calculate average pressure
     real p_avg = avg_entries(dom[dev].Gcc.s3,
-      thrust::raw_pointer_cast(p_tmp.data()));
+      thrust::raw_pointer_cast(_p_sol->data()));
 
     // subtract average value from pressure
     cusp::array1d<real, cusp::device_memory> ones(dom[dev].Gcc.s3, 1.);
-    cusp::blas::axpy(ones, p_tmp, -p_avg);
+    cusp::blas::axpy(ones, *_p_sol, -p_avg);
 
     // copy solution back to pressure field
-    copy_p_ghost<<<numBlocks_x, dimBlocks_x>>>(_p[dev],
-      thrust::raw_pointer_cast(p_tmp.data()), _dom[dev]);
+    copy_p_ghost<<<numBlocks_x, dimBlocks_x>>>(_phi[dev],
+      thrust::raw_pointer_cast(_p_sol->data()), _dom[dev]);
 
     // clean up
+    checkCudaErrors(cudaFree(_phinoghost));
+    delete(_p_sol);
     delete(_pp);
     delete(_A_p);
   }
