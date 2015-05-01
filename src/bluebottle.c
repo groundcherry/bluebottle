@@ -165,15 +165,11 @@ real Kp;
 real Ki;
 real Kd;
 
-int COLLIDE;
-
 int main(int argc, char *argv[]) {
 
   int np = 0;     // number of MPI processes
   int rank = 0;   // number assigned to this MPI process
   int restart_stop = 0; // boolean to determine when to stop restart loop
-
-COLLIDE = 0;
 
   // set up MPI
   MPI_Init(&argc, &argv);
@@ -484,6 +480,10 @@ COLLIDE = 0;
         }
         cuda_dom_BC();
 
+        // write particle internal flow equal to solid body velocity
+        cuda_parts_internal();
+        cuda_dom_BC();
+
         // write initial fields
         if(runrestart != 1) {
           cuda_dom_pull();
@@ -553,21 +553,11 @@ COLLIDE = 0;
           int iter = 0;
           real iter_err = FLT_MAX;
 
-          COLLIDE = 0;
-
           while(iter_err > lamb_residual) {  // iterate for Lamb's coefficients
             #ifndef BATCHRUN
               printf("  Iteration %d: ", iter);
               fflush(stdout);
             #endif
-
-            if(COLLIDE) {
-              lamb_residual = 1e-1;
-              lamb_relax = 0.1;
-            } else {
-              lamb_residual = 1e-2;
-              lamb_relax = 1.0;
-            }
 
             // solve for U_star
             #ifndef IMPLICIT
@@ -639,6 +629,10 @@ COLLIDE = 0;
             // update particle position
             cuda_move_parts();
 
+            // write particle internal flow equal to solid body velocity
+            cuda_parts_internal();
+            cuda_dom_BC();
+
             // store u, conv, and coeffs for use in next timestep
             cuda_store_u();
             if(nparts > 0)
@@ -663,6 +657,7 @@ COLLIDE = 0;
             if(rec_flow_field_ttime_out >= rec_flow_field_dt) {
               // pull back data and write fields
               cuda_dom_pull();
+              cuda_part_pull();
               #ifndef BATCHRUN
                 printf("  Writing flow field file t = %e...                  \r",
                   ttime);

@@ -2668,6 +2668,18 @@ void cuda_move_parts(void);
  ******
  */
 
+/****f* bluebottle/cuda_parts_internal()
+ * NAME
+ *  cuda_parts_internal()
+ * USAGE
+ */
+void cuda_parts_internal(void);
+/*
+ * FUNCTION
+ *  Apply particle solid-body motion to internal velocity nodes.
+ ******
+ */
+
 /****f* bluebottle/cuda_yank_turb_planes()
  * NAME
  *  cuda_yank_turb_planes()
@@ -2910,9 +2922,7 @@ extern real Kd;
  * PURPOSE
  *  PID controller derivative gain.
  ******
-:*/
-
-extern int COLLIDE;
+ */
 
 /****f* bluebottle/cuda_compute_energy()
  * NAME

@@ -2102,7 +2102,7 @@ __global__ void collision_init(part_struct *parts, int nparts);
  */
 __global__ void collision_parts(part_struct *parts, int i,
   dom_struct *dom, real eps, real *forces, real *moments, int nparts, real mu,
-  BC bc, int *COLLIDE);
+  BC bc);
 /*
  * FUNCTION
  *  Calculate collision forcing between particle i and all other particles.
@@ -2123,7 +2123,7 @@ __global__ void collision_parts(part_struct *parts, int i,
  * USAGE
  */
 __global__ void collision_walls(dom_struct *dom, part_struct *parts,
-  int nparts, BC bc, real eps, real mu, int *COLLIDE);
+  int nparts, BC bc, real eps, real mu);
 /*
  * FUNCTION
  *  Calculate collision forcing between particle i and all other particles.
@@ -2437,6 +2437,63 @@ __device__ real ab_int(real dt0, real dt, real f0, real df0, real df);
  *  * df -- function derivative at current time level
  * OUTPUT
  *  * f -- function value at future time level
+ ******
+ */
+
+/****f* bluebottle_kernel/internal_u<<<>>>()
+ * NAME
+ *  internal_u<<<>>>()
+ * TYPE
+ */
+__global__ void internal_u(real *u, part_struct *parts, dom_struct *dom,
+  int *flag_u, int *phase);
+/* PURPOSE
+ *  CUDA device kernel to apply particle solid-body motion to internal
+ *  velocity nodes.
+ * ARGUMENTS
+ *  * u -- device velocity field
+ *  * parts -- device particle struct
+ *  * dom -- device domain information
+ *  * flag_u -- device flag field
+ *  * phase -- device phase mask field
+ ******
+ */
+
+/****f* bluebottle_kernel/internal_v<<<>>>()
+ * NAME
+ *  internal_v<<<>>>()
+ * TYPE
+ */
+__global__ void internal_v(real *v, part_struct *parts, dom_struct *dom,
+  int *flag_v, int *phase);
+/* PURPOSE
+ *  CUDA device kernel to apply particle solid-body motion to internal
+ *  velocity nodes.
+ * ARGUMENTS
+ *  * v -- device velocity field
+ *  * parts -- device particle struct
+ *  * dom -- device domain information
+ *  * flag_v -- device flag field
+ *  * phase -- device phase mask field
+ ******
+ */
+
+/****f* bluebottle_kernel/internal_w<<<>>>()
+ * NAME
+ *  internal_w<<<>>>()
+ * TYPE
+ */
+__global__ void internal_w(real *w, part_struct *parts, dom_struct *dom,
+  int *flag_w, int *phase);
+/* PURPOSE
+ *  CUDA device kernel to apply particle solid-body motion to internal
+ *  velocity nodes.
+ * ARGUMENTS
+ *  * w -- device velocity field
+ *  * parts -- device particle struct
+ *  * dom -- device domain information
+ *  * flag_w -- device flag field
+ *  * phase -- device phase mask field
  ******
  */
 

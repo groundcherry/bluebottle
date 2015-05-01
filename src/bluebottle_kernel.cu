@@ -2383,11 +2383,10 @@ __global__ void collision_init(part_struct *parts, int nparts)
 
 __global__ void collision_parts(part_struct *parts, int i,
   dom_struct *dom, real eps, real *forces, real *moments, int nparts, real mu,
-  BC bc, int *COLLIDE)
+  BC bc)
 {
   int j = threadIdx.x + blockIdx.x*blockDim.x;
 
-  *COLLIDE = 0;
   if(j < nparts) {
     // clear out temporary array
     forces[    j*3] = 0;
@@ -2575,13 +2574,12 @@ __global__ void collision_parts(part_struct *parts, int i,
           + (1-parts[j].sigma*parts[j].sigma)/parts[j].E)*sqrt(1./ai + 1./aj);
           
         Fnx = (sqrt(-h*h*h)/denom
-          - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*unx)*nx;
+          - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*udotn)*nx;
         Fny = (sqrt(-h*h*h)/denom
-          - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*uny)*ny;
+          - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*udotn)*ny;
         Fnz = (sqrt(-h*h*h)/denom
-          - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*unz)*nz;
+          - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*udotn)*nz;
 
-      *COLLIDE = 1;
       }
 
       forces[    j*3] = Fnx + Ftx;
@@ -2608,12 +2606,11 @@ __global__ void collision_parts(part_struct *parts, int i,
 }
 
 __global__ void collision_walls(dom_struct *dom, part_struct *parts,
-  int nparts, BC bc, real eps, real mu, int *COLLIDE)
+  int nparts, BC bc, real eps, real mu)
 {
   int i = threadIdx.x + blockIdx.x*blockDim.x;
   /**** parallelize this further by using a CUDA block for each wall ****/
 
-  *COLLIDE = 0;
   if(i < nparts) {
     real dx = 0;
     real dy = 0;
@@ -2680,8 +2677,6 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
       parts[i].iFx += (bc.uW == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
         - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
-
-      *COLLIDE = (bc.uW == DIRICHLET);
     }
 
     // east wall
@@ -2735,8 +2730,6 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
       parts[i].iFx -= (bc.uE == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
         - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
-
-      *COLLIDE = (bc.uE == DIRICHLET);
     }
 
     // south wall
@@ -2753,7 +2746,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Utz = parts[i].w - bc.wSD;
       omx = parts[i].ox;
       omy = parts[i].oy;
-      omz = parts[i].oz;
+      omz = parts[i].oz;// + bc.uSD/(ai+h);
 
       Fnx = 0.;
       Fny = -6.*PI*mu*ai*Un*ah;
@@ -2790,8 +2783,6 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
       parts[i].iFy += (bc.vS == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
         - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
-
-      *COLLIDE = (bc.vS == DIRICHLET);
     }
 
     // north wall
@@ -2808,7 +2799,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Utz = parts[i].w - bc.wND;
       omx = parts[i].ox;
       omy = parts[i].oy;
-      omz = parts[i].oz;
+      omz = parts[i].oz;// + bc.uND/(ai+h);
 
       Fnx = 0.;
       Fny = -6.*PI*mu*ai*Un*ah;
@@ -2845,8 +2836,6 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
       parts[i].iFy -= (bc.vN == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
         - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
-
-      *COLLIDE = (bc.vN == DIRICHLET);
     }
 
     // bottom wall
@@ -2900,8 +2889,6 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
       parts[i].iFz += (bc.wB == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
         - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
-
-      *COLLIDE = (bc.wB == DIRICHLET);
     }
 
     // top wall
@@ -2955,8 +2942,6 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
       parts[i].iFz -= (bc.wT == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
         - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
-
-      *COLLIDE = (bc.wT == DIRICHLET);
     }
   }
 }
@@ -3260,4 +3245,112 @@ __device__ real ab_int(real dt0, real dt, real f0, real df0, real df)
     return f0 + df*dt;
   else
     return f0 + ((1+0.5*DT)*df - 0.5*DT*df0)*dt;
+}
+
+__global__ void internal_u(real *u, part_struct *parts, dom_struct *dom,
+  int *flag_u, int *phase)
+{
+  int tj = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+
+  if(tj < dom->Gfx._je && tk < dom->Gfx._ke) {
+    for(int i = dom->Gfx._is; i < dom->Gfx._ie; i++) {
+      int C = i + tj*dom->Gfx._s1b + tk*dom->Gfx._s2b;
+      int W = (i-1) + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b;
+      int E = i + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b;
+
+      int pw = phase[W];
+      int pe = phase[E];
+      int f = flag_u[C];
+
+      int p = (pw > -1 && pe > -1) * phase[E];
+
+      real rx = (i - DOM_BUF) * dom->dx + dom->xs - parts[p].x;
+      if(rx < dom->xs - 0.5*dom->dx) rx += dom->xl;
+      if(rx > dom->xe + 0.5*dom->dx) rx -= dom->xl;
+      real ry = (tj - 0.5) * dom->dy + dom->ys - parts[p].y;
+      if(ry < dom->ys - 0.5*dom->dy) ry += dom->yl;
+      if(ry > dom->ye + 0.5*dom->dy) ry -= dom->yl;
+      real rz = (tk - 0.5) * dom->dz + dom->zs - parts[p].z;
+      if(rz < dom->zs - 0.5*dom->dz) rz += dom->zl;
+      if(rz > dom->ze + 0.5*dom->dz) rz -= dom->zl;
+
+      real ocrossr_x = parts[p].oy*rz - parts[p].oz*ry;
+
+      u[C] = (pw == -1 || pe == -1 || f == -1) * u[C]
+        + (pw > -1 && pe > -1 && f != -1) * (ocrossr_x + parts[p].u);
+    }
+  }
+}
+
+__global__ void internal_v(real *v, part_struct *parts, dom_struct *dom,
+  int *flag_v, int *phase)
+{
+  int tk = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
+  int ti = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+
+  if(tk < dom->Gfy._ke && ti < dom->Gfy._ie) {
+    for(int j = dom->Gfy._js; j < dom->Gfy._je; j++) {
+      int C = ti + j*dom->Gfy._s1b + tk*dom->Gfy._s2b;
+      int S = ti + (j-1)*dom->Gcc._s1b + tk*dom->Gcc._s2b;
+      int N = ti + j*dom->Gcc._s1b + tk*dom->Gcc._s2b;
+
+      int ps = phase[S];
+      int pn = phase[N];
+      int f = flag_v[C];
+
+      int p = (ps > -1 && pn > -1) * phase[N];
+
+      real rx = (ti - 0.5) * dom->dx + dom->xs - parts[p].x;
+      if(rx < dom->xs - 0.5*dom->dx) rx += dom->xl;
+      if(rx > dom->xe + 0.5*dom->dx) rx -= dom->xl;
+      real ry = (j - DOM_BUF) * dom->dy + dom->ys - parts[p].y;
+      if(ry < dom->ys - 0.5*dom->dy) ry += dom->yl;
+      if(ry > dom->ye + 0.5*dom->dy) ry -= dom->yl;
+      real rz = (tk - 0.5) * dom->dz + dom->zs - parts[p].z;
+      if(rz < dom->zs - 0.5*dom->dz) rz += dom->zl;
+      if(rz > dom->ze + 0.5*dom->dz) rz -= dom->zl;
+
+      real ocrossr_y = parts[p].oz*rx - parts[p].ox*rz;
+
+      v[C] = (ps == -1 || pn == -1 || f == -1) * v[C]
+        + (ps > -1 && pn > -1 && f != -1) * (ocrossr_y + parts[p].v);
+    }
+  }
+}
+
+__global__ void internal_w(real *w, part_struct *parts, dom_struct *dom,
+  int *flag_w, int *phase)
+{
+  int ti = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
+  int tj = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+
+  if(ti < dom->Gfz._ie && tj < dom->Gfz._je) {
+    for(int k = dom->Gfz._ks; k < dom->Gfz._ke; k++) {
+      int C = ti + tj*dom->Gfz._s1b + k*dom->Gfz._s2b;
+      int B = ti + tj*dom->Gcc._s1b + (k-1)*dom->Gcc._s2b;
+      int T = ti + tj*dom->Gcc._s1b + k*dom->Gcc._s2b;
+
+      int pb = phase[B];
+      int pt = phase[T];
+      int f = flag_w[C];
+
+      int p = (pb > -1 && pt > -1) * phase[T];
+
+      real rx = (ti - 0.5) * dom->dx + dom->xs - parts[p].x;
+      if(rx < dom->xs - 0.5*dom->dx) rx += dom->xl;
+      if(rx > dom->xe + 0.5*dom->dx) rx -= dom->xl;
+      real ry = (tj - 0.5) * dom->dy + dom->ys - parts[p].y;
+      if(ry < dom->ys - 0.5*dom->dy) ry += dom->yl;
+      if(ry > dom->ye + 0.5*dom->dy) ry -= dom->yl;
+      real rz = (k - DOM_BUF) * dom->dz + dom->zs - parts[p].z;
+      if(rz < dom->zs - 0.5*dom->dz) rz += dom->zl;
+      if(rz > dom->ze + 0.5*dom->dz) rz -= dom->zl;
+
+      real ocrossr_z = parts[p].ox*ry - parts[p].oy*rx;
+
+      w[C] = (pb == -1 || pt == -1 || f == -1) * w[C]
+        + (pb > -1 && pt > -1 && f != -1) * (ocrossr_z + parts[p].w);
+    }
+  }
 }

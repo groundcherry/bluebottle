@@ -112,9 +112,7 @@ __global__ void build_phase(int p, part_struct *parts, int *phase,
 
     C = ti + tj*dom->Gcc.s1b + tk*dom->Gcc.s2b;
 
-    cutoff =
-      (floor(d / (1.0*parts[p].r
-      - 0.50*(dom->dx + dom->dy + dom->dz)/3.))) < 1;
+    cutoff = (floor(d / (parts[p].r))) < 1;
 
     phase[C] = cutoff*p + (1 - cutoff)*phase[C];
   }
@@ -484,7 +482,7 @@ __global__ void cage_flag_w(int *flag_w, part_struct *parts, dom_struct *dom,
 
 #ifdef STEPS
       flag_w[ti + tj*dom->Gfz._s1b + k*dom->Gfz._s2b] = 
-        1 - (phase[B] < 0 && phase[T] > -1)
+        1 - ((phase[B] < 0 && phase[T] > -1)
             || (phase[B] > -1 && phase[T] < 0)
             || ((phase_shell[B] < 1 && phase_shell[T] < 1)));
 #else
@@ -603,14 +601,14 @@ __global__ void part_BC_u(real *u, int *phase, int *flag_u,
         uu = 0;
       }
       x = (i-DOM_BUF) * dom->dx + dom->xs - X;
-      if(x < dom->xs) x += dom->xl;
-      if(x > dom->xe) x -= dom->xl;
+      if(x < dom->xs - 0.5*dom->dx) x += dom->xl;
+      if(x > dom->xe + 0.5*dom->dx) x -= dom->xl;
       y = (tj-0.5) * dom->dy + dom->ys - Y;
-      if(y < dom->ys) y += dom->yl;
-      if(y > dom->ye) y -= dom->yl;
+      if(y < dom->ys - 0.5*dom->dy) y += dom->yl;
+      if(y > dom->ye + 0.5*dom->dy) y -= dom->yl;
       z = (tk-0.5) * dom->dz + dom->zs - Z;
-      if(z < dom->zs) z += dom->zl;
-      if(z > dom->ze) z -= dom->zl;
+      if(z < dom->zs - 0.5*dom->dz) z += dom->zl;
+      if(z > dom->ze + 0.5*dom->dz) z -= dom->zl;
       xyz2rtp(x, y, z, &r, &theta, &phi);
 
       // calculate analytic solution
@@ -705,14 +703,14 @@ __global__ void part_BC_v(real *v, int *phase, int *flag_v,
         vv = 0;
       }
       x = (ti-0.5) * dom->dx + dom->xs - X;
-      if(x < dom->xs) x += dom->xl;
-      if(x > dom->xe) x -= dom->xl;
+      if(x < dom->xs - 0.5*dom->dx) x += dom->xl;
+      if(x > dom->xe + 0.5*dom->dx) x -= dom->xl;
       y = (j-DOM_BUF) * dom->dy + dom->ys - Y;
-      if(y < dom->ys) y += dom->yl;
-      if(y > dom->ye) y -= dom->yl;
+      if(y < dom->ys - 0.5*dom->dy) y += dom->yl;
+      if(y > dom->ye + 0.5*dom->dy) y -= dom->yl;
       z = (tk-0.5) * dom->dz + dom->zs - Z;
-      if(z < dom->zs) z += dom->zl;
-      if(z > dom->ze) z -= dom->zl;
+      if(z < dom->zs - 0.5*dom->dx) z += dom->zl;
+      if(z > dom->ze + 0.5*dom->dz) z -= dom->zl;
       xyz2rtp(x, y, z, &r, &theta, &phi);
 
       // calculate analytic solution
@@ -807,14 +805,14 @@ __global__ void part_BC_w(real *w, int *phase, int *flag_w,
         ww = 0;
       }
       x = (ti-0.5) * dom->dx + dom->xs - X;
-      if(x < dom->xs) x += dom->xl;
-      if(x > dom->xe) x -= dom->xl;
+      if(x < dom->xs - 0.5*dom->dx) x += dom->xl;
+      if(x > dom->xe + 0.5*dom->dx) x -= dom->xl;
       y = (tj-0.5) * dom->dy + dom->ys - Y;
-      if(y < dom->ys) y += dom->yl;
-      if(y > dom->ye) y -= dom->yl;
+      if(y < dom->ys - 0.5*dom->dy) y += dom->yl;
+      if(y > dom->ye + 0.5*dom->dy) y -= dom->yl;
       z = (k-DOM_BUF) * dom->dz + dom->zs - Z;
-      if(z < dom->zs) z += dom->zl;
-      if(z > dom->ze) z -= dom->zl;
+      if(z < dom->zs - 0.5*dom->dz) z += dom->zl;
+      if(z > dom->ze + 0.5*dom->dz) z -= dom->zl;
       xyz2rtp(x, y, z, &r, &theta, &phi);
 
       // calculate analytic solution
@@ -935,7 +933,6 @@ __global__ void part_BC_p(real *p, real *p_rhs, int *phase, int *phase_shell,
       // write BC if flagged, otherwise leave alone
       p_rhs[C] = (real) phase_shell[CC] * p_rhs[C]
         + (real) (1 - phase_shell[CC])
-        //* ((pp_tmp*(dt/(dt+dt0)) + pp_tmp00*(dt0/(dt+dt0)) - p[CC])
         * (((pp_tmp) - p[CC]) + 0.5*nu*dt*p_rhs[C]);
       p_rhs[C] = (real) (phase[CC] < 0 && phase_shell[CC]) * p_rhs[C];
 #endif
