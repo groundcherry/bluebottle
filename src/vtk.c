@@ -87,9 +87,9 @@ void dom_out_VTK(void)
   int Cz;  // cell center index for interpolation
 
   // number of cells in a subdomain (length, start, end)
-  int ncx_l, ncx_s, ncx_e;  
-  int ncy_l, ncy_s, ncy_e;  
-  int ncz_l, ncz_s, ncz_e;  
+  int ncx_l, ncx_s, ncx_e;
+  int ncy_l, ncy_s, ncy_e;
+  int ncz_l, ncz_s, ncz_e;
 
   sprintf(fname, "%sout_%d.pvtr", OUTPUT_DIR, rec_paraview_stepnum_out);
   FILE *outfile = fopen(fname, "w");

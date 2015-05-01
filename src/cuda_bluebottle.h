@@ -1424,13 +1424,13 @@ __global__ void project_w(real *w_star, real *p, real rho_f, real dt,
  *  update_p_laplacian<<<>>>()
  * USAGE
  */
-__global__ void update_p_laplacian(real *Lp, real *p, dom_struct *dom);
+__global__ void update_p_laplacian(real *Lp, real *phi, dom_struct *dom);
 /*
  * FUNCTION
  *  Update the pressure according to Brown, Cortez, and Minion (2000), eq. 74.
  * ARGUMENTS
- *  * Lp -- Laplacian of p
- *  * p -- intermediate pressure given by solution of pressure-Poisson problem
+ *  * Lp -- Laplacian of phi
+ *  * phi -- intermediate pressure given by solution of pressure-Poisson problem
  *  * dom -- the subdomain on which to operate
  ******
  */
@@ -1440,15 +1440,16 @@ __global__ void update_p_laplacian(real *Lp, real *p, dom_struct *dom);
  *  update_p<<<>>>()
  * USAGE
  */
-__global__ void update_p(real *Lp, real *p0, real *p, dom_struct *dom,
-  real nu, real dt);
+__global__ void update_p(real *Lp, real *p0, real *p, real *phi,
+  dom_struct *dom, real nu, real dt, int *phase);
 /*
  * FUNCTION
  *  Update the pressure according to Brown, Cortez, and Minion (2000), eq. 74.
  * ARGUMENTS
  *  * Lp -- Laplacian of p
  *  * p0 -- previous pressure
- *  * p -- intermediate pressure given by solution of pressure-Poisson problem
+ *  * p -- next pressure
+ *  * phi -- intermediate pressure given by solution of pressure-Poisson problem
  *  * dom -- the subdomain on which to operate
  *  * nu -- kinematic viscosity
  ******
@@ -1604,7 +1605,7 @@ __global__ void copy_w_fluid(real *w_noghost, real *w_ghost, int *phase, dom_str
 __global__ void u_star_2(real rho_f, real nu,
   real *u0, real *v0, real *w0, real *p, real *f,
   real *diff0, real *conv0, real *diff, real *conv, real *u_star,
-  dom_struct *dom, real dt0, real dt);
+  dom_struct *dom, real dt0, real dt, int *phase);
 /*
  * FUNCTION
  *  Compute the intermediate velocity field u_star (2nd-order in time).
@@ -1633,7 +1634,7 @@ __global__ void u_star_2(real rho_f, real nu,
 __global__ void v_star_2(real rho_f, real nu,
   real *u0, real *v0, real *w0, real *p, real *f,
   real *diff0, real *conv0, real *diff, real *conv, real *v_star,
-  dom_struct *dom, real dt0, real dt);
+  dom_struct *dom, real dt0, real dt, int *phase);
 /*
  * FUNCTION
  *  Compute the intermediate velocity field v_star (2nd-order in time).
@@ -1662,7 +1663,7 @@ __global__ void v_star_2(real rho_f, real nu,
 __global__ void w_star_2(real rho_f, real nu,
   real *u0, real *v0, real *w0, real *p, real *f,
   real *diff0, real *conv0, real *diff, real *conv, real *w_star,
-  dom_struct *dom, real dt0, real dt);
+  dom_struct *dom, real dt0, real dt, int *phase);
 /*
  * FUNCTION
  *  Compute the intermediate velocity field w_star (2nd-order in time).
@@ -2436,6 +2437,63 @@ __device__ real ab_int(real dt0, real dt, real f0, real df0, real df);
  *  * df -- function derivative at current time level
  * OUTPUT
  *  * f -- function value at future time level
+ ******
+ */
+
+/****f* bluebottle_kernel/internal_u<<<>>>()
+ * NAME
+ *  internal_u<<<>>>()
+ * TYPE
+ */
+__global__ void internal_u(real *u, part_struct *parts, dom_struct *dom,
+  int *flag_u, int *phase);
+/* PURPOSE
+ *  CUDA device kernel to apply particle solid-body motion to internal
+ *  velocity nodes.
+ * ARGUMENTS
+ *  * u -- device velocity field
+ *  * parts -- device particle struct
+ *  * dom -- device domain information
+ *  * flag_u -- device flag field
+ *  * phase -- device phase mask field
+ ******
+ */
+
+/****f* bluebottle_kernel/internal_v<<<>>>()
+ * NAME
+ *  internal_v<<<>>>()
+ * TYPE
+ */
+__global__ void internal_v(real *v, part_struct *parts, dom_struct *dom,
+  int *flag_v, int *phase);
+/* PURPOSE
+ *  CUDA device kernel to apply particle solid-body motion to internal
+ *  velocity nodes.
+ * ARGUMENTS
+ *  * v -- device velocity field
+ *  * parts -- device particle struct
+ *  * dom -- device domain information
+ *  * flag_v -- device flag field
+ *  * phase -- device phase mask field
+ ******
+ */
+
+/****f* bluebottle_kernel/internal_w<<<>>>()
+ * NAME
+ *  internal_w<<<>>>()
+ * TYPE
+ */
+__global__ void internal_w(real *w, part_struct *parts, dom_struct *dom,
+  int *flag_w, int *phase);
+/* PURPOSE
+ *  CUDA device kernel to apply particle solid-body motion to internal
+ *  velocity nodes.
+ * ARGUMENTS
+ *  * w -- device velocity field
+ *  * parts -- device particle struct
+ *  * dom -- device domain information
+ *  * flag_w -- device flag field
+ *  * phase -- device phase mask field
  ******
  */
 

@@ -38,6 +38,8 @@ void cuda_dom_malloc(void)
   cpumem += nsubdom * sizeof(real*);
   _p = (real**) malloc(nsubdom * sizeof(real*));
   cpumem += nsubdom * sizeof(real*);
+  _phi = (real**) malloc(nsubdom * sizeof(real*));
+  cpumem += nsubdom * sizeof(real*);
   //_divU = (real**) malloc(nsubdom * sizeof(real*));
   cpumem += nsubdom * sizeof(real*);
   _u = (real**) malloc(nsubdom * sizeof(real*));
@@ -129,6 +131,10 @@ void cuda_dom_malloc(void)
     gpumem += dom[dev].Gcc.s3b * sizeof(real);
 
     checkCudaErrors(cudaMalloc((void**) &(_p[dev]),
+      sizeof(real) * dom[dev].Gcc.s3b));
+    gpumem += dom[dev].Gcc.s3b * sizeof(real);
+
+    checkCudaErrors(cudaMalloc((void**) &(_phi[dev]),
       sizeof(real) * dom[dev].Gcc.s3b));
     gpumem += dom[dev].Gcc.s3b * sizeof(real);
 
@@ -267,6 +273,7 @@ void cuda_dom_push(void)
     real *pp0 = (real*) malloc(dom[dev].Gcc.s3b * sizeof(real));
     // cpumem += dom[dev].Gcc.s3b * sizeof(real);
     real *pp = (real*) malloc(dom[dev].Gcc.s3b * sizeof(real));
+    real *pphi = (real*) malloc(dom[dev].Gcc.s3b * sizeof(real));
     // cpumem += dom[dev].Gcc.s3b * sizeof(real);
     //real *pdivU = (real*) malloc(dom[dev].Gcc.s3b * sizeof(real));
     // cpumem += dom[dev].Gcc.s3b * sizeof(real);
@@ -327,6 +334,7 @@ void cuda_dom_push(void)
           CC = ii + jj * dom[dev].Gcc.s1b + kk * dom[dev].Gcc.s2b;
           pp0[CC] = p0[C];
           pp[CC] = p[C];
+          pphi[CC] = phi[C];
           //pdivU[CC] = divU[C];
         }
       }
@@ -400,6 +408,8 @@ void cuda_dom_push(void)
       cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(_p[dev], pp, sizeof(real) * dom[dev].Gcc.s3b,
       cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(_phi[dev], pphi, sizeof(real) * dom[dev].Gcc.s3b,
+      cudaMemcpyHostToDevice));
     //checkCudaErrors(cudaMemcpy(_divU[dev], pdivU, sizeof(real) * dom[dev].Gcc.s3b,
       //cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(_u[dev], uu, sizeof(real) * dom[dev].Gfx.s3b,
@@ -450,6 +460,7 @@ void cuda_dom_push(void)
     // free host subdomain working arrays
     free(pp0);
     free(pp);
+    free(pphi);
     //free(pdivU);
     free(uu);
     free(vv);
@@ -729,6 +740,7 @@ void cuda_dom_pull(void)
     real *pp0 = (real*) malloc(dom[dev].Gcc.s3b * sizeof(real));
     // cpumem += dom[dev].Gcc.s3b * sizeof(real);
     real *pp = (real*) malloc(dom[dev].Gcc.s3b * sizeof(real));
+    real *pphi = (real*) malloc(dom[dev].Gcc.s3b * sizeof(real));
     // cpumem += dom[dev].Gcc.s3b * sizeof(real);
     //real *pdivU = (real*) malloc(dom[dev].Gcc.s3b * sizeof(real));
     // cpumem += dom[dev].Gcc.s3b * sizeof(real);
@@ -772,6 +784,8 @@ void cuda_dom_pull(void)
     checkCudaErrors(cudaMemcpy(pp0, _p0[dev], sizeof(real) * dom[dev].Gcc.s3b,
       cudaMemcpyDeviceToHost)); 
     checkCudaErrors(cudaMemcpy(pp, _p[dev], sizeof(real) * dom[dev].Gcc.s3b,
+      cudaMemcpyDeviceToHost)); 
+    checkCudaErrors(cudaMemcpy(pphi, _phi[dev], sizeof(real) * dom[dev].Gcc.s3b,
       cudaMemcpyDeviceToHost)); 
     //checkCudaErrors(cudaMemcpy(pdivU , _divU [dev],
       //sizeof(real) * dom[dev].Gcc.s3b, cudaMemcpyDeviceToHost)); 
@@ -942,6 +956,7 @@ void cuda_dom_pull(void)
           CC = ii + jj * dom[dev].Gcc.s1b + kk * dom[dev].Gcc.s2b;
           p0[C] = pp0[CC];
           p[C] = pp[CC];
+          phi[C] = pphi[CC];
           //divU[C] = pdivU[CC];
         }
       }
@@ -1048,6 +1063,7 @@ void cuda_dom_pull(void)
     // free host subdomain working arrays
     free(pp0);
     free(pp);
+    free(pphi);
     //free(pdivU);
     free(uu);
     free(vv);
@@ -1316,6 +1332,7 @@ void cuda_dom_free(void)
     checkCudaErrors(cudaFree(_dom[dev]));
     checkCudaErrors(cudaFree(_p0[dev]));
     checkCudaErrors(cudaFree(_p[dev]));
+    checkCudaErrors(cudaFree(_phi[dev]));
     //checkCudaErrors(cudaFree(_divU[dev]));
     checkCudaErrors(cudaFree(_u[dev]));
     checkCudaErrors(cudaFree(_v[dev]));
@@ -1359,6 +1376,7 @@ void cuda_dom_free(void)
   free(_dom);
   free(_p0);
   free(_p);
+  free(_phi);
   //free(_divU);
   free(_u);
   free(_v);
@@ -2815,7 +2833,7 @@ void cuda_U_star_2(void)
     u_star_2<<<numBlocks_u, dimBlocks_u>>>(rho_f, nu,
       _u0[dev], _v0[dev], _w0[dev], _p0[dev], _f_x[dev],
       _diff0_u[dev], _conv0_u[dev], _diff_u[dev], _conv_u[dev],
-      _u_star[dev], _dom[dev], dt0, dt);
+      _u_star[dev], _dom[dev], dt0, dt, _phase[dev]);
 
     // v-component
     if(dom[dev].Gfy.knb < MAX_THREADS_DIM)
@@ -2837,7 +2855,7 @@ void cuda_U_star_2(void)
     v_star_2<<<numBlocks_v, dimBlocks_v>>>(rho_f, nu,
       _u0[dev], _v0[dev], _w0[dev], _p0[dev], _f_y[dev],
       _diff0_v[dev], _conv0_v[dev], _diff_v[dev], _conv_v[dev],
-      _v_star[dev], _dom[dev], dt0, dt);
+      _v_star[dev], _dom[dev], dt0, dt, _phase[dev]);
 
     // w-component
     if(dom[dev].Gfz.inb < MAX_THREADS_DIM)
@@ -2859,7 +2877,7 @@ void cuda_U_star_2(void)
     w_star_2<<<numBlocks_w, dimBlocks_w>>>(rho_f, nu,
       _u0[dev], _v0[dev], _w0[dev], _p0[dev], _f_z[dev],
       _diff0_w[dev], _conv0_w[dev], _diff_w[dev], _conv_w[dev],
-      _w_star[dev], _dom[dev], dt0, dt);
+      _w_star[dev], _dom[dev], dt0, dt, _phase[dev]);
 
   #ifdef TEST
     // copy _u_star back to _u
@@ -2878,6 +2896,202 @@ void cuda_U_star_2(void)
   }
 }
 #endif
+
+extern "C"
+void cuda_dom_BC_phi(void)
+{
+  // CPU threading for multi-GPU
+  #pragma omp parallel num_threads(nsubdom)
+  {
+    int dev = omp_get_thread_num();
+    checkCudaErrors(cudaSetDevice(dev + dev_start));
+
+    int threads_x = 0;
+    int threads_y = 0;
+    int threads_z = 0;
+    int blocks_x = 0;
+    int blocks_y = 0;
+    int blocks_z = 0;
+
+    // check whether each subdomain boundary (E, W, N, S, T, B) is
+    // an external boundary
+    if(dom[dev].W == -1) {
+      // set up kernel call
+      // pressure
+      if(dom[dev].Gcc.jnb < MAX_THREADS_DIM)
+        threads_y = dom[dev].Gcc.jnb;
+      else
+        threads_y = MAX_THREADS_DIM;
+
+      if(dom[dev].Gcc.knb < MAX_THREADS_DIM)
+        threads_z = dom[dev].Gcc.knb;
+      else
+        threads_z = MAX_THREADS_DIM;
+
+      blocks_y = (int)ceil((real) dom[dev].Gcc.jnb / (real) threads_y);
+      blocks_z = (int)ceil((real) dom[dev].Gcc.knb / (real) threads_z);
+
+      dim3 dimBlocks_p(threads_y, threads_z);
+      dim3 numBlocks_p(blocks_y, blocks_z);
+
+      // apply BC to all fields for this face
+      switch(bc.pW) {
+        case PERIODIC:
+          BC_p_W_P<<<numBlocks_p, dimBlocks_p>>>(_phi[dev], _dom[dev]);
+          break;
+        case NEUMANN:
+          BC_p_W_N<<<numBlocks_p, dimBlocks_p>>>(_phi[dev], _dom[dev]);
+          break;
+      }
+    }
+    if(dom[dev].E == -1) {
+      // set up kernel call
+      // pressure
+      if(dom[dev].Gcc.jnb < MAX_THREADS_DIM)
+        threads_y = dom[dev].Gcc.jnb;
+      else
+        threads_y = MAX_THREADS_DIM;
+
+      if(dom[dev].Gcc.knb < MAX_THREADS_DIM)
+        threads_z = dom[dev].Gcc.knb;
+      else
+        threads_z = MAX_THREADS_DIM;
+
+      blocks_y = (int)ceil((real) dom[dev].Gcc.jnb / (real) threads_y);
+      blocks_z = (int)ceil((real) dom[dev].Gcc.knb / (real) threads_z);
+
+      dim3 dimBlocks_p(threads_y, threads_z);
+      dim3 numBlocks_p(blocks_y, blocks_z);
+
+      // apply BC to all fields for this face
+      switch(bc.pE) {
+        case PERIODIC:
+          BC_p_E_P<<<numBlocks_p, dimBlocks_p>>>(_phi[dev], _dom[dev]);
+          break;
+        case NEUMANN:
+          BC_p_E_N<<<numBlocks_p, dimBlocks_p>>>(_phi[dev], _dom[dev]);
+          break;
+      }
+    }
+    if(dom[dev].S == -1) {
+      // set up kernel call
+      // pressure
+      if(dom[dev].Gcc.knb < MAX_THREADS_DIM)
+        threads_z = dom[dev].Gcc.knb;
+      else
+        threads_z = MAX_THREADS_DIM;
+
+      if(dom[dev].Gcc.inb < MAX_THREADS_DIM)
+        threads_x = dom[dev].Gcc.inb;
+      else
+        threads_x = MAX_THREADS_DIM;
+
+      blocks_z = (int)ceil((real) dom[dev].Gcc.knb / (real) threads_z);
+      blocks_x = (int)ceil((real) dom[dev].Gcc.inb / (real) threads_x);
+
+      dim3 dimBlocks_p(threads_z, threads_x);
+      dim3 numBlocks_p(blocks_z, blocks_x);
+
+      // apply BC to all fields for this face
+      switch(bc.pS) {
+        case PERIODIC:
+          BC_p_S_P<<<numBlocks_p, dimBlocks_p>>>(_phi[dev], _dom[dev]);
+          break;
+        case NEUMANN:
+          BC_p_S_N<<<numBlocks_p, dimBlocks_p>>>(_phi[dev], _dom[dev]);
+          break;
+      }
+    }
+    if(dom[dev].N == -1) {
+      // set up kernel call
+      // pressure
+      if(dom[dev].Gcc.knb < MAX_THREADS_DIM)
+        threads_z = dom[dev].Gcc.knb;
+      else
+        threads_z = MAX_THREADS_DIM;
+
+      if(dom[dev].Gcc.inb < MAX_THREADS_DIM)
+        threads_x = dom[dev].Gcc.inb;
+      else
+        threads_x = MAX_THREADS_DIM;
+
+      blocks_z = (int)ceil((real) dom[dev].Gcc.knb / (real) threads_z);
+      blocks_x = (int)ceil((real) dom[dev].Gcc.inb / (real) threads_x);
+
+      dim3 dimBlocks_p(threads_z, threads_x);
+      dim3 numBlocks_p(blocks_z, blocks_x);
+
+      // apply BC to all fields for this face
+      switch(bc.pN) {
+        case PERIODIC:
+          BC_p_N_P<<<numBlocks_p, dimBlocks_p>>>(_phi[dev], _dom[dev]);
+          break;
+        case NEUMANN:
+          BC_p_N_N<<<numBlocks_p, dimBlocks_p>>>(_phi[dev], _dom[dev]);
+          break;
+      }
+    }
+    if(dom[dev].B == -1) {
+      // set up kernel call
+      // pressure
+      if(dom[dev].Gcc.inb < MAX_THREADS_DIM)
+        threads_x = dom[dev].Gcc.inb;
+      else
+        threads_x = MAX_THREADS_DIM;
+
+      if(dom[dev].Gcc.jnb < MAX_THREADS_DIM)
+        threads_y = dom[dev].Gcc.jnb;
+      else
+        threads_y = MAX_THREADS_DIM;
+
+      blocks_x = (int)ceil((real) dom[dev].Gcc.inb / (real) threads_x);
+      blocks_y = (int)ceil((real) dom[dev].Gcc.jnb / (real) threads_y);
+
+      dim3 dimBlocks_p(threads_x, threads_y);
+      dim3 numBlocks_p(blocks_x, blocks_y);
+
+      // apply BC to all fields for this face
+      switch(bc.pB) {
+        case PERIODIC:
+          BC_p_B_P<<<numBlocks_p, dimBlocks_p>>>(_phi[dev], _dom[dev]);
+          break;
+        case NEUMANN:
+          BC_p_B_N<<<numBlocks_p, dimBlocks_p>>>(_phi[dev], _dom[dev]);
+          break;
+      }
+
+    }
+    if(dom[dev].T == -1) {
+      // set up kernel call
+      // pressure
+      if(dom[dev].Gcc.inb < MAX_THREADS_DIM)
+        threads_x = dom[dev].Gcc.inb;
+      else
+        threads_x = MAX_THREADS_DIM;
+
+      if(dom[dev].Gcc.jnb < MAX_THREADS_DIM)
+        threads_y = dom[dev].Gcc.jnb;
+      else
+        threads_y = MAX_THREADS_DIM;
+
+      blocks_x = (int)ceil((real) dom[dev].Gcc.inb / (real) threads_x);
+      blocks_y = (int)ceil((real) dom[dev].Gcc.jnb / (real) threads_y);
+
+      dim3 dimBlocks_p(threads_x, threads_y);
+      dim3 numBlocks_p(blocks_x, blocks_y);
+
+      // apply BC to all fields for this face
+      switch(bc.pT) {
+        case PERIODIC:
+          BC_p_T_P<<<numBlocks_p, dimBlocks_p>>>(_phi[dev], _dom[dev]);
+          break;
+        case NEUMANN:
+          BC_p_T_N<<<numBlocks_p, dimBlocks_p>>>(_phi[dev], _dom[dev]);
+          break;
+      }
+    }
+  }
+}
 
 extern "C"
 void cuda_dom_BC_p(void)
@@ -3108,7 +3322,7 @@ void cuda_project(void)
     dim3 dimBlocks_u(threads_y, threads_z);
     dim3 numBlocks_u(blocks_y, blocks_z);
 
-    project_u<<<numBlocks_u, dimBlocks_u>>>(_u_star[dev], _p[dev],
+    project_u<<<numBlocks_u, dimBlocks_u>>>(_u_star[dev], _phi[dev],
       rho_f, dt, _u[dev], _dom[dev], 1. / dom[dev].dx, _flag_u[dev], _phase[dev]);
 
     // solve for v
@@ -3128,7 +3342,7 @@ void cuda_project(void)
     dim3 dimBlocks_v(threads_z, threads_x);
     dim3 numBlocks_v(blocks_z, blocks_x);
 
-    project_v<<<numBlocks_v, dimBlocks_v>>>(_v_star[dev], _p[dev],
+    project_v<<<numBlocks_v, dimBlocks_v>>>(_v_star[dev], _phi[dev],
       rho_f, dt, _v[dev], _dom[dev], 1. / dom[dev].dy, _flag_v[dev], _phase[dev]);
 
     // solve for w
@@ -3148,7 +3362,7 @@ void cuda_project(void)
     dim3 dimBlocks_w(threads_x, threads_y);
     dim3 numBlocks_w(blocks_x, blocks_y);
 
-    project_w<<<numBlocks_w, dimBlocks_w>>>(_w_star[dev], _p[dev],
+    project_w<<<numBlocks_w, dimBlocks_w>>>(_w_star[dev], _phi[dev],
       rho_f, dt, _w[dev], _dom[dev], 1. / dom[dev].dz, _flag_w[dev], _phase[dev]);
   }
 }
@@ -3171,12 +3385,27 @@ real cuda_find_dt(void)
     real v_max = find_max_mag(dom[dev].Gfy.s3b, _v[dev]);
     real w_max = find_max_mag(dom[dev].Gfz.s3b, _w[dev]);
 
+/*#ifndef IMPLICIT
+    real tmp = u_max / dom[dev].dx + 2.*nu/dom[dev].dx/dom[dev].dx;
+    tmp += v_max / dom[dev].dy + 2.*nu/dom[dev].dy/dom[dev].dy;
+    tmp += w_max / dom[dev].dz + 2.*nu/dom[dev].dz/dom[dev].dz;
+
+    dts[dev] = tmp;
+#else
+    real tmp = u_max / dom[dev].dx;
+    tmp += v_max / dom[dev].dy;
+    tmp += w_max / dom[dev].dz;
+
+    dts[dev] = tmp;
+#endif
+*/
+
 #ifndef IMPLICIT
     real max = u_max / dom[dev].dx + 2.*nu/dom[dev].dx/dom[dev].dx;
     real tmp = v_max / dom[dev].dy + 2.*nu/dom[dev].dy/dom[dev].dy;
     if(tmp > max) max = tmp;
     tmp = w_max / dom[dev].dz + 2.*nu/dom[dev].dz/dom[dev].dz;
-    if(w_max > max) max = tmp;
+    if(tmp > max) max = tmp;
 
     dts[dev] = max;
 #else
@@ -3184,7 +3413,7 @@ real cuda_find_dt(void)
     real tmp = v_max / dom[dev].dy;
     if(tmp > max) max = tmp;
     tmp = w_max / dom[dev].dz;
-    if(w_max > max) max = tmp;
+    if(tmp > max) max = tmp;
 
     dts[dev] = max;
     //dts[dev] += v_max / dom[dev].dy;
@@ -3280,10 +3509,10 @@ void cuda_update_p()
     checkCudaErrors(cudaMalloc((void**) &_Lp,
       sizeof(real)*dom[dev].Gcc.s3b));
 
-    update_p_laplacian<<<numBlocks_p, dimBlocks_p>>>(_Lp, _p[dev], _dom[dev]);
+    update_p_laplacian<<<numBlocks_p, dimBlocks_p>>>(_Lp, _phi[dev], _dom[dev]);
 
-    update_p<<<numBlocks_p, dimBlocks_p>>>(_Lp, _p0[dev], _p[dev], _dom[dev],
-      nu, dt);
+    update_p<<<numBlocks_p, dimBlocks_p>>>(_Lp, _p0[dev], _p[dev], _phi[dev],
+      _dom[dev], nu, dt, _phase[dev]);
 
     // clean up temporary array
     checkCudaErrors(cudaFree(_Lp));
@@ -3411,7 +3640,7 @@ void cuda_compute_forcing(real *pid_int, real *pid_back, real Kp, real Ki,
 
       *pid_int = *pid_int + acc_z*dt;
       gradP.z = gradP.z
-        + (Kp*acc_z + Ki*(*pid_int)/ttime + Kd*(acc_z-*pid_back))*rho_avg;
+        + (Kp*acc_z + Ki*(*pid_int)/ttime + (Kd)*(acc_z-*pid_back))*rho_avg;
       *pid_back = acc_z;
     }
 
@@ -3884,10 +4113,14 @@ void cuda_move_parts_sub()
 
     int threads = MAX_THREADS_1D;
     int blocks = (int)ceil((real) nparts / (real) threads);
+    if(threads > nparts) {
+      threads = nparts;
+      blocks = 1;
+    }
 
     dim3 dimBlocks(threads);
     dim3 numBlocks(blocks);
-    
+
     if(nparts > 0) {
       // do collision forcing
       real *forces;
@@ -3949,6 +4182,10 @@ void cuda_move_parts()
 
     int threads = MAX_THREADS_1D;
     int blocks = (int)ceil((real) nparts / (real) threads);
+    if(threads > nparts) {
+      threads = nparts;
+      blocks = 1;
+    }
 
     dim3 dimBlocks(threads);
     dim3 numBlocks(blocks);
@@ -4270,5 +4507,85 @@ void cuda_yank_turb_planes(int *bc_flow_configs, real *pos, real *vel)
     if(bc_flow_configs[17] == PRECURSOR)
       yank_w_BT<<<numBlocks_w, dimBlocks_w>>>(_w[dev], _dom[dev], _w_BT[dev],
         pos[ 8], vel[17]);
+  }
+}
+
+void cuda_parts_internal(void)
+{
+  // CPU thread for multi-GPU
+  #pragma omp parallel num_threads(nsubdom)
+  {
+    int dev = omp_get_thread_num();
+    cudaSetDevice(dev + dev_start);
+
+    int threads_x = 0;
+    int threads_y = 0;
+    int threads_z = 0;
+    int blocks_x = 0;
+    int blocks_y = 0;
+    int blocks_z = 0;
+
+    if(nparts > 0) {
+
+      // solve for u
+      if(dom[dev].Gfx._jn < MAX_THREADS_DIM)
+        threads_y = dom[dev].Gfx._jn;
+      else
+        threads_y = MAX_THREADS_DIM;
+
+      if(dom[dev].Gfx._kn < MAX_THREADS_DIM)
+        threads_z = dom[dev].Gfx._kn;
+      else
+        threads_z = MAX_THREADS_DIM;
+
+      blocks_y = (int)ceil((real) dom[dev].Gfx._jn / (real) threads_y);
+      blocks_z = (int)ceil((real) dom[dev].Gfx._kn / (real) threads_z);
+
+      dim3 dimBlocks_u(threads_y, threads_z);
+      dim3 numBlocks_u(blocks_y, blocks_z);
+
+      internal_u<<<numBlocks_u, dimBlocks_u>>>(_u[dev], _parts[dev], _dom[dev],
+        _flag_u[dev], _phase[dev]);
+
+      // solve for v
+      if(dom[dev].Gfy._kn < MAX_THREADS_DIM)
+        threads_z = dom[dev].Gfy._kn;
+      else
+        threads_z = MAX_THREADS_DIM;
+
+      if(dom[dev].Gfy._in < MAX_THREADS_DIM)
+        threads_x = dom[dev].Gfy._in;
+      else
+        threads_x = MAX_THREADS_DIM;
+
+      blocks_z = (int)ceil((real) dom[dev].Gfy._kn / (real) threads_z);
+      blocks_x = (int)ceil((real) dom[dev].Gfy._in / (real) threads_x);
+
+      dim3 dimBlocks_v(threads_z, threads_x);
+      dim3 numBlocks_v(blocks_z, blocks_x);
+
+      internal_v<<<numBlocks_v, dimBlocks_v>>>(_v[dev], _parts[dev], _dom[dev],
+        _flag_v[dev], _phase[dev]);
+
+      // solve for w
+      if(dom[dev].Gfz._in < MAX_THREADS_DIM)
+        threads_x = dom[dev].Gfz._in;
+      else
+        threads_x = MAX_THREADS_DIM;
+
+      if(dom[dev].Gfz._jn < MAX_THREADS_DIM)
+        threads_y = dom[dev].Gfz._jn;
+      else
+        threads_y = MAX_THREADS_DIM;
+
+      blocks_x = (int)ceil((real) dom[dev].Gfz._in / (real) threads_x);
+      blocks_y = (int)ceil((real) dom[dev].Gfz._jn / (real) threads_y);
+
+      dim3 dimBlocks_w(threads_x, threads_y);
+      dim3 numBlocks_w(blocks_x, blocks_y);
+
+      internal_w<<<numBlocks_w, dimBlocks_w>>>(_w[dev], _parts[dev], _dom[dev],
+        _flag_w[dev], _phase[dev]);
+    }
   }
 }

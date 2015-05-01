@@ -33,9 +33,11 @@ dom_struct **_dom;
 dom_struct Dom;
 real *p0;
 real *p;
+real *phi;
 //real *divU;
 real **_p0;
 real **_p;
+real **_phi;
 //real **_divU;
 real *u;
 real *u0;
@@ -478,6 +480,10 @@ int main(int argc, char *argv[]) {
         }
         cuda_dom_BC();
 
+        // write particle internal flow equal to solid body velocity
+        cuda_parts_internal();
+        cuda_dom_BC();
+
         // write initial fields
         if(runrestart != 1) {
           cuda_dom_pull();
@@ -546,6 +552,7 @@ int main(int argc, char *argv[]) {
 
           int iter = 0;
           real iter_err = FLT_MAX;
+
           while(iter_err > lamb_residual) {  // iterate for Lamb's coefficients
             #ifndef BATCHRUN
               printf("  Iteration %d: ", iter);
@@ -574,7 +581,7 @@ int main(int argc, char *argv[]) {
             cuda_dom_BC_star();
             // solve for pressure
             cuda_PP_bicgstab(rank);
-            cuda_dom_BC_p();
+            cuda_dom_BC_phi();
             // solve for U
             cuda_project();
             // apply boundary conditions to field variables
@@ -584,6 +591,9 @@ int main(int argc, char *argv[]) {
             cuda_dom_BC();
             // update pressure
             cuda_update_p();
+            if(nparts > 0) {
+              cuda_part_BC();
+            }
             cuda_dom_BC_p();
 
             // update Lamb's coefficients
@@ -619,6 +629,10 @@ int main(int argc, char *argv[]) {
             // update particle position
             cuda_move_parts();
 
+            // write particle internal flow equal to solid body velocity
+            cuda_parts_internal();
+            cuda_dom_BC();
+
             // store u, conv, and coeffs for use in next timestep
             cuda_store_u();
             if(nparts > 0)
@@ -643,6 +657,7 @@ int main(int argc, char *argv[]) {
             if(rec_flow_field_ttime_out >= rec_flow_field_dt) {
               // pull back data and write fields
               cuda_dom_pull();
+              cuda_part_pull();
               #ifndef BATCHRUN
                 printf("  Writing flow field file t = %e...                  \r",
                   ttime);

@@ -1843,6 +1843,8 @@ int domain_init(void)
   cpumem += Dom.Gcc.s3b * sizeof(real);
   p = (real*) malloc(Dom.Gcc.s3b * sizeof(real));
   cpumem += Dom.Gcc.s3b * sizeof(real);
+  phi = (real*) malloc(Dom.Gcc.s3b * sizeof(real));
+  cpumem += Dom.Gcc.s3 * sizeof(real);
   //divU = (real*) malloc(Dom.Gcc.s3b * sizeof(real));
   cpumem += Dom.Gcc.s3b * sizeof(real);
   u = (real*) malloc(Dom.Gfx.s3b * sizeof(real));
@@ -1918,6 +1920,7 @@ int domain_init(void)
   for(i = 0; i < Dom.Gcc.s3b; i++) {
     p0[i] = 0.;
     p[i] = 0.;
+    phi[i] = 0.;
     //divU[i] = 0.;
   }
 
@@ -2656,8 +2659,10 @@ int domain_init_turb(void)
   for(i = 0; i < Dom.Gcc.s3b; i++) {
     p0[i] = 0.;
     p[i] = 0.;
+    phi[i] = 0.;
     //divU[i] = 0.;
   }
+
   for(i = 0; i < Dom.Gfx.s3b; i++) {
     u[i] = 0.;
 #ifndef IMPLICIT
@@ -2858,6 +2863,7 @@ void domain_clean(void)
   free(dom);
   free(p0);
   free(p);
+  free(phi);
   //free(divU);
   free(u);
   free(v);
@@ -3071,6 +3077,7 @@ void out_restart(void)
     for(j = Dom.Gcc.jsb; j < Dom.Gcc.jeb; j++) {
       for(i = Dom.Gcc.isb; i < Dom.Gcc.ieb; i++) {
         fprintf(rest, "%e ", p[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
+        fprintf(rest, "%e ", phi[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
         fprintf(rest, "%e ", p0[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
         fprintf(rest, "%d ", phase[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
         fprintf(rest, "%d ", phase_shell[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
@@ -3405,9 +3412,11 @@ void in_restart(void)
       for(i = Dom.Gcc.isb; i < Dom.Gcc.ieb; i++) {
 #ifdef DOUBLE
         fret = fscanf(infile, "%le ", &p[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
+        fret = fscanf(infile, "%le ", &phi[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
         fret = fscanf(infile, "%le ", &p0[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
 #else
         fret = fscanf(infile, "%e ", &p[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
+        fret = fscanf(infile, "%e ", &phi[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
         fret = fscanf(infile, "%e ", &p0[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
 #endif
         fret = fscanf(infile, "%d ", &phase[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
@@ -3791,6 +3800,7 @@ void out_restart_turb(void)
     for(j = Dom.Gcc.jsb; j < Dom.Gcc.jeb; j++) {
       for(i = Dom.Gcc.isb; i < Dom.Gcc.ieb; i++) {
         fprintf(rest, "%e ", p[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
+        fprintf(rest, "%e ", phi[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
         fprintf(rest, "%e ", p0[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
         fprintf(rest, "%d ", phase[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
         fprintf(rest, "%d ", phase_shell[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
@@ -3994,9 +4004,11 @@ void in_restart_turb(void)
       for(i = Dom.Gcc.isb; i < Dom.Gcc.ieb; i++) {
 #ifdef DOUBLE
         fret = fscanf(infile, "%le ", &p[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
+        fret = fscanf(infile, "%le ", &phi[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
         fret = fscanf(infile, "%le ", &p0[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
 #else
         fret = fscanf(infile, "%e ", &p[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
+        fret = fscanf(infile, "%e ", &phi[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
         fret = fscanf(infile, "%e ", &p0[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
 #endif
         fret = fscanf(infile, "%d ", &phase[i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b]);
