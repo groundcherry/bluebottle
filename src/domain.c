@@ -2582,6 +2582,8 @@ int domain_init_turb(void)
   cpumem += Dom.Gcc.s3b * sizeof(real);
   p = (real*) malloc(Dom.Gcc.s3b * sizeof(real));
   cpumem += Dom.Gcc.s3b * sizeof(real);
+  phi = (real*) malloc(Dom.Gcc.s3b * sizeof(real));
+  cpumem += Dom.Gcc.s3 * sizeof(real);
   //divU = (real*) malloc(Dom.Gcc.s3b * sizeof(real));
   cpumem += Dom.Gcc.s3b * sizeof(real);
   u = (real*) malloc(Dom.Gfx.s3b * sizeof(real));
@@ -2673,6 +2675,7 @@ int domain_init_turb(void)
     conv0_u[i] = 0.;
     conv_u[i] = 0.;
     f_x[i] = 0.;
+    u_star[i] = 0.;
   }
   for(i = 0; i < Dom.Gfy.s3b; i++) {
     v[i] = 0.;
@@ -2684,6 +2687,7 @@ int domain_init_turb(void)
     conv0_v[i] = 0.;
     conv_v[i] = 0.;
     f_y[i] = 0.;
+    v_star[i] = 0.;
   }
   for(i = 0; i < Dom.Gfz.s3b; i++) {
     w[i] = 0.;
@@ -2695,6 +2699,7 @@ int domain_init_turb(void)
     conv0_w[i] = 0.;
     conv_w[i] = 0.;
     f_z[i] = 0.;
+    w_star[i] = 0.;
   }
 
   // integral scale
@@ -2839,9 +2844,13 @@ int domain_init_turb(void)
   }
 
   // initialize some variables
-  dt = 2 * nu / (Dom.dx * Dom.dx);
-  dt += 2 * nu / (Dom.dy * Dom.dy);
-  dt += 2 * nu / (Dom.dz * Dom.dz);
+  real dx_min = Dom.dx;
+  if(Dom.dy < dx_min) dx_min = Dom.dy;
+  if(Dom.dz < dx_min) dx_min = Dom.dz;
+
+  dt = 2. * nu / (dx_min * dx_min);
+  //dt += 2. * nu / (Dom.dy * Dom.dy);
+  //dt += 2. * nu / (Dom.dz * Dom.dz);
   dt = CFL / dt;
   dt0 = -1.;
   stepnum = 0;
@@ -3722,7 +3731,7 @@ void out_restart_turb(void)
   // write current timestep information (uvw0 is previous timestep info)
   // flow solver data
   fprintf(rest, "%e %e %e %d %d\n", ttime, dt0, dt, stepnum,
-    rec_paraview_stepnum_out);
+    rec_precursor_stepnum_out);
 
   for(k = Dom.Gfx.ksb; k < Dom.Gfx.keb; k++) {
     for(j = Dom.Gfx.jsb; j < Dom.Gfx.jeb; j++) {
@@ -3840,6 +3849,7 @@ void out_restart_turb(void)
     fprintf(rest, "%e ", bc_plane_pos[i]);
   }
   fprintf(rest, "\n");
+  fprintf(rest, "%e\n", rec_precursor_ttime_out);
 
   // close the file
   fclose(rest);
@@ -3863,10 +3873,10 @@ void in_restart_turb(void)
   // flow solver data
 #ifdef DOUBLE
   fret = fscanf(infile, "%le %le %le %d %d\n", &ttime, &dt0, &dt, &stepnum,
-    &rec_paraview_stepnum_out);
+    &rec_precursor_stepnum_out);
 #else
   fret = fscanf(infile, "%e %e %e %d %d\n", &ttime, &dt0, &dt, &stepnum,
-    &rec_paraview_stepnum_out);
+    &rec_precursor_stepnum_out);
 #endif
 
   for(k = Dom.Gfx.ksb; k < Dom.Gfx.keb; k++) {
@@ -4053,6 +4063,12 @@ void in_restart_turb(void)
 #endif
   }
   fprintf(infile, "\n");
+
+#ifdef DOUBLE
+  fret = fscanf(infile, "%le\n", &rec_precursor_ttime_out);
+#else
+  fret = fscanf(infile, "%e\n", &rec_precursor_ttime_out);
+#endif
 
   // close file
   fclose(infile);

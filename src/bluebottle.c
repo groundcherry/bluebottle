@@ -940,7 +940,7 @@ int main(int argc, char *argv[]) {
     cuda_dom_BC();
 
     // write initial fields
-    if(rec_precursor_dt > 0) {
+    if(rec_precursor_dt > 0 && runrestart != 1) {
       cuda_dom_pull();
       printf("Writing precursor file %d (t = %e)...",
         rec_precursor_stepnum_out, ttime);
@@ -980,7 +980,7 @@ int main(int argc, char *argv[]) {
       cuda_dom_BC_star();
       // solve for pressure
       cuda_PP_bicgstab(rank);
-      cuda_dom_BC_p();
+      cuda_dom_BC_phi();
       // solve for U
       cuda_project();
       // apply boundary conditions to field variables
