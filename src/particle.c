@@ -110,6 +110,8 @@ void parts_read_input(int turb)
     fret = fscanf(infile, "rho %lf\n", &parts[i].rho);
     fret = fscanf(infile, "E %lf\n", &parts[i].E);
     fret = fscanf(infile, "sigma %lf\n", &parts[i].sigma);
+    fret = fscanf(infile, "e_dry %lf\n", &parts[i].e_dry);
+    fret = fscanf(infile, "l_rough %lf\n", &parts[i].l_rough);
 #else // single precision
     fret = fscanf(infile, "r %f\n", &parts[i].r);
     fret = fscanf(infile, "(x, y, z) %f %f %f\n",
@@ -121,6 +123,8 @@ void parts_read_input(int turb)
     fret = fscanf(infile, "rho %f\n", &parts[i].rho);
     fret = fscanf(infile, "E %f\n", &parts[i].E);
     fret = fscanf(infile, "sigma %f\n", &parts[i].sigma);
+    fret = fscanf(infile, "e_dry %f\n", &parts[i].e_dry);
+    fret = fscanf(infile, "l_rough %f\n", &parts[i].l_rough);
 #endif
     fret = fscanf(infile, "order %d\n", &parts[i].order);
 #ifdef DOUBLE
@@ -190,6 +194,8 @@ void parts_show_config(void)
     printf("    rho = %f\n", parts[i].rho);
     printf("    E = %e\n", parts[i].E);
     printf("    sigma = %e\n", parts[i].sigma);
+    printf("    e_dry = %e\n", parts[i].e_dry);
+    printf("    l_rough = %e\n", parts[i].l_rough);
     printf("    order = %d\n", parts[i].order);
     printf("    rs = %e\n", parts[i].rs);
     printf("    spring_k = %f\n", parts[i].spring_k);
@@ -434,6 +440,9 @@ int parts_init(void)
     chinm_re00[i] = 0.;
     chinm_im00[i] = 0.;
   }
+
+  // initialize Stokes number
+  parts[i].St = 0.;
 
   return EXIT_SUCCESS;
 }

@@ -4135,13 +4135,13 @@ void cuda_move_parts_sub()
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu);
+          nparts, bc, eps, mu, rho_f, nu);
         move_parts_a<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev], nparts,
           dt, dt0, g, rho_f, ttime);
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu);
+          nparts, bc, eps, mu, rho_f, nu);
       } else if(nparts > 1) {
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
 
@@ -4151,7 +4151,7 @@ void cuda_move_parts_sub()
         }
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu);
+          nparts, bc, eps, mu, rho_f, nu);
         move_parts_a<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev], nparts,
           dt, dt0, g, rho_f, ttime);
 
@@ -4163,7 +4163,7 @@ void cuda_move_parts_sub()
         }
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu);
+          nparts, bc, eps, mu, rho_f, nu);
       }
 
       checkCudaErrors(cudaFree(forces));
@@ -4204,13 +4204,13 @@ void cuda_move_parts()
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu);
+          nparts, bc, eps, mu, rho_f, nu);
         move_parts_a<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev], nparts,
           dt, dt0, g, rho_f, ttime);
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu);
+          nparts, bc, eps, mu, rho_f, nu);
       } else if(nparts > 1) {
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
 
@@ -4220,7 +4220,7 @@ void cuda_move_parts()
         }
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu);
+          nparts, bc, eps, mu, rho_f, nu);
         move_parts_a<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev], nparts,
           dt, dt0, g, rho_f, ttime);
 
@@ -4232,7 +4232,7 @@ void cuda_move_parts()
         }
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu);
+          nparts, bc, eps, mu, rho_f, nu);
       }
 
       move_parts_b<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev], nparts,
