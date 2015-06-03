@@ -1961,8 +1961,11 @@ int domain_init(void)
     w_star[i] = 0.;
   }
 
-  // initialize TAYLOR_GREEN vortex
 /*
+  // initialize TAYLOR_GREEN vortex
+  //dt = 0.015199416342412e-4;
+  //dt = 0.060562015503876e-4;
+  dt = 0.240384615384615e-4/2.;
   for(k = Dom.Gfx.ksb; k < Dom.Gfx.keb; k++) {
     for(j = Dom.Gfx.jsb; j < Dom.Gfx.jeb; j++) {
       for(i = Dom.Gfx.isb; i < Dom.Gfx.ieb; i++) {
@@ -1971,13 +1974,13 @@ int domain_init(void)
         real z = (k-0.5) * Dom.dz + Dom.zs;
         int C = i+j*Dom.Gfx.s1b+k*Dom.Gfx.s2b;
         u[C] = cos(2.*PI*x)*sin(2.*PI*y);
-        u0[C] = u[C] * exp(16.*PI*PI*1.0e-6);
+        u0[C] = u[C] * exp(16.*PI*PI*dt);
         conv0_u[C] = -4.*PI*sin(2.*PI*x)*cos(2.*PI*x)*sin(2.*PI*y)*sin(2.*PI*y)
           + 2.*PI*sin(2.*PI*x)*cos(2.*PI*x)
           *(sin(2.*PI*y)*sin(2.*PI*y)-cos(2.*PI*y)*cos(2.*PI*y));
-        conv0_u[C] *= exp(16.*PI*PI*1.0e-6);
+        conv0_u[C] *= exp(16.*PI*PI*dt);
         diff0_u[C] = -8.*PI*PI*nu*cos(2.*PI*x)*sin(2.*PI*y);
-        diff0_u[C] *= exp(16.*PI*PI*1.0e-6);
+        diff0_u[C] *= exp(16.*PI*PI*dt);
       }
     }
   }
@@ -1989,13 +1992,13 @@ int domain_init(void)
         real z = (k-0.5) * Dom.dz + Dom.zs;
         int C = i+j*Dom.Gfy.s1b+k*Dom.Gfy.s2b;
         v[C] = -sin(2.*PI*x)*cos(2.*PI*y);
-        v0[C] = v[C] * exp(16.*PI*PI*1.0e-6);
+        v0[C] = v[C] * exp(16.*PI*PI*dt);
         conv0_v[C] = -4.*PI*sin(2.*PI*x)*sin(2.*PI*x)*sin(2.*PI*y)*cos(2.*PI*y)
           + 2.*PI*sin(2.*PI*y)*cos(2.*PI*y)
           *(sin(2.*PI*x)*sin(2.*PI*x)-cos(2.*PI*x)*cos(2.*PI*x));
-        conv0_v[C] *= exp(16.*PI*PI*1.0e-6);
+        conv0_v[C] *= exp(16.*PI*PI*dt);
         diff0_v[C] = 8.*PI*PI*nu*sin(2.*PI*x)*cos(2.*PI*y);
-        diff0_v[C] *= exp(16.*PI*PI*1.0e-6);
+        diff0_v[C] *= exp(16.*PI*PI*dt);
       }
     }
   }
@@ -2015,8 +2018,8 @@ int domain_init(void)
         real y = (j-0.5) * Dom.dy + Dom.ys;
         real z = (k-0.5) * Dom.dz + Dom.zs;
         int C = i+j*Dom.Gcc.s1b+k*Dom.Gcc.s2b;
-        p0[C] = -0.25*rho_f*(cos(2.*2.*PI*x)+cos(2.*2.*PI*y))*exp(16.*PI*PI*0.0e-6);
-        p[C] = -0.25*rho_f*(cos(2.*2.*PI*x)+cos(2.*2.*PI*y))*exp(16.*PI*PI*0.0e-6);
+        p0[C] = -0.25*rho_f*(cos(2.*2.*PI*x)+cos(2.*2.*PI*y))*exp(16.*PI*PI*dt/2.);
+        p[C] = -0.25*rho_f*(cos(2.*2.*PI*x)+cos(2.*2.*PI*y))*exp(16.*PI*PI*dt/2.);
       }
     }
   }

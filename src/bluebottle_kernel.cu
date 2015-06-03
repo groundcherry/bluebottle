@@ -2218,22 +2218,23 @@ __global__ void plane_eps_z_T(real eps, real *w_star, dom_struct *dom)
 }
 
 __global__ void move_parts_a(dom_struct *dom, part_struct *parts, int nparts,
-  real dt, real dt0, g_struct g, real rho_f, real ttime)
+  real dt, real dt0, g_struct g, gradP_struct gradP, real rho_f, real ttime)
 {
   int pp = threadIdx.x + blockIdx.x*blockDim.x; // particle number
-  real m = 4./3. * PI * parts[pp].rho * parts[pp].r*parts[pp].r*parts[pp].r;
+  real vol = 4./3. * PI * parts[pp].r*parts[pp].r*parts[pp].r;
+  real m = vol * parts[pp].rho;
 
   if(pp < nparts) {
     if(parts[pp].translating) {
       // update linear accelerations
       parts[pp].udot = (parts[pp].Fx + parts[pp].kFx + parts[pp].iFx
-        + parts[pp].aFx) / m
+        + parts[pp].aFx - vol*gradP.x) / m
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.x;
       parts[pp].vdot = (parts[pp].Fy + parts[pp].kFy + parts[pp].iFy
-        + parts[pp].aFy) / m
+        + parts[pp].aFy - vol*gradP.y) / m
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.y;
       parts[pp].wdot = (parts[pp].Fz + parts[pp].kFz + parts[pp].iFz
-        + parts[pp].aFz) / m
+        + parts[pp].aFz - vol*gradP.z) / m
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.z;
 
       // update linear velocities
@@ -2259,22 +2260,23 @@ __global__ void move_parts_a(dom_struct *dom, part_struct *parts, int nparts,
 }
 
 __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
-  real dt, real dt0, g_struct g, real rho_f, real ttime)
+  real dt, real dt0, g_struct g, gradP_struct gradP, real rho_f, real ttime)
 {
   int pp = threadIdx.x + blockIdx.x*blockDim.x; // particle number
-  real m = 4./3. * PI * parts[pp].rho * parts[pp].r*parts[pp].r*parts[pp].r;
+  real vol = 4./3. * PI * parts[pp].r*parts[pp].r*parts[pp].r;
+  real m = vol * parts[pp].rho;
 
   if(pp < nparts) {
     if(parts[pp].translating) {
       // update linear accelerations
       parts[pp].udot = (parts[pp].Fx + parts[pp].kFx + parts[pp].iFx
-        + parts[pp].aFx) / m
+        + parts[pp].aFx - vol*gradP.x) / m
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.x;
       parts[pp].vdot = (parts[pp].Fy + parts[pp].kFy + parts[pp].iFy
-        + parts[pp].aFy) / m
+        + parts[pp].aFy - vol*gradP.y) / m
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.y;
       parts[pp].wdot = (parts[pp].Fz + parts[pp].kFz + parts[pp].iFz
-        + parts[pp].aFz) / m
+          + parts[pp].aFz - vol*gradP.z) / m
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.z;
 
       // update linear velocities
@@ -2567,6 +2569,7 @@ __global__ void collision_parts(part_struct *parts, int i,
         Loz = 0;
       }
 
+/** TODO implement variable alpha damping as is done for the walls **/
       if(h < 0) {
         ah = 0;
         lnah = 0;
@@ -2606,7 +2609,7 @@ __global__ void collision_parts(part_struct *parts, int i,
 }
 
 __global__ void collision_walls(dom_struct *dom, part_struct *parts,
-  int nparts, BC bc, real eps, real mu)
+  int nparts, BC bc, real eps, real mu, real rhof, real nu)
 {
   int i = threadIdx.x + blockIdx.x*blockDim.x;
   /**** parallelize this further by using a CUDA block for each wall ****/
@@ -2630,11 +2633,11 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     dx = fabs(parts[i].x - dom->xs);
     h = dx - ai;
     if(h < hN && h > 0) {
+      Un = parts[i].u - bc.uWD;
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
       lnah = log(hN/h);
 
-      Un = parts[i].u - bc.uWD;
       Utx = 0.;
       Uty = parts[i].v - bc.vWD;
       Utz = parts[i].w - bc.wWD;
@@ -2660,23 +2663,36 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Loy += -8.*PI*mu*ai*ai*ai*omy*2./5.*lnah;
       Loz += -8.*PI*mu*ai*ai*ai*omz*2./5.*lnah;
 
-      ah = 1./h - 1./eps;
       parts[i].iFx += (bc.uW == DIRICHLET) * (Fnx + Ftx);
       parts[i].iFy += (bc.uW == DIRICHLET) * (Fny + Fty);
       parts[i].iFz += (bc.uW == DIRICHLET) * (Fnz + Ftz);
       parts[i].iLx += (bc.uW == DIRICHLET) * Lox;
       parts[i].iLy += (bc.uW == DIRICHLET) * Loy;
       parts[i].iLz += (bc.uW == DIRICHLET) * Loz;
+
+      // if no contact, mark with a -1
+      parts[i].St = -1.;
     }
     if(h < 0) {
       Un = parts[i].u - bc.uWD;
-      ah = h;
+      // if this is the first time step with contact, set St
+      // otherwise, use St that was set at the beginning of the contact
+      if(parts[i].St == -1.) {
+        parts[i].St = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
+      }
       lnah = 0;
       /** for now, use particle material as wall materal in second V term **/
-      real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
-        + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFx += (bc.uW == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
-        - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
+      real k = 4./3./((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
+        + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
+
+      // estimate alpha according to Tsuji (1991) p. 32 and Joseph (2000) p. 344
+      real xcx0 = parts[i].l_rough/(2.*parts[i].r)*100.;
+      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
+      if(e < 0) e = 0;
+      real alpha = -2.263*pow(e,0.3948)+2.22;
+
+      parts[i].iFx += (bc.uW == DIRICHLET) * (sqrt(-h*h*h)*k
+        - alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h))*Un);
     }
 
     // east wall
@@ -2720,16 +2736,30 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLx += (bc.uE == DIRICHLET) * Lox;
       parts[i].iLy += (bc.uE == DIRICHLET) * Loy;
       parts[i].iLz += (bc.uE == DIRICHLET) * Loz;
+
+      // if no contact, mark with a -1
+      parts[i].St = -1.;
     } 
     if(h < 0) {
       Un = parts[i].u - bc.uED;
-      ah = h;
+      // if this is the first time step with contact, set St
+      // otherwise, use St that was set at the beginning of the contact
+      if(parts[i].St == -1.) {
+        parts[i].St = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
+      }
       lnah = 0;
       /** for now, use particle material as wall materal in second V term **/
       real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFx -= (bc.uE == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
-        - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
+
+      // estimate alpha according to Tsuji (1991) p. 32 and Joseph (2000) p. 344
+      real xcx0 = parts[i].l_rough/(2.*parts[i].r)*100.;
+      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
+      if(e < 0) e = 0;
+      real alpha = -2.263*pow(e,0.3948)+2.22;
+
+      parts[i].iFx -= (bc.uE == DIRICHLET) * (sqrt(-h*h*h)/denom
+        - alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*Un);
     }
 
     // south wall
@@ -2773,16 +2803,25 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLx += (bc.vS == DIRICHLET) * Lox;
       parts[i].iLy += (bc.vS == DIRICHLET) * Loy;
       parts[i].iLz += (bc.vS == DIRICHLET) * Loz;
+
+      // if no contact, mark with a -1
+      parts[i].St = -1.;
     }
     if(h < 0) {
       Un = parts[i].v - bc.vSD;
-      ah = h;
       lnah = 0;
       /** for now, use particle material as wall materal in second V term **/
       real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFy += (bc.vS == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
-        - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
+
+      // estimate alpha according to Tsuji (1991) p. 32 and Joseph (2000) p. 344
+      real xcx0 = parts[i].l_rough/(2.*parts[i].r)*100.;
+      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
+      if(e < 0) e = 0;
+      real alpha = -2.263*pow(e,0.3948)+2.22;
+
+      parts[i].iFy += (bc.vS == DIRICHLET) * (sqrt(-h*h*h)/denom
+        - alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*Un);
     }
 
     // north wall
@@ -2826,16 +2865,25 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLx += (bc.vN == DIRICHLET) * Lox;
       parts[i].iLy += (bc.vN == DIRICHLET) * Loy;
       parts[i].iLz += (bc.vN == DIRICHLET) * Loz;
+
+      // if no contact, mark with a -1
+      parts[i].St = -1.;
     }
     if(h < 0) {
       Un = parts[i].v - bc.vND;
-      ah = h;
       lnah = 0;
       /** for now, use particle material as wall materal in second V term **/
       real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFy -= (bc.vN == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
-        - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
+
+      // estimate alpha according to Tsuji (1991) p. 32 and Joseph (2000) p. 344
+      real xcx0 = parts[i].l_rough/(2.*parts[i].r)*100.;
+      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
+      if(e < 0) e = 0;
+      real alpha = -2.263*pow(e,0.3948)+2.22;
+
+      parts[i].iFy -= (bc.vN == DIRICHLET) * (sqrt(-h*h*h)/denom
+        - alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*Un);
     }
 
     // bottom wall
@@ -2879,16 +2927,25 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLx += (bc.wB == DIRICHLET) * Lox;
       parts[i].iLy += (bc.wB == DIRICHLET) * Loy;
       parts[i].iLz += (bc.wB == DIRICHLET) * Loz;
+
+      // if no contact, mark with a -1
+      parts[i].St = -1.;
     }
     if(h < 0) {
       Un = parts[i].w - bc.wBD;
-      ah = h;
       lnah = 0;
       // for now, use particle material as wall materal in second V term //
       real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFz += (bc.wB == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
-        - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
+
+      // estimate alpha according to Tsuji (1991) p. 32 and Joseph (2000) p. 344
+      real xcx0 = parts[i].l_rough/(2.*parts[i].r)*100.;
+      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
+      if(e < 0) e = 0;
+      real alpha = -2.263*pow(e,0.3948)+2.22;
+
+      parts[i].iFz += (bc.wB == DIRICHLET) * (sqrt(-h*h*h)/denom
+        - alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*Un);
     }
 
     // top wall
@@ -2932,16 +2989,25 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLx += (bc.wT == DIRICHLET) * Lox;
       parts[i].iLy += (bc.wT == DIRICHLET) * Loy;
       parts[i].iLz += (bc.wT == DIRICHLET) * Loz;
+
+      // if no contact, mark with a -1
+      parts[i].St = -1.;
     }
     if(h < 0) {
       Un = parts[i].w - bc.wTD;
-      ah = h;
       lnah = 0;
       // for now, use particle material as wall materal in second V term //
       real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)*sqrt(1./ai);
-      parts[i].iFz -= (bc.wT == DIRICHLET) * (sqrt(-ah*ah*ah)/denom
-        - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-ah))*Un);
+
+      // estimate alpha according to Tsuji (1991) p. 32 and Joseph (2000) p. 344
+      real xcx0 = parts[i].l_rough/(2.*parts[i].r)*100.;
+      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
+      if(e < 0) e = 0;
+      real alpha = -2.263*pow(e,0.3948)+2.22;
+
+      parts[i].iFz -= (bc.wT == DIRICHLET) * (sqrt(-h*h*h)/denom
+        - alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*Un);
     }
   }
 }

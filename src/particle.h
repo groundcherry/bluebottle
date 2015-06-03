@@ -306,6 +306,9 @@ typedef struct part_struct {
   real spring_l;
   int translating;
   int rotating;
+  real St;
+  real e_dry;
+  real l_rough;
 } part_struct;
 /*
  * PURPOSE

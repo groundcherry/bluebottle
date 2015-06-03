@@ -1993,7 +1993,7 @@ __global__ void plane_eps_z_T(real eps, real *w_star, dom_struct *dom);
  * USAGE
  */
 __global__ void move_parts_a(dom_struct *dom, part_struct *parts, int nparts,
-  real dt, real dt0, g_struct g, real rho_f, real ttime);
+  real dt, real dt0, g_struct g, gradP_struct gradP, real rho_f, real ttime);
 /*
  * FUNCTION
  *  Update the particle velocities and move the particles. Part A: does
@@ -2016,7 +2016,7 @@ __global__ void move_parts_a(dom_struct *dom, part_struct *parts, int nparts,
  * USAGE
  */
 __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
-  real dt, real dt0, g_struct g, real rho_f, real ttime);
+  real dt, real dt0, g_struct g, gradP_struct gradP, real rho_f, real ttime);
 /*
  * FUNCTION
  *  Update the particle velocities and move the particles. Part B: does
@@ -2123,7 +2123,7 @@ __global__ void collision_parts(part_struct *parts, int i,
  * USAGE
  */
 __global__ void collision_walls(dom_struct *dom, part_struct *parts,
-  int nparts, BC bc, real eps, real mu);
+  int nparts, BC bc, real eps, real mu, real rho, real nu);
 /*
  * FUNCTION
  *  Calculate collision forcing between particle i and all other particles.

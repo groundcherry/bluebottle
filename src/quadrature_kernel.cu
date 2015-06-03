@@ -157,20 +157,6 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   real zz = (k-0.5) * dom->dz + dom->zs;
 
   // interpolate pressure
-/*
-  real a = (0.5 * dt) / (0.5 * dt0 + 0.5 * dt);
-  real pc = (1. + 0.5 * a) * p[C] - 0.5 * a * p0[C];
-  real pw = (1. + 0.5 * a) * p[C-1] - 0.5 * a * p0[C-1];
-  real pe = (1. + 0.5 * a) * p[C+1] - 0.5 * a * p0[C+1];
-  real ps = (1. + 0.5 * a) * p[C-dom->Gcc.s1b] - 0.5 * a * p0[C-dom->Gcc.s1b];
-  real pn = (1. + 0.5 * a) * p[C+dom->Gcc.s1b] - 0.5 * a * p0[C+dom->Gcc.s1b];
-  real pb = (1. + 0.5 * a) * p[C-dom->Gcc.s2b] - 0.5 * a * p0[C-dom->Gcc.s2b];
-  real pt = (1. + 0.5 * a) * p[C+dom->Gcc.s2b] - 0.5 * a * p0[C+dom->Gcc.s2b];
-  real dpdx = 0.5 * (pe - pw) * ddx;
-  real dpdy = 0.5 * (pn - ps) * ddy;
-  real dpdz = 0.5 * (pt - pb) * ddz;
-*/
-
   real pc = p[C];
   real pw = p[C-1];
   real pe = p[C+1];
@@ -181,75 +167,6 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   real dpdx = 0.5*(pe - pw) * ddx;
   real dpdy = 0.5*(pn - ps) * ddy;
   real dpdz = 0.5*(pt - pb) * ddz;
-
-// WITH NEW FLOW SOLVER, PARTICLES SEEM TO NOT LIKE THIS
-/*
-  real a = dt0/dt;
-  a = (a + 2.)/(a + 1.);
-  real pc = p[C]*a + p0[C]*(1.-a);
-  real pw = p[C-1]*a + p0[C-1]*(1.-a);
-  real pe = p[C+1]*a + p0[C+1]*(1.-a);
-  real ps = p[C-dom->Gcc.s1b]*a + p0[C-dom->Gcc.s1b]*(1.-a);
-  real pn = p[C+dom->Gcc.s1b]*a + p0[C+dom->Gcc.s1b]*(1.-a);
-  real pb = p[C-dom->Gcc.s2b]*a + p0[C-dom->Gcc.s2b]*(1.-a);
-  real pt = p[C+dom->Gcc.s2b]*a + p0[C+dom->Gcc.s2b]*(1.-a);
-  real dpdx = (pe - pw) * ddx;
-  real dpdy = (pn - ps) * ddy;
-  real dpdz = (pt - pb) * ddz;
-
-
-  real a = dt0/dt;
-  a = (a + 2.)/(a + 1.);
-  real pc = p[C];
-  real pw = p[C-1];
-  real pe = p[C+1];
-  real ps = p[C-dom->Gcc.s1b];
-  real pn = p[C+dom->Gcc.s1b];
-  real pb = p[C-dom->Gcc.s2b];
-  real pt = p[C+dom->Gcc.s2b];
-  real dpdx = (pe - pw) * ddx;
-  real dpdy = (pn - ps) * ddy;
-  real dpdz = (pt - pb) * ddz;
-
-  pc = p0[C0];
-  pw = p0[C0-1];
-  pe = p0[C0+1];
-  ps = p0[C0-dom->Gcc.s1b];
-  pn = p0[C0+dom->Gcc.s1b];
-  pb = p0[C0-dom->Gcc.s2b];
-  pt = p0[C0+dom->Gcc.s2b];
-  real dpdx0 = (pe - pw) * ddx;
-  real dpdy0 = (pn - ps) * ddy;
-  real dpdz0 = (pt - pb) * ddz;
-
-  real ptmp = pc + dpdx*(x-xx) + dpdy*(y-yy) + dpdz*(z-zz);
-  real ptmp0 = pc + dpdx0*(x-xx0) + dpdy0*(y-yy0) + dpdz0*(z-zz0);
-
-  // switch to particle rest frame
-  real ocrossr2 = (oy*zp - oz*yp) * (oy*zp - oz*yp);
-  ocrossr2 += (ox*zp - oz*xp) * (ox*zp - oz*xp);
-  ocrossr2 += (ox*yp - oy*xp) * (ox*yp - oy*xp);
-  real ocrossr20 = (oy0*zp - oz0*yp) * (oy0*zp - oz0*yp);
-  ocrossr20 += (ox0*zp - oz0*xp) * (ox0*zp - oz0*xp);
-  ocrossr20 += (ox0*yp - oy0*xp) * (ox0*yp - oy0*xp);
-  real rhoV = rho_f;
-  real accdotr = (-gradP.x/rhoV - udot)*xp + (-gradP.y/rhoV - vdot)*yp
-    + (-gradP.z/rhoV - wdot)*zp;
-  real accdotr0 = (-gradP.x/rhoV - udot0)*xp + (-gradP.y/rhoV - vdot0)*yp
-    + (-gradP.z/rhoV - wdot0)*zp;
-
-  ptmp -= 0.5 * rho_f * ocrossr2 + rho_f * accdotr;
-  ptmp0 -= 0.5 * rho_f * ocrossr20 + rho_f * accdotr0;
-
-  // zero if this node intersects another particle
-  pp[node+nnodes*part] = (parts[part].nodes[node]==-1)*(ptmp*a + ptmp0*(1.-a));
-
-
-
-
-
-*/
-
   pp[node+nnodes*part] = pc + dpdx*(x-xx) + dpdy*(y-yy) + dpdz*(z-zz);
   // switch to particle rest frame
   real ocrossr2 = (oy*zp - oz*yp) * (oy*zp - oz*yp);
@@ -488,8 +405,8 @@ __global__ void cuda_get_coeffs(part_struct *parts,
     real phi = node_p[node];
     real N_nm = nnm(n,m);
     real P_nm = pnm(n,m,theta);
-    real P_n1m = pnm(n+1,m,theta);
-    real dPdt = (n-m+1)*P_n1m-(n+1)*cos(theta)*P_nm;
+    real P_n1m = pnm(n+1.,m,theta);
+    real dPdt = (n-m+1.)*P_n1m-(n+1.)*cos(theta)*P_nm;
     real dPdp = m*P_nm;
 
     int_Yp_re[j] = N_nm*P_nm*pp[node+part*nnodes]*cos(m*phi);
@@ -623,13 +540,13 @@ __global__ void cuda_calc_forces(dom_struct *dom, part_struct *parts,
     real N10 = sqrt(3./4./PI);
     real N11 = sqrt(3./8./PI);
 
-    parts[pp].Fx = gradP.x + rho_f * vol * parts[pp].udot
+    parts[pp].Fx = rho_f * vol * (parts[pp].udot + gradP.x)
       - PI * mu * nu * 2.*N11 * (pnm_re[stride*pp + 2]
       + 6.*phinm_re[stride*pp + 2]);
-    parts[pp].Fy = gradP.y + rho_f * vol * parts[pp].vdot
+    parts[pp].Fy = rho_f * vol * (parts[pp].vdot + gradP.y)
       + PI * mu * nu * 2.*N11 * (pnm_im[stride*pp + 2]
       + 6.*phinm_im[stride*pp + 2]);
-    parts[pp].Fz = gradP.z + rho_f * vol * parts[pp].wdot
+    parts[pp].Fz = rho_f * vol * (parts[pp].wdot + gradP.z)
       + PI * mu * nu * N10 * (pnm_re[stride*pp + 1]
       + 6.*phinm_re[stride*pp + 1]);
 
