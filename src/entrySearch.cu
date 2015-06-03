@@ -190,6 +190,56 @@ real find_max(int size, real *d_iarr)
 }
 
 /* The base function of the maximum search algorithm. */
+int find_max_int(int size, int *d_iarr)
+{
+  int blocks = 0;
+  int threads = 0;
+
+  getNumBlocksAndThreads(size, blocks, threads);
+
+  // create minarr on device
+  int h_bytes = blocks * sizeof(int);
+  int *d_maxarr = NULL;
+  checkCudaErrors(cudaMalloc((void**)&d_maxarr, h_bytes));
+  gpumem += h_bytes;
+
+  cudaThreadSynchronize();
+
+  dim3 dimBlock(threads, 1, 1);
+  dim3 dimGrid(blocks, 1, 1);
+  int smemSize = threads * sizeof(int);
+
+  // run kernel
+  entrySearch_max_int_kernel<<<dimGrid, dimBlock, smemSize>>>(d_iarr,
+    d_maxarr, size);
+
+  getLastCudaError("Kernel execution failed.");
+  cudaThreadSynchronize();
+
+  // if there was more than one block, re-run the kernel on the maximum values 
+  // from each of the blocks, which now reside in the first block_number indices
+  // in d_minarr
+  while(blocks > 1) {
+    // use only the first block_number indices in min_arr
+    size = blocks;
+    getNumBlocksAndThreads(size, blocks, threads);
+
+    entrySearch_max_int_kernel<<<dimGrid, dimBlock, smemSize>>>(d_maxarr,
+      d_maxarr, size);
+
+    getLastCudaError("Kernel execution failed.");
+    cudaThreadSynchronize();
+  }
+
+  // grab final answer
+  int max;
+  checkCudaErrors(cudaMemcpy(&max, d_maxarr, sizeof(int),
+    cudaMemcpyDeviceToHost));
+  checkCudaErrors(cudaFree(d_maxarr));
+  return max;
+}
+
+/* The base function of the maximum search algorithm. */
 real find_max_mag(int size, real *d_iarr)
 {
   int blocks = 0;

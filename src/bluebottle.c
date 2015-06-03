@@ -345,10 +345,14 @@ int main(int argc, char *argv[]) {
       printf("Initializing particle variables...");
       fflush(stdout);
       int parts_init_flag = parts_init();
+      int binDom_init_flag = binDom_init();
       printf("done.\n");
       fflush(stdout);
       if(parts_init_flag == EXIT_FAILURE) {
         printf("\nThe initial particle configuration is not allowed.\n");
+        return EXIT_FAILURE;
+      } else if(binDom_init_flag == EXIT_FAILURE) {
+        printf("\nThe bin configuration is not allowed.\n");
         return EXIT_FAILURE;
       }
 
@@ -427,6 +431,7 @@ int main(int argc, char *argv[]) {
         cuda_part_pull();
         domain_show_config();
         parts_show_config();
+        bin_show_config();
         printf("========================================");
         printf("========================================\n\n");
         fflush(stdout);
@@ -466,7 +471,6 @@ int main(int argc, char *argv[]) {
         fflush(stdout);
 
         // get initial dt; this is an extra check for the SHEAR initialization
-        dt0 = cuda_find_dt();
         dt = cuda_find_dt();
 
         // share this with the precursor domain
@@ -880,8 +884,12 @@ int main(int argc, char *argv[]) {
 
     // initialize the particles
     int parts_init_flag = parts_init();
+    int binDom_init_flag = binDom_init();
     if(parts_init_flag == EXIT_FAILURE) {
       printf("\nThe initial particle configuration is not allowed.\n");
+      return EXIT_FAILURE;
+    } else if(binDom_init_flag == EXIT_FAILURE) {
+      printf("\nThe bin configuration is not allowed.\n");
       return EXIT_FAILURE;
     }
 

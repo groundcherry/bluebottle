@@ -2383,233 +2383,409 @@ __global__ void collision_init(part_struct *parts, int nparts)
   }
 }
 
-__global__ void collision_parts(part_struct *parts, int i,
-  dom_struct *dom, real eps, real *forces, real *moments, int nparts, real mu,
-  BC bc)
+__global__ void init(int *vector, int N, int val)
 {
-  int j = threadIdx.x + blockIdx.x*blockDim.x;
+  int i = threadIdx.x + blockIdx.x*blockDim.x;
 
-  if(j < nparts) {
-    // clear out temporary array
-    forces[    j*3] = 0;
-    forces[1 + j*3] = 0;
-    forces[2 + j*3] = 0;
-    moments[    j*3] = 0;
-    moments[1 + j*3] = 0;
-    moments[2 + j*3] = 0;
+  if (i < N) {
+    vector[i] = val;
+  }
+}
 
-    if(j != i) {
-      real ai = parts[i].r;
-      real aj = parts[j].r;
-      real B = aj / ai;
-      real hN = parts[i].r;
+__global__ void bin_fill(int *partInd, int *partBin, int nparts,
+                  part_struct *parts, dom_struct *binDom, BC bc)
+{
+  int pp = threadIdx.x + blockIdx.x*blockDim.x;
 
-      real ux, uy, uz;
-      real rx, rx1, rx2, ry, ry1, ry2, rz, rz1, rz2, r;
-      real h, ah, lnah;
-      real nx, ny, nz, udotn;
-      real unx, uny, unz, utx, uty, utz, ut;
-      real tx, ty, tz, t, bx, by, bz, b;
-      real omegax, omegay, omegaz, omega;
-      real ocrossnx, ocrossny, ocrossnz;
-      real utcrossnx, utcrossny, utcrossnz;
-      real opB;
-      real Fnx, Fny, Fnz, Ftx, Fty, Ftz, Lox, Loy, Loz;
+  int c;
+  int ibin, jbin, kbin;
 
-      real xi = parts[i].x;
-      real xj = parts[j].x;
-      // check for neighbors across the domain when using periodic boundaries
-      rx = xi - xj;
-      rx1 = xi - (xj + dom->xl);
-      rx2 = xi - (xj - dom->xl);
-      if(rx1*rx1 < rx*rx) rx = rx1;
-      if(rx2*rx2 < rx*rx) rx = rx2;
-      rx = (bc.uW == PERIODIC) * rx + (bc.uW != PERIODIC) * (xi - xj);
+  // find the correct bin index for each part and store it
+  if (pp < nparts) {
+    ibin = floor((parts[pp].x - binDom->xs)/binDom->dx);
+    jbin = floor((parts[pp].y - binDom->ys)/binDom->dy);
+    kbin = floor((parts[pp].z - binDom->zs)/binDom->dz);
+    c = ibin + jbin*binDom->Gcc.s1 + kbin*binDom->Gcc.s2;
 
-      real yi = parts[i].y;
-      real yj = parts[j].y;
-      // check for neighbors across the domain when using periodic boundaries
-      ry = yi - yj;
-      ry1 = yi - (yj + dom->yl);
-      ry2 = yi - (yj - dom->yl);
-      if(ry1*ry1 < ry*ry) ry = ry1;
-      if(ry2*ry2 < ry*ry) ry = ry2;
-      ry = (bc.vS == PERIODIC) * ry + (bc.vS != PERIODIC) * (yi - yj);
+    partInd[pp] = pp;         // index of particle
+    partBin[pp] = c;          // bin index
+    parts[pp].bin = c;        // bin index (stored in particle)
+  }
+}
 
-      real zi = parts[i].z;
-      real zj = parts[j].z;
-      // check for neighbors across the domain when using periodic boundaries
-      rz = zi - zj;
-      rz1 = zi - (zj + dom->zl);
-      rz2 = zi - (zj - dom->zl);
-      if(rz1*rz1 < rz*rz) rz = rz1;
-      if(rz2*rz2 < rz*rz) rz = rz2;
-      rz = (bc.wB == PERIODIC) * rz + (bc.wB != PERIODIC) * (zi - zj);
+__global__ void bin_partCount(int *binCount, int *binStart, int *binEnd,
+                              dom_struct *binDom, BC bc, int nBins)
+{
+  int bin = threadIdx.x + blockIdx.x*blockDim.x;
 
-      ux = parts[i].u - parts[j].u;
-      uy = parts[i].v - parts[j].v;
-      uz = parts[i].w - parts[j].w;
+  // fill binCount
+  if (bin < nBins) {
+    binCount[bin] = binEnd[bin] - binStart[bin];
+  }
+}
 
-      r = sqrt(rx*rx + ry*ry + rz*rz);
+__global__ void bin_start(int *binStart, int *binEnd, int *partBin, int nparts)
+{
+  // This kernel function was adapted from NVIDIA CUDA 5.5 Examples
+  // This software contains source code provided by NVIDIA Corporation
+  extern __shared__ int sharedBin[];    //blockSize + 1
+  int index = threadIdx.x + blockIdx.x*blockDim.x;
+  int bin;
 
-      omegax = parts[i].ox - parts[j].ox;
-      omegay = parts[i].oy - parts[j].oy;
-      omegaz = parts[i].oz - parts[j].oz;
+  // for a given bin index, the previous bins's index is stored in sharedBin
+  if (index < nparts) {
+    bin = partBin[index]; 
 
-      omega = sqrt(omegax*omegax + omegay*omegay + omegaz*omegaz);
+    // Load bin data into shared memory so that we can look
+    // at neighboring particle's hash value without loading
+    // two bin values per thread
+    sharedBin[threadIdx.x + 1] = bin;
 
-      h = r - ai - aj;
+    if (index > 0 && threadIdx.x == 0) {
+      // first thread in block must load neighbor particle bin
+      sharedBin[0] = partBin[index - 1];
+    }
+  }
+  __syncthreads();
 
-      nx = rx / r;
-      ny = ry / r;
-      nz = rz / r;
+  if (index < nparts) {
+    // If this particle has a different cell index to the previous
+    // particle then it must be the first particle in the cell,
+    // so store the index of this particle in the cell.
+    // As it isn't the first particle, it must also be the cell end of
+    // the previous particle's cell
+    bin = partBin[index]; 
 
-      udotn = ux * nx + uy * ny + uz * nz;
+    if (index == 0 || bin != sharedBin[threadIdx.x]) {
+    binStart[bin] = index;
 
-      unx = udotn * nx;
-      uny = udotn * ny;
-      unz = udotn * nz;
-
-      utx = ux - unx;
-      uty = uy - uny;
-      utz = uz - unz;
-
-      ut = sqrt(utx*utx + uty*uty + utz*utz);
-
-      if(ut > 0) {
-        tx = utx / ut;
-        ty = uty / ut;
-        tz = utz / ut;
-
-        bx = ny*tz - nz*ty;
-        by = -nx*tz + nz*tx;
-        bz = nx*ty - ny*tx;
-
-        b = sqrt(bx*bx + by*by + bz*bz);
-
-        bx = bx / b;
-        by = by / b;
-        bz = bz / b;
-
-      } else if(omega > 0) {
-        bx = omegax / omega;
-        by = omegay / omega;
-        bz = omegaz / omega;
-
-        tx = by*nz - bz*ny;
-        ty = -bx*nz + bz*nx;
-        tz = bx*ny - by*nx;
-
-        t = sqrt(tx*tx + ty*ty + tz*tz);
-
-        tx = tx / t;
-        ty = ty / t;
-        tz = tz / t;
-      } else {
-        tx = 1.;
-        ty = 0.;
-        tz = 0.;
-
-        bx = ny*tz - nz*ty;
-        by = -nx*tz + nz*tx;
-        bz = nx*ty - ny*tx;
-
-        b = sqrt(bx*bx + by*by + bz*bz);
-
-        bx = bx / b;
-        by = by / b;
-        bz = bz / b;
-      }
-
-      opB = 1 + B;
-
-      ocrossnx = omegay*nz - omegaz*ny;
-      ocrossny = -omegax*nz + omegaz*nx;
-      ocrossnz = omegax*ny - omegay*nx;
-
-      utcrossnx = uty*nz - utz*ny;
-      utcrossny = -utx*nz + utz*nx;
-      utcrossnz = utx*ny - uty*nx;
-
-      if(h < hN && h > 0) {
-        if(h < eps*parts[i].r) h = eps*parts[i].r;
-        ah = ai/h - ai/hN;
-        lnah = log(hN/h);
-        Fnx = -1. * B*B / (opB*opB) * ah - (1.+7.*B+B*B)/(5.*opB*opB*opB)*lnah;
-        Fny = Fnx;
-        Fnz = Fnx;
-        Fnx *= 6.*PI*mu*ai*unx;
-        Fny *= 6.*PI*mu*ai*uny;
-        Fnz *= 6.*PI*mu*ai*unz;
-
-        Ftx = -6.*PI*mu*ai*utx*4.*B*(2.+B+2.*B*B)/(15.*opB*opB*opB)*lnah;
-        Fty = -6.*PI*mu*ai*uty*4.*B*(2.+B+2.*B*B)/(15.*opB*opB*opB)*lnah;
-        Ftz = -6.*PI*mu*ai*utz*4.*B*(2.+B+2.*B*B)/(15.*opB*opB*opB)*lnah;
-        Ftx += 8.*PI*mu*ai*ai*ocrossnx*B*(4.+B)/(10.*opB*opB)*lnah;
-        Fty += 8.*PI*mu*ai*ai*ocrossny*B*(4.+B)/(10.*opB*opB)*lnah;
-        Ftz += 8.*PI*mu*ai*ai*ocrossnz*B*(4.+B)/(10.*opB*opB)*lnah;
-
-        Lox = -8.*PI*mu*ai*ai*utcrossnx*B*(4.+B)/(10.*opB*opB)*lnah;
-        Loy = -8.*PI*mu*ai*ai*utcrossny*B*(4.+B)/(10.*opB*opB)*lnah;
-        Loz = -8.*PI*mu*ai*ai*utcrossnz*B*(4.+B)/(10.*opB*opB)*lnah;
-        Lox += -8.*PI*mu*ai*ai*ai*omegax*2.*B/(5.*opB)*lnah;
-        Loy += -8.*PI*mu*ai*ai*ai*omegay*2.*B/(5.*opB)*lnah;
-        Loz += -8.*PI*mu*ai*ai*ai*omegaz*2.*B/(5.*opB)*lnah;
-      } else {
-        ah = 0;
-        lnah = 0;
-        Fnx = 0;
-        Fny = 0;
-        Fnz = 0;
-        Ftx = 0;
-        Fty = 0;
-        Ftz = 0;
-        Lox = 0;
-        Loy = 0;
-        Loz = 0;
-      }
-
-/** TODO implement variable alpha damping as is done for the walls **/
-      if(h < 0) {
-        ah = 0;
-        lnah = 0;
-        real denom = 0.75*((1-parts[i].sigma*parts[i].sigma)/parts[i].E
-          + (1-parts[j].sigma*parts[j].sigma)/parts[j].E)*sqrt(1./ai + 1./aj);
-          
-        Fnx = (sqrt(-h*h*h)/denom
-          - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*udotn)*nx;
-        Fny = (sqrt(-h*h*h)/denom
-          - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*udotn)*ny;
-        Fnz = (sqrt(-h*h*h)/denom
-          - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*udotn)*nz;
-
-      }
-
-      forces[    j*3] = Fnx + Ftx;
-      forces[1 + j*3] = Fny + Fty;
-      forces[2 + j*3] = Fnz + Ftz;
-      moments[    j*3] = Lox;
-      moments[1 + j*3] = Loy;
-      moments[2 + j*3] = Loz;
+        if (index > 0)
+            binEnd[sharedBin[threadIdx.x]] = index;
     }
 
-    __syncthreads();
+    if (index == nparts - 1)
+    {
+        binEnd[bin] = index + 1;
+    }
+  }
+}
 
-    if(j == 0) {
-      for(int k = 0; k < nparts; k++) {
-        parts[i].iFx += forces[    k*3];
-        parts[i].iFy += forces[1 + k*3];
-        parts[i].iFz += forces[2 + k*3];
-        parts[i].iLx += moments[    k*3];
-        parts[i].iLy += moments[1 + k*3];
-        parts[i].iLz += moments[2 + k*3];
+__global__ void check(int *array, int N) {
+  int index = threadIdx.x + blockIdx.x*blockDim.x;
+  if (index < N) {
+    printf("index = %d, val = %d\n", index, array[index]);
+  }
+  __syncthreads(); 
+}
+
+__global__ void collision_parts(part_struct *parts, int nparts,
+  dom_struct *dom, real eps, real mu, BC bc, int *binStart, int *binEnd,
+  int *partBin, int *partInd, dom_struct *binDom, int interactionLength)
+{
+  int index = threadIdx.x + blockIdx.x*blockDim.x;
+
+  if (index < nparts) {
+
+    int i = partInd[index];
+    int bin = partBin[index];
+
+    int kbin = floorf(bin/binDom->Gcc.s2);
+    int jbin = floorf((bin - kbin*binDom->Gcc.s2)/binDom->Gcc.s1);
+    int ibin = bin - kbin*binDom->Gcc.s2 - jbin*binDom->Gcc.s1;
+
+    int l, m, n;                          // adjacent bin iterators
+    int target, j;                        // target indices
+    int adjBin, adjStart, adjEnd;         // adjacent bin stuff
+    int iStride, kStride, jStride;        // how to get to adjacent bin
+
+    // predefine face locations 
+    // -1, -2 due to local vs global indexing and defiinition of dom_struct
+    int fW = binDom->Gcc.is - 1;
+    int fE = binDom->Gcc.ie - 2;
+    int fS = binDom->Gcc.js - 1;
+    int fN = binDom->Gcc.je - 2;
+    int fB = binDom->Gcc.ks - 1;
+    int fT = binDom->Gcc.ke - 2;
+
+    // size checks
+    int xnBin = (binDom->xn > 2);
+    int ynBin = (binDom->yn > 2);
+    int znBin = (binDom->zn > 2);
+
+    // loop over adjacent bins and take care of periodic conditions 
+    for (n = -1; n <= 1; n++) {
+      // if on a face and not periodic, continue
+      // if on a face and periodic but only 2 bins, continue
+      if ((n == -1 && kbin == fB && bc.uB != PERIODIC) || 
+          (n == 1 && kbin == fT && bc.uT != PERIODIC) ||
+          (n == -1 && kbin == fB && bc.uB == PERIODIC && znBin == 0) ||
+          (n == 1 && kbin == fT && bc.uT == PERIODIC && znBin == 0)) {
+        continue;
+      // if on a face and periodic, flip to other side
+      } else if (n == -1 && kbin == fB && bc.uB == PERIODIC) {
+        kStride = fT*binDom->Gcc.s2;
+      } else if (n == 1 && kbin == fT && bc.uT == PERIODIC) {
+        kStride = fB*binDom->Gcc.s2;
+      // else, we are in the middle, do nothing special
+      } else {
+        kStride = (kbin + n)*binDom->Gcc.s2;
+      }
+
+      for (m = -1; m <= 1; m++) {
+        if ((m == -1 && jbin == fS && bc.uS != PERIODIC) ||
+            (m == 1 && jbin == fN && bc.uN != PERIODIC) ||
+            (m == -1 && jbin == fS && bc.uS == PERIODIC && ynBin == 0) ||
+            (m == 1 && jbin == fN && bc.uN == PERIODIC && ynBin == 0)) {
+          continue;
+        } else if (m == -1 && jbin == fS && bc.uS == PERIODIC) {
+          jStride = fN*binDom->Gcc.s1;  
+        } else if (m == 1 && jbin == fN && bc.uN == PERIODIC) {
+          jStride = fS*binDom->Gcc.s1;
+        } else {
+          jStride = (jbin + m)*binDom->Gcc.s1;
+        }
+
+        for (l = -1; l <= 1; l++) {
+          if ((l == -1 && ibin == fW && bc.uW != PERIODIC) ||
+              (l == 1 && ibin == fE && bc.uE != PERIODIC) ||
+              (l == -1 && ibin == fW && bc.uW == PERIODIC && xnBin == 0) ||
+              (l == 1 && ibin == fE && bc.uE == PERIODIC && xnBin == 0)) {
+            continue;
+          } else if (l == -1 && ibin == fW && bc.uW == PERIODIC) {
+            iStride = fE;
+          } else if (l == 1 && ibin == fE && bc.uE == PERIODIC) {
+            iStride = fW;
+          } else {
+            iStride = ibin + l;
+          }
+
+          adjBin = iStride + jStride + kStride; 
+          adjStart = binStart[adjBin];        // find start and end of bins
+          adjEnd = binEnd[adjBin];
+          if (adjStart != -1) {               // if bin is not empty
+            for (target = adjStart; target < adjEnd; target++) {
+              j = partInd[target];
+              if (j != i) {                   // if its not original part
+
+                // calculate forces
+
+                real ai = parts[i].r;
+                real aj = parts[j].r;
+                real B = aj / ai;
+                real hN = interactionLength;
+
+                real ux, uy, uz;
+                real rx, rx1, rx2, ry, ry1, ry2, rz, rz1, rz2, r;
+                real h, ah, lnah;
+                real nx, ny, nz, udotn;
+                real unx, uny, unz, utx, uty, utz, ut;
+                real tx, ty, tz, t, bx, by, bz, b;
+                real omegax, omegay, omegaz, omega;
+                real ocrossnx, ocrossny, ocrossnz;
+                real utcrossnx, utcrossny, utcrossnz;
+                real opB;
+                real Fnx, Fny, Fnz, Ftx, Fty, Ftz, Lox, Loy, Loz;
+
+                real xi = parts[i].x;
+                real xj = parts[j].x;
+                // check for neighbors across the domain when using periodic
+                // boundaries
+                rx = xi - xj;
+                rx1 = xi - (xj + dom->xl);
+                rx2 = xi - (xj - dom->xl);
+                if(rx1*rx1 < rx*rx) rx = rx1;
+                if(rx2*rx2 < rx*rx) rx = rx2;
+                rx = (bc.uW == PERIODIC) * rx + (bc.uW != PERIODIC) * (xi - xj);
+
+                real yi = parts[i].y;
+                real yj = parts[j].y;
+                // check for neighbors across the domain when using periodic
+                // boundaries
+                ry = yi - yj;
+                ry1 = yi - (yj + dom->yl);
+                ry2 = yi - (yj - dom->yl);
+                if(ry1*ry1 < ry*ry) ry = ry1;
+                if(ry2*ry2 < ry*ry) ry = ry2;
+                ry = (bc.vS == PERIODIC) * ry + (bc.vS != PERIODIC) * (yi - yj);
+
+                real zi = parts[i].z;
+                real zj = parts[j].z;
+                // check for neighbors across the domain when using periodic
+                // boundaries
+                rz = zi - zj;
+                rz1 = zi - (zj + dom->zl);
+                rz2 = zi - (zj - dom->zl);
+                if(rz1*rz1 < rz*rz) rz = rz1;
+                if(rz2*rz2 < rz*rz) rz = rz2;
+                rz = (bc.wB == PERIODIC) * rz + (bc.wB != PERIODIC) * (zi - zj);
+
+                ux = parts[i].u - parts[j].u;
+                uy = parts[i].v - parts[j].v;
+                uz = parts[i].w - parts[j].w;
+
+                r = sqrt(rx*rx + ry*ry + rz*rz);
+
+                omegax = parts[i].ox - parts[j].ox;
+                omegay = parts[i].oy - parts[j].oy;
+                omegaz = parts[i].oz - parts[j].oz;
+
+                omega = sqrt(omegax*omegax + omegay*omegay + omegaz*omegaz);
+
+                h = r - ai - aj;
+
+                nx = rx / r;
+                ny = ry / r;
+                nz = rz / r;
+
+                udotn = ux * nx + uy * ny + uz * nz;
+
+                unx = udotn * nx;
+                uny = udotn * ny;
+                unz = udotn * nz;
+
+                utx = ux - unx;
+                uty = uy - uny;
+                utz = uz - unz;
+
+                ut = sqrt(utx*utx + uty*uty + utz*utz);
+
+                if(ut > 0) {
+                  tx = utx / ut;
+                  ty = uty / ut;
+                  tz = utz / ut;
+
+                  bx = ny*tz - nz*ty;
+                  by = -nx*tz + nz*tx;
+                  bz = nx*ty - ny*tx;
+
+                  b = sqrt(bx*bx + by*by + bz*bz);
+
+                  bx = bx / b;
+                  by = by / b;
+                  bz = bz / b;
+
+                } else if(omega > 0) {
+                  bx = omegax / omega;
+                  by = omegay / omega;
+                  bz = omegaz / omega;
+
+                  tx = by*nz - bz*ny;
+                  ty = -bx*nz + bz*nx;
+                  tz = bx*ny - by*nx;
+
+                  t = sqrt(tx*tx + ty*ty + tz*tz);
+
+                  tx = tx / t;
+                  ty = ty / t;
+                  tz = tz / t;
+                } else {
+                  tx = 1.;
+                  ty = 0.;
+                  tz = 0.;
+
+                  bx = ny*tz - nz*ty;
+                  by = -nx*tz + nz*tx;
+                  bz = nx*ty - ny*tx;
+
+                  b = sqrt(bx*bx + by*by + bz*bz);
+
+                  bx = bx / b;
+                  by = by / b;
+                  bz = bz / b;
+                }
+
+                opB = 1 + B;
+
+                ocrossnx = omegay*nz - omegaz*ny;
+                ocrossny = -omegax*nz + omegaz*nx;
+                ocrossnz = omegax*ny - omegay*nx;
+
+                utcrossnx = uty*nz - utz*ny;
+                utcrossny = -utx*nz + utz*nx;
+                utcrossnz = utx*ny - uty*nx;
+
+                if(h < hN && h > 0) {
+                  if(h < eps*parts[i].r) h = eps*parts[i].r;
+                  ah = ai/h - ai/hN;
+                  lnah = log(hN/h);
+                  Fnx = -1. * B*B / (opB*opB) * ah
+                    - (1.+7.*B+B*B)/(5.*opB*opB*opB)*lnah;
+                  Fny = Fnx;
+                  Fnz = Fnx;
+                  Fnx *= 6.*PI*mu*ai*unx;
+                  Fny *= 6.*PI*mu*ai*uny;
+                  Fnz *= 6.*PI*mu*ai*unz;
+
+                  Ftx = -6.*PI*mu*ai*utx*4.*B*(2.+B+2.*B*B)
+                    /(15.*opB*opB*opB)*lnah;
+                  Fty = -6.*PI*mu*ai*uty*4.*B*(2.+B+2.*B*B)
+                    /(15.*opB*opB*opB)*lnah;
+                  Ftz = -6.*PI*mu*ai*utz*4.*B*(2.+B+2.*B*B)
+                    /(15.*opB*opB*opB)*lnah;
+                  Ftx += 8.*PI*mu*ai*ai*ocrossnx*B*(4.+B)/(10.*opB*opB)*lnah;
+                  Fty += 8.*PI*mu*ai*ai*ocrossny*B*(4.+B)/(10.*opB*opB)*lnah;
+                  Ftz += 8.*PI*mu*ai*ai*ocrossnz*B*(4.+B)/(10.*opB*opB)*lnah;
+
+                  Lox = -8.*PI*mu*ai*ai*utcrossnx*B*(4.+B)/(10.*opB*opB)*lnah;
+                  Loy = -8.*PI*mu*ai*ai*utcrossny*B*(4.+B)/(10.*opB*opB)*lnah;
+                  Loz = -8.*PI*mu*ai*ai*utcrossnz*B*(4.+B)/(10.*opB*opB)*lnah;
+                  Lox += -8.*PI*mu*ai*ai*ai*omegax*2.*B/(5.*opB)*lnah;
+                  Loy += -8.*PI*mu*ai*ai*ai*omegay*2.*B/(5.*opB)*lnah;
+                  Loz += -8.*PI*mu*ai*ai*ai*omegaz*2.*B/(5.*opB)*lnah;
+                } else {
+                  ah = 0;
+                  lnah = 0;
+                  Fnx = 0;
+                  Fny = 0;
+                  Fnz = 0;
+                  Ftx = 0;
+                  Fty = 0;
+                  Ftz = 0;
+                  Lox = 0;
+                  Loy = 0;
+                  Loz = 0;
+                }
+
+          /** TODO implement variable alpha damping as is done for the walls **/
+                if(h < 0) {
+                  ah = 0;
+                  lnah = 0;
+                  real denom = 0.75*((1-parts[i].sigma*parts[i].sigma)
+                    /parts[i].E
+                    + (1-parts[j].sigma*parts[j].sigma)/parts[j].E)
+                    *sqrt(1./ai + 1./aj);
+                    
+                  Fnx = (sqrt(-h*h*h)/denom
+                    - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*udotn)
+                    *nx;
+                  Fny = (sqrt(-h*h*h)/denom
+                    - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*udotn)
+                    *ny;
+                  Fnz = (sqrt(-h*h*h)/denom
+                    - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*udotn)
+                    *nz;
+
+                }
+
+                // assign forces
+                parts[i].iFx += Fnx + Ftx;
+                parts[i].iFy += Fny + Fty;
+                parts[i].iFz += Fnz + Ftz;
+                parts[i].iLx += Lox;
+                parts[i].iLy += Loy;
+                parts[i].iLz += Loz;
+              }
+            }
+          }
+        }
       }
     }
   }
 }
 
 __global__ void collision_walls(dom_struct *dom, part_struct *parts,
-  int nparts, BC bc, real eps, real mu, real rhof, real nu)
+  int nparts, BC bc, real eps, real mu, real rhof, real nu,
+  int interactionLength)
 {
   int i = threadIdx.x + blockIdx.x*blockDim.x;
   /**** parallelize this further by using a CUDA block for each wall ****/
@@ -2623,7 +2799,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
     real ai = parts[i].r;
     real h = 0;
-    real hN = parts[i].r;
+    real hN = interactionLength;
     real ah, lnah;
 
     real Fnx, Fny, Fnz, Ftx, Fty, Ftz;
