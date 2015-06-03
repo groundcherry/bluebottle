@@ -128,13 +128,13 @@ void parts_read_input(int turb)
 #endif
     fret = fscanf(infile, "order %d\n", &parts[i].order);
 #ifdef DOUBLE
-    //fret = fscanf(infile, "rs/r %lf\n", &parts[i].rs);
+    fret = fscanf(infile, "rs/r %lf\n", &parts[i].rs);
     fret = fscanf(infile, "spring_k %lf\n", &parts[i].spring_k);
     fret = fscanf(infile, "spring (x, y, z) %lf %lf %lf\n",
       &parts[i].spring_x, &parts[i].spring_y, &parts[i].spring_z);
     fret = fscanf(infile, "spring_l %lf\n", &parts[i].spring_l);
 #else // single precision
-    //fret = fscanf(infile, "rs/r %f\n", &parts[i].rs);
+    fret = fscanf(infile, "rs/r %f\n", &parts[i].rs);
     fret = fscanf(infile, "spring_k %f\n", &parts[i].spring_k);
     fret = fscanf(infile, "spring (x, y, z) %f %f %f\n",
       &parts[i].spring_x, &parts[i].spring_y, &parts[i].spring_z);
@@ -234,9 +234,9 @@ int parts_init(void)
   coeff_stride = 0;
 
   for(i = 0; i < nparts; i++) {
+    parts[i].rs = parts[i].rs * parts[i].r;
     // set rs as one cell away from surface of particle
-    //parts[i].rs = parts[i].rs * parts[i].r;
-    parts[i].rs = parts[i].r + (Dom.dx + Dom.dy + Dom.dz)/3.;
+    //parts[i].rs = parts[i].r + 2.*(Dom.dx + Dom.dy + Dom.dz)/3.;
 
     // calculate the number of coefficients needed
     parts[i].ncoeff = 0;

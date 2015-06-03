@@ -2218,22 +2218,23 @@ __global__ void plane_eps_z_T(real eps, real *w_star, dom_struct *dom)
 }
 
 __global__ void move_parts_a(dom_struct *dom, part_struct *parts, int nparts,
-  real dt, real dt0, g_struct g, real rho_f, real ttime)
+  real dt, real dt0, g_struct g, gradP_struct gradP, real rho_f, real ttime)
 {
   int pp = threadIdx.x + blockIdx.x*blockDim.x; // particle number
-  real m = 4./3. * PI * parts[pp].rho * parts[pp].r*parts[pp].r*parts[pp].r;
+  real vol = 4./3. * PI * parts[pp].r*parts[pp].r*parts[pp].r;
+  real m = vol * parts[pp].rho;
 
   if(pp < nparts) {
     if(parts[pp].translating) {
       // update linear accelerations
       parts[pp].udot = (parts[pp].Fx + parts[pp].kFx + parts[pp].iFx
-        + parts[pp].aFx) / m
+        + parts[pp].aFx - vol*gradP.x) / m
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.x;
       parts[pp].vdot = (parts[pp].Fy + parts[pp].kFy + parts[pp].iFy
-        + parts[pp].aFy) / m
+        + parts[pp].aFy - vol*gradP.y) / m
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.y;
       parts[pp].wdot = (parts[pp].Fz + parts[pp].kFz + parts[pp].iFz
-        + parts[pp].aFz) / m
+        + parts[pp].aFz - vol*gradP.z) / m
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.z;
 
       // update linear velocities
@@ -2259,22 +2260,23 @@ __global__ void move_parts_a(dom_struct *dom, part_struct *parts, int nparts,
 }
 
 __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
-  real dt, real dt0, g_struct g, real rho_f, real ttime)
+  real dt, real dt0, g_struct g, gradP_struct gradP, real rho_f, real ttime)
 {
   int pp = threadIdx.x + blockIdx.x*blockDim.x; // particle number
-  real m = 4./3. * PI * parts[pp].rho * parts[pp].r*parts[pp].r*parts[pp].r;
+  real vol = 4./3. * PI * parts[pp].r*parts[pp].r*parts[pp].r;
+  real m = vol * parts[pp].rho;
 
   if(pp < nparts) {
     if(parts[pp].translating) {
       // update linear accelerations
       parts[pp].udot = (parts[pp].Fx + parts[pp].kFx + parts[pp].iFx
-        + parts[pp].aFx) / m
+        + parts[pp].aFx - vol*gradP.x) / m
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.x;
       parts[pp].vdot = (parts[pp].Fy + parts[pp].kFy + parts[pp].iFy
-        + parts[pp].aFy) / m
+        + parts[pp].aFy - vol*gradP.y) / m
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.y;
       parts[pp].wdot = (parts[pp].Fz + parts[pp].kFz + parts[pp].iFz
-        + parts[pp].aFz) / m
+          + parts[pp].aFz - vol*gradP.z) / m
         + (parts[pp].rho - rho_f) / parts[pp].rho * g.z;
 
       // update linear velocities
