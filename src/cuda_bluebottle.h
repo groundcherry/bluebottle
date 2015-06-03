@@ -1993,7 +1993,7 @@ __global__ void plane_eps_z_T(real eps, real *w_star, dom_struct *dom);
  * USAGE
  */
 __global__ void move_parts_a(dom_struct *dom, part_struct *parts, int nparts,
-  real dt, real dt0, g_struct g, gradP_struct gradP, real rho_f, real ttime);
+  real dt, real dt0, g_struct g, real rho_f, real ttime);
 /*
  * FUNCTION
  *  Update the particle velocities and move the particles. Part A: does
@@ -2016,7 +2016,7 @@ __global__ void move_parts_a(dom_struct *dom, part_struct *parts, int nparts,
  * USAGE
  */
 __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
-  real dt, real dt0, g_struct g, gradP_struct gradP, real rho_f, real ttime);
+  real dt, real dt0, g_struct g, real rho_f, real ttime);
 /*
  * FUNCTION
  *  Update the particle velocities and move the particles. Part B: does
@@ -2095,27 +2095,107 @@ __global__ void collision_init(part_struct *parts, int nparts);
  ******
  */
 
+/****f* cuda_bluebottle_kernel/init<<<>>>()
+  * NAME
+  *   init<<<>>>()
+  * USAGE
+  */
+__global__ void init(int *vector, int N, int val);
+/*
+ * FUNCTION
+ *  fill a general array with a general value
+ * ARGUMENTS
+ *  * vector -- vector to be filled
+ *  * N -- length of array
+ *  * val -- value to initialize with
+ ******
+ */
+
+/****f* cuda_bluebottle_kernel/bin_fill<<<>>>()
+  * NAME
+  *   bin_fill<<<>>>()
+  * USAGE
+  */
+__global__ void bin_fill(int *partInd, int *partBin, int nparts,
+                  part_struct *parts, dom_struct *binDom, BC bc);
+/*
+ * FUNCTION
+ *  fill the partInd and partBin arrays with locations
+ * ARGUMENTS
+ *  * partInd -- corresponding particle index for partBin
+ *  * partBin -- for each particle, give bin
+ *  * nparts -- the number of particles
+ *  * parts -- the device particle array subdomain
+ *  * binDom -- the domain structure contaiing info about bin domain
+ *  * bc -- boundary condition data
+ ******
+ */
+
+/****f* cuda_bluebottle_kernel/bin_partCount<<<>>>()
+  * NAME
+  *   bin_partCount<<<>>>()
+  * USAGE
+  */
+__global__ void bin_partCount(int *binCount, int *binStart, int *binEnd,
+                              dom_struct *binDom, BC bc, int nBins);
+/*
+ * FUNCTION
+ *  counts the number of particles per bin and bin stencil
+ * ARGUMENTS
+ *  * binCount -- number of particles in each bin
+ *  * binStart -- index of (sorted) partBin where each bin starts
+ *  * binEnd -- index of (sorted) partBin where each bin ends
+ *  * binDom -- the domain structure containing info about bin domain
+ *  * bc -- boundary condition data
+ *  * nBins -- the number of bins
+ ******
+ */
+
+/****f* cuda_bluebottle_kernel/bin_start<<<>>>()
+  * NAME
+  *   bin_start<<<>>>()
+  * USAGE
+  */
+__global__ void bin_start(int *binStart, int *binEnd, int *partBin, int nparts);
+/*
+ * FUNCTION
+ *  find the start and end indices of each in the sorted arra
+ * ARGUMENTS
+ *  * binStart -- index of (sorted) partBin where each bin starts
+ *  * binEnd -- index of (sorted) partBin where each bin ends
+ *  * partBin -- for each particle, give bin
+ *  * nparts -- the number of particles
+ ******
+ */
+
 /****f* cuda_bluebottle_kernel/collision_parts<<<>>>()
  * NAME
  *  collision_parts<<<>>>()
  * USAGE
  */
-__global__ void collision_parts(part_struct *parts, int i,
-  dom_struct *dom, real eps, real *forces, real *moments, int nparts, real mu,
-  BC bc);
+__global__ void collision_parts(part_struct *parts, int nparts,
+  dom_struct *dom, real eps, real mu, BC bc, int *binStart, int *binEnd,
+  int *partBin, int *partInd, dom_struct *binDom, int interactionLength);
 /*
  * FUNCTION
  *  Calculate collision forcing between particle i and all other particles.
  * ARGUMENTS
  *  * parts -- the device particle array subdomain
- *  * i -- the particle number to calculate
+ *  * nparts -- the number of particles in the domain
+ *  * dom -- the device domain array
  *  * eps -- magnitude of forcing
- *  * forces -- temporary working array
- *  * moments -- temporary working array
- *  * nparts -- number of particles
  *  * mu -- fluid viscosity
+ *  * bc -- boundary condition data
+ *  * binStart -- index of (sorted) partBin where each bin starts
+ *  * binEnd -- index of (sorted) partBin where each bin ends
+ *  * partBin -- for each particle, give bin
+ *  * partInd -- corresponding particle index for partBin
+ *  * binDom -- the domain structure contaiing info about bin domain
+ *  * interactionLength -- the compact support length for interactions
  ******
  */
+
+ __global__ void check(int *array, int N);
 
 /****f* cuda_bluebottle_kernel/collision_walls<<<>>>()
  * NAME
@@ -2123,7 +2203,7 @@ __global__ void collision_parts(part_struct *parts, int i,
  * USAGE
  */
 __global__ void collision_walls(dom_struct *dom, part_struct *parts,
-  int nparts, BC bc, real eps, real mu, real rho, real nu);
+  int nparts, BC bc, real eps, real mu, int interactionLength);
 /*
  * FUNCTION
  *  Calculate collision forcing between particle i and all other particles.
@@ -2134,6 +2214,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
  *  * bc -- boundary condition data
  *  * eps -- magnitude of forcing
  *  * mu -- fluid viscosity
+ *  * interactionLength -- the compact support length for interactions
  ******
  */
 

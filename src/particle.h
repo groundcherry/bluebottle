@@ -306,9 +306,7 @@ typedef struct part_struct {
   real spring_l;
   int translating;
   int rotating;
-  real St;
-  real e_dry;
-  real l_rough;
+  int bin;
 } part_struct;
 /*
  * PURPOSE
@@ -381,6 +379,7 @@ typedef struct part_struct {
  *  * spring_l -- the relaxed length of the spring
  *  * translating -- 1 if allowed to translate, 0 if not
  *  * rotating -- 1 if allowed to rotate, 0 if not
+ *  * bin -- which bin the particle resides in
  ******
  */
 
@@ -393,6 +392,42 @@ extern int nparts;
 /*
  * PURPOSE
  *  Define the total number of particles in the domain.
+ ******
+ */
+
+/****v* particle/interactionLength
+ * NAME
+ *  interactionLength
+ * TYPE
+ */
+extern real interactionLength;
+/*
+ * PURPOSE
+ *  Defines the particle-particle interaction length
+ ******
+ */
+
+/****v* particle/binDom
+ * NAME
+ *  binDom
+ * TYPE
+ */
+extern dom_struct binDom;
+/*
+ * PURPOSE
+ *  A domain struct for the bin
+ ******
+ */
+
+ /****v* particle/_binDom
+ * NAME
+ *  _binDom
+ * TYPE
+ */
+extern dom_struct *_binDom;
+/*
+ * PURPOSE
+ *  A domain struct for the bin (device)
  ******
  */
 
@@ -953,6 +988,18 @@ void parts_show_config(void);
  ******
  */
 
+/****f* particle/bin_show_config()
+ * NAME
+ *  bin_show_config()
+ * USAGE
+ */
+void bin_show_config(void);
+/*
+ * FUNCTION
+ *  Write bin specifications to screen.
+ ******
+ */
+
 /****f* particle/parts_init()
  * NAME
  *  parts_init()
@@ -992,6 +1039,21 @@ void flags_reset(void);
 /*
  * FUNCTION
  *  Reinitializes flag arrays to no boundaries (1).
+ ******
+ */
+
+/****f* particle/binDom_init()
+ * NAME
+ *  binDom_init()
+ * USAGE
+ *
+ */
+int binDom_init(void);
+/*
+ * FUNCTION
+ *  Initialize the binDom structure
+ * RESULT
+ *  EXIT_SUCCESS if successful, EXIT_FAILURE otherwise.
  ******
  */
 
