@@ -27,6 +27,10 @@
 
 #include <cuda.h>
 #include <helper_cuda.h>
+#include <thrust/reduce.h>
+#include <thrust/functional.h>
+#include <thrust/sort.h>
+//#include <thrust/device_ptr.h>
 
 extern "C"
 void cuda_dom_malloc(void)
@@ -125,6 +129,7 @@ void cuda_dom_malloc(void)
     // copy domain info to _dom
     checkCudaErrors(cudaMemcpy(_dom[dev], &dom[dev], sizeof(dom_struct),
       cudaMemcpyHostToDevice));
+
 
     checkCudaErrors(cudaMalloc((void**) &(_p0[dev]),
       sizeof(real) * dom[dev].Gcc.s3b));
@@ -853,7 +858,6 @@ void cuda_dom_pull(void)
           C = i + j * Dom.Gcc.s1b + k * Dom.Gcc.s2b;
           CC = ii + jj * dom[dev].Gcc.s1b + kk * dom[dev].Gcc.s2b;
           p0[C] = pp0[CC];
-          phi[C] = pphi[CC];
           p[C] = pp[CC];
           //divU[C] = pdivU[CC];
         }
@@ -3386,7 +3390,7 @@ real cuda_find_dt(void)
     real v_max = find_max_mag(dom[dev].Gfy.s3b, _v[dev]);
     real w_max = find_max_mag(dom[dev].Gfz.s3b, _w[dev]);
 
-#ifndef IMPLICIT
+/*#ifndef IMPLICIT
     real tmp = u_max / dom[dev].dx + 2.*nu/dom[dev].dx/dom[dev].dx;
     tmp += v_max / dom[dev].dy + 2.*nu/dom[dev].dy/dom[dev].dy;
     tmp += w_max / dom[dev].dz + 2.*nu/dom[dev].dz/dom[dev].dz;
@@ -3399,8 +3403,8 @@ real cuda_find_dt(void)
 
     dts[dev] = tmp;
 #endif
+*/
 
-/*
 #ifndef IMPLICIT
     real max = u_max / dom[dev].dx + 2.*nu/dom[dev].dx/dom[dev].dx;
     real tmp = v_max / dom[dev].dy + 2.*nu/dom[dev].dy/dom[dev].dy;
@@ -3420,7 +3424,6 @@ real cuda_find_dt(void)
     //dts[dev] += v_max / dom[dev].dy;
     //dts[dev] += w_max / dom[dev].dz;
 #endif
-*/
     dts[dev] = CFL / dts[dev];
   }
 
@@ -4124,52 +4127,102 @@ void cuda_move_parts_sub()
     dim3 numBlocks(blocks);
 
     if(nparts > 0) {
-      // do collision forcing
-      real *forces;
-      checkCudaErrors(cudaMalloc((void**) &forces, 3*nparts*sizeof(real)));
-      gpumem += 3 * nparts * sizeof(real);
-      real *moments;
-      checkCudaErrors(cudaMalloc((void**) &moments, 3*nparts*sizeof(real)));
-      gpumem += 3 * nparts * sizeof(real);
       real eps = 0.01;
 
       if(nparts == 1) {
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu, rho_f, nu);
+          nparts, bc, eps, mu, interactionLength);
         move_parts_a<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev], nparts,
-          dt, dt0, g, gradP, rho_f, ttime);
+          dt, dt0, g, rho_f, ttime);
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu, rho_f, nu);
+          nparts, bc, eps, mu, interactionLength);
+
       } else if(nparts > 1) {
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
 
-        for(int i = 0; i < nparts; i++) {
-          collision_parts<<<numBlocks, dimBlocks>>>(_parts[dev], i,
-            _dom[dev], eps, forces, moments, nparts, mu, bc);
+        int nBins = binDom.Gcc.s3;
+
+        // initialize threads for nBin size
+        int threads_nb = MAX_THREADS_1D;
+        int blocks_nb = (int)ceil((real) nBins / (real) threads_nb);
+        if(threads_nb > nBins) {
+          threads_nb = nBins;
+          blocks_nb = 1;
         }
+        dim3 dimBlocks_nb(threads_nb);
+        dim3 numBlocks_nb(blocks_nb);
+
+        /* go to each particle and find its bin */
+        int *_partInd;
+        int *_partBin;
+        checkCudaErrors(cudaMalloc((void**) &_partInd, nparts*sizeof(int)));
+        checkCudaErrors(cudaMalloc((void**) &_partBin, nparts*sizeof(int)));
+        gpumem += nparts*sizeof(int);
+        gpumem += nparts*sizeof(int);
+        bin_fill<<<numBlocks, dimBlocks>>>(_partInd, _partBin, nparts,
+          _parts[dev], _binDom, bc);
+
+        /* sort by bin */
+        thrust::device_ptr<int> ptr_partBin(_partBin);
+        thrust::device_ptr<int> ptr_partInd(_partInd);
+        thrust::sort_by_key(ptr_partBin, ptr_partBin + nparts, ptr_partInd);
+        _partBin = thrust::raw_pointer_cast(ptr_partBin);
+        _partInd = thrust::raw_pointer_cast(ptr_partInd);
+
+        /* calculate start and end index of each bin */
+        int *_binStart;
+        int *_binEnd;
+        checkCudaErrors(cudaMalloc((void**) &_binStart, nBins*sizeof(int)));
+        checkCudaErrors(cudaMalloc((void**) &_binEnd, nBins*sizeof(int)));
+        init<<<numBlocks_nb, dimBlocks_nb>>>(_binStart, nBins, -1);
+        init<<<numBlocks_nb, dimBlocks_nb>>>(_binEnd, nBins, -1);
+        gpumem += nBins*sizeof(int);
+        gpumem += nBins*sizeof(int);
+
+        int smemSize = sizeof(int)*(threads + 1);
+        bin_start<<<blocks, threads, smemSize>>>(_binStart, _binEnd, _partBin,
+          nparts);
+
+        /* count the number of particles in each bin */
+        //int *_binCount;
+        //checkCudaErrors(cudaMalloc((void**) &_binCount, nBins*sizeof(int)));
+        //init<<<numBlocks_nb, dimBlocks_nb>>>(_binCount, nBins, 0);
+        //gpumem += nBins*sizeof(int);
+        //bin_partCount<<<dimBlocks_nb, numBlocks_nb>>>(_binCount,_binStart,
+        //  _binEnd, _binDom, bc, nBins);
+
+        // launch a thread per particle to calc collision
+        collision_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts,
+         _dom[dev], eps, mu, bc, _binStart, _binEnd, _partBin, _partInd, 
+         _binDom, interactionLength);
+
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu, rho_f, nu);
+          nparts, bc, eps, mu, interactionLength);
         move_parts_a<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev], nparts,
-          dt, dt0, g, gradP, rho_f, ttime);
+          dt, dt0, g, rho_f, ttime);
 
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
+        
+        collision_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts,
+         _dom[dev], eps, mu, bc, _binStart, _binEnd, _partBin, _partInd, 
+         _binDom, interactionLength);
 
-        for(int i = 0; i < nparts; i++) {
-          collision_parts<<<numBlocks, dimBlocks>>>(_parts[dev], i,
-            _dom[dev], eps, forces, moments, nparts, mu, bc);
-        }
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu, rho_f, nu);
-      }
+          nparts, bc, eps, mu, interactionLength);
 
-      checkCudaErrors(cudaFree(forces));
-      checkCudaErrors(cudaFree(moments));
+        // free variables
+        checkCudaErrors(cudaFree(_partInd));
+        checkCudaErrors(cudaFree(_partBin));
+        //checkCudaErrors(cudaFree(_binCount));
+        checkCudaErrors(cudaFree(_binStart));
+        checkCudaErrors(cudaFree(_binEnd));
+      }
     }
   }
 }
@@ -4191,57 +4244,107 @@ void cuda_move_parts()
 
     dim3 dimBlocks(threads);
     dim3 numBlocks(blocks);
-    
+
     if(nparts > 0) {
-      // do collision forcing
-      real *forces;
-      checkCudaErrors(cudaMalloc((void**) &forces, 3*nparts*sizeof(real)));
-      gpumem += 3 * nparts * sizeof(real);
-      real *moments;
-      checkCudaErrors(cudaMalloc((void**) &moments, 3*nparts*sizeof(real)));
-      gpumem += 3 * nparts * sizeof(real);
       real eps = 0.01;
 
       if(nparts == 1) {
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu, rho_f, nu);
+          nparts, bc, eps, mu, interactionLength);
         move_parts_a<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev], nparts,
-          dt, dt0, g, gradP, rho_f, ttime);
+          dt, dt0, g, rho_f, ttime);
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu, rho_f, nu);
+          nparts, bc, eps, mu, interactionLength);
+          
       } else if(nparts > 1) {
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
 
-        for(int i = 0; i < nparts; i++) {
-          collision_parts<<<numBlocks, dimBlocks>>>(_parts[dev], i,
-            _dom[dev], eps, forces, moments, nparts, mu, bc);
+        int nBins = binDom.Gcc.s3;
+
+        // initialize threads for nBin size
+        int threads_nb = MAX_THREADS_1D;
+        int blocks_nb = (int)ceil((real) nBins / (real) threads_nb);
+        if(threads_nb > nBins) {
+          threads_nb = nBins;
+          blocks_nb = 1;
         }
+        dim3 dimBlocks_nb(threads_nb);
+        dim3 numBlocks_nb(blocks_nb);
+
+        /* go to each particle and find its bin */
+        int *_partInd;
+        int *_partBin;
+        checkCudaErrors(cudaMalloc((void**) &_partInd, nparts*sizeof(int)));
+        checkCudaErrors(cudaMalloc((void**) &_partBin, nparts*sizeof(int)));
+        gpumem += nparts*sizeof(int);
+        gpumem += nparts*sizeof(int);
+        bin_fill<<<numBlocks, dimBlocks>>>(_partInd, _partBin, nparts,
+          _parts[dev], _binDom, bc);
+
+        /* sort by bin */
+        thrust::device_ptr<int> ptr_partBin(_partBin);
+        thrust::device_ptr<int> ptr_partInd(_partInd);
+        thrust::sort_by_key(ptr_partBin, ptr_partBin + nparts, ptr_partInd);
+        _partBin = thrust::raw_pointer_cast(ptr_partBin);
+        _partInd = thrust::raw_pointer_cast(ptr_partInd);
+
+        /* calculate start and end index of each bin */
+        int *_binStart;
+        int *_binEnd;
+        checkCudaErrors(cudaMalloc((void**) &_binStart, nBins*sizeof(int)));
+        checkCudaErrors(cudaMalloc((void**) &_binEnd, nBins*sizeof(int)));
+        init<<<numBlocks_nb, dimBlocks_nb>>>(_binStart, nBins, -1);
+        init<<<numBlocks_nb, dimBlocks_nb>>>(_binEnd, nBins, -1);
+        gpumem += nBins*sizeof(int);
+        gpumem += nBins*sizeof(int);
+
+        int smemSize = sizeof(int)*(threads + 1);
+        bin_start<<<blocks, threads, smemSize>>>(_binStart, _binEnd,_partBin,
+          nparts);
+
+        /* count the number of particles in each bin */
+        //int *_binCount;
+        //checkCudaErrors(cudaMalloc((void**) &_binCount, nBins*sizeof(int)));
+        //init<<<numBlocks_nb, dimBlocks_nb>>>(_binCount, nBins, 0);
+        //gpumem += nBins*sizeof(int);
+        //bin_partCount<<<dimBlocks_nb, numBlocks_nb>>>(_binCount,_binStart,
+        //  _binEnd, _binDom, bc, nBins);
+
+        // launch a thread per particle to calc collision
+        collision_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts,
+         _dom[dev], eps, mu, bc, _binStart, _binEnd, _partBin, _partInd, 
+         _binDom, interactionLength);
+
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu, rho_f, nu);
+          nparts, bc, eps, mu, interactionLength);
         move_parts_a<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev], nparts,
-          dt, dt0, g, gradP, rho_f, ttime);
+          dt, dt0, g, rho_f, ttime);
 
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
+        
+        collision_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts,
+         _dom[dev], eps, mu, bc, _binStart, _binEnd, _partBin, _partInd, 
+         _binDom, interactionLength);
 
-        for(int i = 0; i < nparts; i++) {
-          collision_parts<<<numBlocks, dimBlocks>>>(_parts[dev], i,
-            _dom[dev], eps, forces, moments, nparts, mu, bc);
-        }
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
-          nparts, bc, eps, mu, rho_f, nu);
+          nparts, bc, eps, mu, interactionLength);
+
+        // free variables
+        checkCudaErrors(cudaFree(_partInd));
+        checkCudaErrors(cudaFree(_partBin));
+        //checkCudaErrors(cudaFree(_binCount));
+        checkCudaErrors(cudaFree(_binStart));
+        checkCudaErrors(cudaFree(_binEnd));
       }
 
       move_parts_b<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev], nparts,
-        dt, dt0, g, gradP, rho_f, ttime);
-
-      checkCudaErrors(cudaFree(forces));
-      checkCudaErrors(cudaFree(moments));
+        dt, dt0, g, rho_f, ttime);
     }
   }
 }

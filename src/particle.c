@@ -33,8 +33,11 @@ int **_flag_v;
 int *flag_w;
 int **_flag_w;
 int nparts;
+real interactionLength;
 part_struct *parts;
 part_struct **_parts;
+dom_struct binDom;
+dom_struct *_binDom;
 int coeff_stride;
 real *pnm_re;
 real *pnm_im;
@@ -96,6 +99,16 @@ void parts_read_input(int turb)
   parts = (part_struct*) malloc(nparts * sizeof(part_struct));
   cpumem += nparts * sizeof(part_struct);
 
+  // allocate bin domain
+  // read nbody parameters
+  #ifdef DOUBLE  
+    fret = fscanf(infile, "INTERACTION SUPPORT LENGTH (l/a) %lf\n", 
+                  &interactionLength);
+  #else
+    fret = fscanf(infile, "INTERACTION SUPPORT LENGTH (l/a) %f\n", 
+                  &interactionLength);
+  #endif
+
   // read nparts particles
   for(i = 0; i < nparts; i++) {
     fret = fscanf(infile, "\n");
@@ -110,8 +123,6 @@ void parts_read_input(int turb)
     fret = fscanf(infile, "rho %lf\n", &parts[i].rho);
     fret = fscanf(infile, "E %lf\n", &parts[i].E);
     fret = fscanf(infile, "sigma %lf\n", &parts[i].sigma);
-    fret = fscanf(infile, "e_dry %lf\n", &parts[i].e_dry);
-    fret = fscanf(infile, "l_rough %lf\n", &parts[i].l_rough);
 #else // single precision
     fret = fscanf(infile, "r %f\n", &parts[i].r);
     fret = fscanf(infile, "(x, y, z) %f %f %f\n",
@@ -123,18 +134,16 @@ void parts_read_input(int turb)
     fret = fscanf(infile, "rho %f\n", &parts[i].rho);
     fret = fscanf(infile, "E %f\n", &parts[i].E);
     fret = fscanf(infile, "sigma %f\n", &parts[i].sigma);
-    fret = fscanf(infile, "e_dry %f\n", &parts[i].e_dry);
-    fret = fscanf(infile, "l_rough %f\n", &parts[i].l_rough);
 #endif
     fret = fscanf(infile, "order %d\n", &parts[i].order);
 #ifdef DOUBLE
-    fret = fscanf(infile, "rs/r %lf\n", &parts[i].rs);
+    //fret = fscanf(infile, "rs/r %lf\n", &parts[i].rs);
     fret = fscanf(infile, "spring_k %lf\n", &parts[i].spring_k);
     fret = fscanf(infile, "spring (x, y, z) %lf %lf %lf\n",
       &parts[i].spring_x, &parts[i].spring_y, &parts[i].spring_z);
     fret = fscanf(infile, "spring_l %lf\n", &parts[i].spring_l);
 #else // single precision
-    fret = fscanf(infile, "rs/r %f\n", &parts[i].rs);
+    //fret = fscanf(infile, "rs/r %f\n", &parts[i].rs);
     fret = fscanf(infile, "spring_k %f\n", &parts[i].spring_k);
     fret = fscanf(infile, "spring (x, y, z) %f %f %f\n",
       &parts[i].spring_x, &parts[i].spring_y, &parts[i].spring_z);
@@ -152,6 +161,11 @@ void parts_show_config(void)
   int i;  // iterator
 
   printf("Particles:\n");
+  #ifdef DOUBLE  
+    printf("  Interaction Support Length (l/a) = %lf\n", interactionLength);
+  #else
+    printf("  Interaction Support Length (l/a) = %f\n", interactionLength);
+  #endif
   for(i = 0; i < nparts; i++) {
     printf("  Particle %d:\n", i);
     printf("    r = %e\n", parts[i].r);
@@ -194,8 +208,6 @@ void parts_show_config(void)
     printf("    rho = %f\n", parts[i].rho);
     printf("    E = %e\n", parts[i].E);
     printf("    sigma = %e\n", parts[i].sigma);
-    printf("    e_dry = %e\n", parts[i].e_dry);
-    printf("    l_rough = %e\n", parts[i].l_rough);
     printf("    order = %d\n", parts[i].order);
     printf("    rs = %e\n", parts[i].rs);
     printf("    spring_k = %f\n", parts[i].spring_k);
@@ -206,6 +218,72 @@ void parts_show_config(void)
     printf("    translating = %d\n", parts[i].translating);
     printf("    rotating = %d\n", parts[i].rotating);
   }
+}
+
+void bin_show_config(void) {
+
+  printf(" Bin Domain:\n");
+  printf("  X: (%f, %f), dX = %f\n", binDom.xs, binDom.xe, binDom.dx);
+  printf("  Y: (%f, %f), dY = %f\n", binDom.ys, binDom.ye, binDom.dy);
+  printf("  Z: (%f, %f), dZ = %f\n", binDom.zs, binDom.ze, binDom.dz);
+  printf("  Xn = %d, Yn = %d, Zn = %d\n", binDom.xn, binDom.yn, binDom.zn);
+  printf("binDomain Grids:\n");
+  printf("  binDom.Gcc:\n");
+  printf("    is = %d, ie = %d, in = %d\n", binDom.Gcc.is, binDom.Gcc.ie, binDom.Gcc.in);
+  printf("    isb = %d, ieb = %d, inb = %d\n", binDom.Gcc.isb, binDom.Gcc.ieb,
+    binDom.Gcc.inb);
+  printf("    js = %d, je = %d, jn = %d\n", binDom.Gcc.js, binDom.Gcc.je, binDom.Gcc.jn);
+  printf("    jsb = %d, jeb = %d, jnb = %d\n", binDom.Gcc.jsb, binDom.Gcc.jeb,
+    binDom.Gcc.jnb);
+  printf("    ks = %d, ke = %d, kn = %d\n", binDom.Gcc.ks, binDom.Gcc.ke, binDom.Gcc.kn);
+  printf("    ksb = %d, keb = %d, knb = %d\n", binDom.Gcc.ksb, binDom.Gcc.keb,
+    binDom.Gcc.knb);
+  printf("    s1 = %d, s2 = %d, s3 = %d\n", binDom.Gcc.s1, binDom.Gcc.s2,
+    binDom.Gcc.s3);
+  printf("    s1b = %d, s2b = %d, s3b = %d\n", binDom.Gcc.s1b, binDom.Gcc.s2b,
+    binDom.Gcc.s3b);
+  printf("  binDom.Gfx:\n");
+  printf("    is = %d, ie = %d, in = %d\n", binDom.Gfx.is, binDom.Gfx.ie, binDom.Gfx.in);
+  printf("    isb = %d, ieb = %d, inb = %d\n", binDom.Gfx.isb, binDom.Gfx.ieb,
+    binDom.Gfx.inb);
+  printf("    js = %d, je = %d, jn = %d\n", binDom.Gfx.js, binDom.Gfx.je, binDom.Gfx.jn);
+  printf("    jsb = %d, jeb = %d, jnb = %d\n", binDom.Gfx.jsb, binDom.Gfx.jeb,
+    binDom.Gfx.jnb);
+  printf("    ks = %d, ke = %d, kn = %d\n", binDom.Gfx.ks, binDom.Gfx.ke, binDom.Gfx.kn);
+  printf("    ksb = %d, keb = %d, knb = %d\n", binDom.Gfx.ksb, binDom.Gfx.keb,
+    binDom.Gfx.knb);
+  printf("    s1 = %d, s2 = %d, s3 = %d\n", binDom.Gfx.s1, binDom.Gfx.s2,
+    binDom.Gfx.s3);
+  printf("    s1b = %d, s2b = %d, s3b = %d\n", binDom.Gfx.s1b, binDom.Gfx.s2b,
+    binDom.Gfx.s3b);
+  printf("  binDom.Gfy:\n");
+  printf("    is = %d, ie = %d, in = %d\n", binDom.Gfy.is, binDom.Gfy.ie, binDom.Gfy.in);
+  printf("    isb = %d, ieb = %d, inb = %d\n", binDom.Gfy.isb, binDom.Gfy.ieb,
+    binDom.Gfy.inb);
+  printf("    js = %d, je = %d, jn = %d\n", binDom.Gfy.js, binDom.Gfy.je, binDom.Gfy.jn);
+  printf("    jsb = %d, jeb = %d, jnb = %d\n", binDom.Gfy.jsb, binDom.Gfy.jeb,
+    binDom.Gfy.jnb);
+  printf("    ks = %d, ke = %d, kn = %d\n", binDom.Gfy.ks, binDom.Gfy.ke, binDom.Gfy.kn);
+  printf("    ksb = %d, keb = %d, knb = %d\n", binDom.Gfy.ksb, binDom.Gfy.keb,
+    binDom.Gfy.knb);
+  printf("    s1 = %d, s2 = %d, s3 = %d\n", binDom.Gfy.s1, binDom.Gfy.s2,
+    binDom.Gfy.s3);
+  printf("    s1b = %d, s2b = %d, s3b = %d\n", binDom.Gfy.s1b, binDom.Gfy.s2b,
+    binDom.Gfy.s3b);
+  printf("  binDom.Gfz:\n");
+  printf("    is = %d, ie = %d, in = %d\n", binDom.Gfz.is, binDom.Gfz.ie, binDom.Gfz.in);
+  printf("    isb = %d, ieb = %d, inb = %d\n", binDom.Gfz.isb, binDom.Gfz.ieb,
+    binDom.Gfz.inb);
+  printf("    js = %d, je = %d, jn = %d\n", binDom.Gfz.js, binDom.Gfz.je, binDom.Gfz.jn);
+  printf("    jsb = %d, jeb = %d, jnb = %d\n", binDom.Gfz.jsb, binDom.Gfz.jeb,
+    binDom.Gfz.jnb);
+  printf("    ks = %d, ke = %d, kn = %d\n", binDom.Gfz.ks, binDom.Gfz.ke, binDom.Gfz.kn);
+  printf("    ksb = %d, keb = %d, knb = %d\n", binDom.Gfz.ksb, binDom.Gfz.keb,
+    binDom.Gfz.knb);
+  printf("    s1 = %d, s2 = %d, s3 = %d\n", binDom.Gfz.s1, binDom.Gfz.s2,
+    binDom.Gfz.s3);
+  printf("    s1b = %d, s2b = %d, s3b = %d\n", binDom.Gfz.s1b, binDom.Gfz.s2b,
+    binDom.Gfz.s3b);
 }
 
 int parts_init(void)
@@ -234,9 +312,9 @@ int parts_init(void)
   coeff_stride = 0;
 
   for(i = 0; i < nparts; i++) {
-    parts[i].rs = parts[i].rs * parts[i].r;
     // set rs as one cell away from surface of particle
-    //parts[i].rs = parts[i].r + 2.*(Dom.dx + Dom.dy + Dom.dz)/3.;
+    //parts[i].rs = parts[i].rs * parts[i].r;
+    parts[i].rs = parts[i].r + (Dom.dx + Dom.dy + Dom.dz)/3.;
 
     // calculate the number of coefficients needed
     parts[i].ncoeff = 0;
@@ -441,9 +519,6 @@ int parts_init(void)
     chinm_im00[i] = 0.;
   }
 
-  // initialize Stokes number
-  parts[i].St = 0.;
-
   return EXIT_SUCCESS;
 }
 
@@ -506,6 +581,157 @@ void flags_reset(void)
       }
     }
   }
+}
+
+int binDom_init(void)
+{
+  // find max of radii to set up bins
+  real rmax = 0;
+  for (int i = 0; i < nparts; i++) {
+    rmax = rmax + (parts[i].r > rmax)*(parts[i].r - rmax);
+  }
+  binDom.xs = Dom.xs;
+  binDom.xe = Dom.xe;
+  binDom.xl = Dom.xl;
+  binDom.xn = floor(Dom.xl/(2.*rmax + interactionLength));
+  binDom.dx = Dom.xl / binDom.xn;
+
+  binDom.ys = Dom.ys;
+  binDom.ye = Dom.ye;
+  binDom.yl = Dom.yl;
+  binDom.yn = floor(Dom.yl/(2.*rmax + interactionLength));
+  binDom.dy = Dom.yl / binDom.yn;
+
+  binDom.zs = Dom.zs;
+  binDom.ze = Dom.ze;
+  binDom.zl = Dom.zl;
+  binDom.zn = floor(Dom.zl/(2.*rmax + interactionLength));
+  binDom.dz = Dom.zl / binDom.zn;
+
+  binDom.E = 0;
+  binDom.W = 0;
+  binDom.N = 0;
+  binDom.S = 0;
+  binDom.T = 0;
+  binDom.B = 0;
+
+  //GCC
+  binDom.Gcc.is = DOM_BUF;
+  binDom.Gcc.isb = 0;
+  binDom.Gcc.in = binDom.xn;
+  binDom.Gcc.inb = 0;
+  binDom.Gcc.ie = binDom.Gcc.is + binDom.Gcc.in;
+  binDom.Gcc.ieb = 0;
+
+  binDom.Gcc.js = DOM_BUF;
+  binDom.Gcc.jsb = 0;
+  binDom.Gcc.jn = binDom.yn;
+  binDom.Gcc.jnb = 0;
+  binDom.Gcc.je = binDom.Gcc.js + binDom.Gcc.jn;
+  binDom.Gcc.jeb = 0;
+
+  binDom.Gcc.ks = DOM_BUF;
+  binDom.Gcc.ksb = 0;
+  binDom.Gcc.kn = binDom.zn;
+  binDom.Gcc.knb = 0;
+  binDom.Gcc.ke = DOM_BUF + binDom.Gcc.kn;
+  binDom.Gcc.keb = 0;
+
+  binDom.Gcc.s1 = binDom.Gcc.in;
+  binDom.Gcc.s2 = binDom.Gcc.s1 * binDom.Gcc.jn;
+  binDom.Gcc.s3 = binDom.Gcc.s2 * binDom.Gcc.kn;
+  binDom.Gcc.s1b = 0;
+  binDom.Gcc.s2b = 0;
+  binDom.Gcc.s3b = 0;
+
+  //GFX
+  binDom.Gfx.is = 0;
+  binDom.Gfx.in = 0;
+  binDom.Gfx.ie = 0;
+  binDom.Gfx.isb = 0;
+  binDom.Gfx.inb = 0;
+  binDom.Gfx.ieb = 0;
+
+  binDom.Gfx.js = 0;
+  binDom.Gfx.jn = 0;
+  binDom.Gfx.je = 0;
+  binDom.Gfx.jsb = 0;
+  binDom.Gfx.jnb = 0;
+  binDom.Gfx.jeb = 0;
+  
+  binDom.Gfx.ks = 0;
+  binDom.Gfx.kn = 0;
+  binDom.Gfx.ke = 0;
+  binDom.Gfx.ksb = 0;
+  binDom.Gfx.knb = 0;
+  binDom.Gfx.keb = 0;
+
+  binDom.Gfx.s1 = 0;
+  binDom.Gfx.s1b = 0;
+  binDom.Gfx.s2 = 0;
+  binDom.Gfx.s2b = 0;
+  binDom.Gfx.s3 = 0;
+  binDom.Gfx.s3b = 0;
+
+  //GFY
+  binDom.Gfy.is = 0;
+  binDom.Gfy.in = 0;
+  binDom.Gfy.ie = 0;
+  binDom.Gfy.isb = 0;
+  binDom.Gfy.inb = 0;
+  binDom.Gfy.ieb = 0;
+
+  binDom.Gfy.js = 0;
+  binDom.Gfy.jn = 0;
+  binDom.Gfy.je = 0;
+  binDom.Gfy.jsb = 0;
+  binDom.Gfy.jnb = 0;
+  binDom.Gfy.jeb = 0;
+  
+  binDom.Gfy.ks = 0;
+  binDom.Gfy.kn = 0;
+  binDom.Gfy.ke = 0;
+  binDom.Gfy.ksb = 0;
+  binDom.Gfy.knb = 0;
+  binDom.Gfy.keb = 0;
+
+  binDom.Gfy.s1 = 0;
+  binDom.Gfy.s1b = 0;
+  binDom.Gfy.s2 = 0;
+  binDom.Gfy.s2b = 0;
+  binDom.Gfy.s3 = 0;
+  binDom.Gfy.s3b = 0;
+
+  //GFZ
+  binDom.Gfz.is = 0;
+  binDom.Gfz.in = 0;
+  binDom.Gfz.ie = 0;
+  binDom.Gfz.isb = 0;
+  binDom.Gfz.inb = 0;
+  binDom.Gfz.ieb = 0;
+
+  binDom.Gfz.js = 0;
+  binDom.Gfz.jn = 0;
+  binDom.Gfz.je = 0;
+  binDom.Gfz.jsb = 0;
+  binDom.Gfz.jnb = 0;
+  binDom.Gfz.jeb = 0;
+  
+  binDom.Gfz.ks = 0;
+  binDom.Gfz.kn = 0;
+  binDom.Gfz.ke = 0;
+  binDom.Gfz.ksb = 0;
+  binDom.Gfz.knb = 0;
+  binDom.Gfz.keb = 0;
+
+  binDom.Gfz.s1 = 0;
+  binDom.Gfz.s1b = 0;
+  binDom.Gfz.s2 = 0;
+  binDom.Gfz.s2b = 0;
+  binDom.Gfz.s3 = 0;
+  binDom.Gfz.s3b = 0;
+
+  return EXIT_SUCCESS;
 }
 
 void parts_clean(void)
