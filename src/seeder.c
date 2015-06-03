@@ -48,7 +48,10 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
   parts = (part_struct*) malloc(nparts * sizeof(part_struct));
   cpumem += nparts * sizeof(part_struct);
 
+  real e_dry = 1.;
+  real l_rough = 1e-4;
   real gap = 1.00;
+  real rs = 1.2;
 
   // place the first particle
   parts[0].r = a;
@@ -99,8 +102,10 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
   parts[0].rho = rho;
   parts[0].E = E;
   parts[0].sigma = sigma;
+  parts[0].e_dry = e_dry;
+  parts[0].l_rough = l_rough;
   parts[0].order = o;
-  parts[0].rs = gap;
+  parts[0].rs = rs;
   parts[0].ncoeff = 0;
   parts[0].translating = t;
   parts[0].rotating = r;
@@ -160,6 +165,8 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
       parts[i].rho = rho;
       parts[i].E = E;
       parts[i].sigma = sigma;
+      parts[i].e_dry = e_dry;
+      parts[i].l_rough = l_rough;
       parts[i].order = o;
       parts[i].rs = gap;
       parts[i].ncoeff = 0;
@@ -581,7 +588,10 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
     fprintf(ofile, "rho %f\n", parts[i].rho);
     fprintf(ofile, "E %f\n", parts[i].E);
     fprintf(ofile, "sigma %f\n", parts[i].sigma);
+    fprintf(ofile, "e_dry %f\n", parts[i].e_dry);
+    fprintf(ofile, "l_rough %f\n", parts[i].l_rough);
     fprintf(ofile, "order %d\n", parts[i].order);
+    fprintf(ofile, "rs/r %f\n", parts[i].rs);
     fprintf(ofile, "spring_k %f\n", 0.);//parts[i].spring_k);
     fprintf(ofile, "spring (x, y, z) %f %f %f\n", 0., 0., 0.);
     fprintf(ofile, "spring_l %f\n", 0.);//parts[i].spring_l);
