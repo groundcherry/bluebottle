@@ -168,7 +168,7 @@ void seeder(int N, real a, real rho, real E, real sigma, int o, int t, int r) {
       parts[i].e_dry = e_dry;
       parts[i].l_rough = l_rough;
       parts[i].order = o;
-      parts[i].rs = gap;
+      parts[i].rs = rs;
       parts[i].ncoeff = 0;
       parts[i].translating = t;
       parts[i].rotating = r;
