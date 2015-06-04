@@ -39,6 +39,7 @@
 #include <cusp/krylov/bicgstab.h>
 #include <cusp/krylov/cg.h>
 #include <cusp/print.h>
+#include <thrust/device_ptr.h>
 
 extern "C"
 void cuda_ustar_helmholtz(int rank)

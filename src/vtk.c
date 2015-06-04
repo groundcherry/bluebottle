@@ -756,19 +756,6 @@ void dom_out_VTK_ghost(void)
       }
     }
   }
-  for(k = Dom.Gcc.ks; k < Dom.Gcc.ke; k++) {
-    for(j = Dom.Gcc.js; j < Dom.Gcc.je; j++) {
-      for(i = Dom.Gcc.is; i < Dom.Gcc.ie; i++) {
-        C = i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b;
-        Cx = i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
-        Cy = i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
-        Cz = i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b;
-        flag_uu[C] = 0.5*(flag_u[Cx] + flag_u[Cx+1]);
-        flag_vv[C] = 0.5*(flag_v[Cy] + flag_v[Cy+Dom.Gfy.s1b]);
-        flag_ww[C] = 0.5*(flag_w[Cz] + flag_w[Cz+Dom.Gfz.s2b]);
-      }
-    }
-  }
 
   // write each subdomain file
   for(l = 0; l < 6 * nsubdom; l += 6) {

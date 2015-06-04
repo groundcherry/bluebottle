@@ -3040,11 +3040,11 @@ void out_restart(void)
         fprintf(rest, "%e %e %e %e %e %e %e ",
           v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           v0[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
-          diff0_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          diff0_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           conv0_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
-          diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
+          diff_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
-          v_star[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+          v_star[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
 #else
         fprintf(rest, "%e %e %e %e %e %e ",
           v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
@@ -3052,7 +3052,7 @@ void out_restart(void)
           conv0_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           diff_v[i+j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
           conv_v[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b],
-          v_star[i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b]);
+          v_star[i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b]);
 #endif
       }
     }
