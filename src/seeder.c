@@ -71,7 +71,6 @@ void seeder_read_input()
 
 #ifdef DOUBLE
   fret = fscanf(infile, "(l/a) %lf\n", &loa);
-  printf("test %lf\n", loa);
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "r %lf\n", &a);
   fret = fscanf(infile, "(x, y, z) %lf %lf %lf\n", &x, &y, &z);
@@ -735,12 +734,12 @@ void seeder(int N, real loa, real a, real aFx, real aFy, real aFz,
   printf(" particles (a = %f) with no intersections.\n\n", a);
   fflush(stdout);
 
-  printf("Writing part_seeder.input...");
+  printf("Writing part_seeder.config...");
   fflush(stdout);
   // write particle configuration to file
   char fname[FILE_NAME_SIZE] = "";
   // open file for writing
-  sprintf(fname, "%spart_seeder.input", INPUT_DIR);
+  sprintf(fname, "%spart_seeder.config", INPUT_DIR);
   FILE *ofile = fopen(fname, "w");
   if(ofile == NULL) {
     fprintf(stderr, "Could not open file %s\n", fname);

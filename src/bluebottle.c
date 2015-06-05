@@ -193,14 +193,6 @@ int main(int argc, char *argv[]) {
     int argin;
     int runseeder = 0;
     int runrestart = 0;
-    int NP = 0;
-    real radius = -1.;
-    real density = -1.;
-    real YoungsModulus = -1.;
-    real PoissonsRatio = -1.;
-    int order = -1.;
-    int translating = -1;
-    int rotating = -1;
     while(--argc > 0 && (*++argv)[0] == '-') {
       while((argin = *++argv[0])) {
         switch(argin) {
@@ -220,12 +212,19 @@ int main(int argc, char *argv[]) {
       }
     }
     
-    NP = 0;
-    radius = -1.;
-    order = -1.;
     if(runseeder == 1) {
-      seeder_read_input();
-      return EXIT_SUCCESS;
+      printf("Seed particles according to parameters specified in");
+      printf(" parts.config? (Y/n)\n");
+      fflush(stdout);
+      int c = getchar();
+      if (c == 'Y' || c == 'y') {
+        seeder_read_input();
+        return EXIT_SUCCESS;
+      } else {
+        printf("Please specify the desired parameters in parts.config\n\n");
+        fflush(stdout);
+        return EXIT_FAILURE;
+      }
     } else if(runrestart == 1 && argc > 0) {
       printf("Usage restart simulation: bluebottle -r\n");
       return EXIT_FAILURE;
