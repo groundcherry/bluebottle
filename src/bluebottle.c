@@ -193,14 +193,6 @@ int main(int argc, char *argv[]) {
     int argin;
     int runseeder = 0;
     int runrestart = 0;
-    int NP = 0;
-    real radius = -1.;
-    real density = -1.;
-    real YoungsModulus = -1.;
-    real PoissonsRatio = -1.;
-    int order = -1.;
-    int translating = -1;
-    int rotating = -1;
     while(--argc > 0 && (*++argv)[0] == '-') {
       while((argin = *++argv[0])) {
         switch(argin) {
@@ -220,47 +212,19 @@ int main(int argc, char *argv[]) {
       }
     }
     
-    NP = 0;
-    radius = -1.;
-    order = -1.;
     if(runseeder == 1) {
-      if(argc != 8) {
-        printf("Usage: bluebottle -s N a d E s o t r\n");
-        printf("       N is the number of particles\n");
-        printf("       a is the particle radius\n");
-        printf("       d is the particle density (rho)\n");
-        printf("       E is the particle Young's modulus\n");
-        printf("       s is the particle Poisson's ratio (-1 < s <= 0.5)\n");
-        printf("       o is the Lamb's solution truncation order\n");
-        printf("       t = 1 if particles can translate (0 if not)\n");
-        printf("       r = 1 if particles can rotate (0 if not)\n");
+      printf("Seed particles according to parameters specified in");
+      printf(" parts.config? (Y/n)\n");
+      fflush(stdout);
+      int c = getchar();
+      if (c == 'Y' || c == 'y') {
+        seeder_read_input();
+        return EXIT_SUCCESS;
+      } else {
+        printf("Please specify the desired parameters in parts.config\n\n");
+        fflush(stdout);
         return EXIT_FAILURE;
       }
-      NP = atoi(argv[0]);
-      radius = atof(argv[1]);
-      density = atof(argv[2]);
-      YoungsModulus = atof(argv[3]);
-      PoissonsRatio = atof(argv[4]);
-      order = atoi(argv[5]);
-      translating = atoi(argv[6]);
-      rotating = atoi(argv[7]);
-      if(NP < 1 || radius < 0 || density < 0
-        || YoungsModulus < 0 || PoissonsRatio == -1 || PoissonsRatio > 0.5
-        || order < 0 || translating > 1 || rotating > 1) {
-        printf("Usage: bluebottle -s N a d o t r\n");
-        printf("       N is the number of particles\n");
-        printf("       a is the particle radius\n");
-        printf("       d is the particle density (rho)\n");
-        printf("       E is the particle Young's modulus\n");
-        printf("       s is the particle Poisson's ratio (-1 < s <= 0.5)\n");
-        printf("       o is the Lamb's solution truncation order\n");
-        printf("       t = 1 if particles can translate (0 if not)\n");
-        printf("       r = 1 if particles can rotate (0 if not)\n");
-        return EXIT_FAILURE;
-      }
-      seeder(NP, radius, density, YoungsModulus, PoissonsRatio, order,
-        translating, rotating);
-      return EXIT_SUCCESS;
     } else if(runrestart == 1 && argc > 0) {
       printf("Usage restart simulation: bluebottle -r\n");
       return EXIT_FAILURE;

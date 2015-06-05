@@ -2714,7 +2714,22 @@ void cuda_collisions(void);
  *  seeder()
  * USAGE
  */
-void seeder(int N, real a, real d, real E, real s, int o, int t, int r);
+void seeder_read_input();
+/*
+  * FUNCTION
+  *   Read parts.config for seeder initialization
+  ******
+  */
+
+/****f* bluebottle/seeder()
+ * NAME
+ *  seeder()
+ * USAGE
+ */
+void seeder(int N, real loa, real a, real aFx, real aFy, real aFz, 
+  real aLx, real aLy, real aLz, real rho, real E, real sigma, real e_dry,
+  real l_rough, int o, real rs_r, real spring_k, real spring_x, real spring_y,
+  real spring_z, real spring_l, int t, int r);
 /*
  * FUNCTION
  *  Randomly seed N particles in the domain. To use this function, run
@@ -2724,11 +2739,26 @@ void seeder(int N, real a, real d, real E, real s, int o, int t, int r);
  *  change its name to part.config and run bluebottle normally.
  * ARGUMENTS
  *  * N -- the number of particles
+ *  * loa -- particle interaction compact support length
  *  * a -- the radius of the particles
+ *  * aFx -- particle x forcing
+ *  * aFy -- particle y forcing
+ *  * aFz -- particle z forcing
+ *  * aLx -- particle x angular forcing
+ *  * aLy -- particle y angular forcing
+ *  * aLz -- particle z angular forcing
  *  * d -- the density of the particles (rho)
  *  * E -- the particle Young's modulus
  *  * s -- the particle Poisson ratio (-1 < s <= 0.5)
+ *  * e_dry -- dry coefficient of restitution
+ *  * l_rough -- particle surface roughness
  *  * o -- the order of truncation of the Lamb's solution
+ *  * rs_r -- cage extent ratio
+ *  * spring_k -- particle spring constant
+ *  * spring_x -- particle spring x location
+ *  * spring_y -- particle spring y location
+ *  * spring_z -- particle spring z location
+ *  * spring_l -- particle spring length
  *  * t -- one if translating, zero if not
  *  * r -- one if rotating, zero if not
  ******
