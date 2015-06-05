@@ -379,6 +379,9 @@ int parts_init(void)
     for(j = 0; j < NNODES; j++) {
       parts[i].nodes[j] = -1;
     }
+
+    // initialize Stokes number
+    parts[i].St = 0.;
   }
 
   // allocate Lamb's coefficients
@@ -440,9 +443,6 @@ int parts_init(void)
     chinm_re00[i] = 0.;
     chinm_im00[i] = 0.;
   }
-
-  // initialize Stokes number
-  parts[i].St = 0.;
 
   return EXIT_SUCCESS;
 }

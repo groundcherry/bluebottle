@@ -621,7 +621,7 @@ __global__ void part_BC_u(real *u, int *phase, int *flag_u,
         chinm_re, chinm_im,
         P, stride, &Ux, &Uy, &Uz);
 
-      // switch reference frame and set boundary condition
+
       real ocrossr_x = oy*z - oz*y;
       real odotcrossr_x = oydot*z - ozdot*y;
       Ux += uu + ocrossr_x;
@@ -1246,32 +1246,43 @@ __device__ void lamb_vel(int order, real a, real r, real theta, real phi,
   real ut = 0.5*ra*Y_pn(0, theta, phi, pnm_re, pnm_im, p_ind, stride);
   real up = 0.5*ra*Z_pn(0, theta, phi, pnm_re, pnm_im, p_ind, stride);
 
+
   for(int n = 1; n <= order; n++) {
-    ur += (0.5*n/(2.*n+3.)*pow(ra,n+1.)
-      + 0.25*n*((2.*n+1.)/(2.*n+3.)*ar*ar-1.)*pow(ar,n))
+    real powranp1 = pow(ra,n+1.);
+    real powranm1 = pow(ra,n-1.);
+
+    real powarnp2 = pow(ar,n+2.);
+    real powarnp1 = pow(ar,n+1.);
+    real powarn = pow(ar,n);
+
+    real od2np3 = 1./(2.*n+3.);
+    real odnp1 = 1./(n+1.);
+
+    ur += (0.5*n*od2np3*powranp1
+      + 0.25*n*((2.*n+1.)*od2np3*ar*ar-1.)*powarn)
       * X_pn(n, theta, phi, pnm_re, pnm_im, p_ind, stride);
-    ur += (n*pow(ra,n-1.)
+    ur += (n*powranm1
       + 0.5*n*(2.*n-1.-(2.*n+1.)*ra*ra)*pow(ar,n+2.))
       * X_phin(n, theta, phi, phinm_re, phinm_im, p_ind, stride);
 
-    ut += (0.5*(n+3.)/(n+1.)/(2.*n+3.)*pow(ra,n+1.)
-      + 0.25/(n+1.)*(n-2.-n*(2.*n+1.)/(2.*n+3.)*ar*ar)*pow(ar,n))
+    ut += (0.5*(n+3.)*odnp1*od2np3*powranp1
+      + 0.25*odnp1*(n-2.-n*(2.*n+1.)*od2np3*ar*ar)*powarn)
       * Y_pn(n, theta, phi, pnm_re, pnm_im, p_ind, stride);
-    ut += (pow(ra,n-1.)
-      + 0.5/(n+1.)*((n-2.)*(2.*n+1.)*ra*ra-n*(2.*n-1.))*pow(ar,n+2.))
+    ut += (powranm1
+      + 0.5*odnp1*((n-2.)*(2.*n+1.)*ra*ra-n*(2.*n-1.))*powarnp2)
       * Y_phin(n, theta, phi, phinm_re, phinm_im, p_ind, stride);
-    ut += (pow(ra,n-1.)
-      - pow(ar,n+1.))
+    ut += (powranm1
+      - powarnp1)
       * Z_chin(n, theta, phi, chinm_re, chinm_im, p_ind, stride);
       
-    up += (0.5*(n+3.)/(n+1.)/(2.*n+3.)*pow(ra,n+1.)
-      + 0.25/(n+1.)*(n-2.-n*(2.*n+1.)/(2.*n+3.)*ar*ar)*pow(ar,n))
+    up += (0.5*(n+3.)*odnp1*od2np3*powranp1
+      + 0.25*odnp1*(n-2.-n*(2.*n+1.)*od2np3*ar*ar)*powarn)
       * Z_pn(n, theta, phi, pnm_re, pnm_im, p_ind, stride);
-    up += (pow(ra,n-1.)
-      + 0.5/(n+1.)*((n-2.)*(2.*n+1.)*ra*ra-n*(2.*n-1.))*pow(ar,n+2.))
+    up += (powranm1
+      + 0.5*odnp1*((n-2.)*(2.*n+1.)*ra*ra-n*(2.*n-1.))*powarnp2)
       * Z_phin(n, theta, phi, phinm_re, phinm_im, p_ind, stride);
-    up += (-pow(ra,n-1.)
-      + pow(ar,n+1.))
+    up += (-powranm1
+      + powarnp1)
       * Y_chin(n, theta, phi, chinm_re, chinm_im, p_ind, stride);
   }
   ur *= nu / a;
