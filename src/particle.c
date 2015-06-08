@@ -102,10 +102,10 @@ void parts_read_input(int turb)
   // allocate bin domain
   // read nbody parameters
   #ifdef DOUBLE  
-    fret = fscanf(infile, "INTERACTION SUPPORT LENGTH (l/a) %lf\n", 
+    fret = fscanf(infile, "(l/a) %lf\n", 
                   &interactionLength);
   #else
-    fret = fscanf(infile, "INTERACTION SUPPORT LENGTH (l/a) %f\n", 
+    fret = fscanf(infile, "(l/a) %f\n", 
                   &interactionLength);
   #endif
 
