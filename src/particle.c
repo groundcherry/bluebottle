@@ -102,10 +102,10 @@ void parts_read_input(int turb)
   // allocate bin domain
   // read nbody parameters
   #ifdef DOUBLE  
-    fret = fscanf(infile, "INTERACTION SUPPORT LENGTH (l/a) %lf\n", 
+    fret = fscanf(infile, "(l/a) %lf\n", 
                   &interactionLength);
   #else
-    fret = fscanf(infile, "INTERACTION SUPPORT LENGTH (l/a) %f\n", 
+    fret = fscanf(infile, "(l/a) %f\n", 
                   &interactionLength);
   #endif
 
@@ -463,6 +463,9 @@ int parts_init(void)
     for(j = 0; j < NNODES; j++) {
       parts[i].nodes[j] = -1;
     }
+
+    // initialize Stokes number
+    parts[i].St = 0.;
   }
 
   // allocate Lamb's coefficients
@@ -524,9 +527,6 @@ int parts_init(void)
     chinm_re00[i] = 0.;
     chinm_im00[i] = 0.;
   }
-
-  // initialize Stokes number
-  parts[i].St = 0.;
 
   return EXIT_SUCCESS;
 }
