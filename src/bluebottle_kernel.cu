@@ -2866,6 +2866,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
+      //real alpha = 1.0;
 
       parts[i].iFx += (bc.uW == DIRICHLET) * (sqrt(-h*h*h)*k
         - alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h))*Un);
@@ -2933,6 +2934,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
+      //real alpha = 1.0;
 
       parts[i].iFx -= (bc.uE == DIRICHLET) * (sqrt(-h*h*h)/denom
         - alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*Un);
@@ -2985,6 +2987,11 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     }
     if(h < 0) {
       Un = parts[i].v - bc.vSD;
+      // if this is the first time step with contact, set St
+      // otherwise, use St that was set at the beginning of the contact
+      if(parts[i].St == -1.) {
+        parts[i].St = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
+      }
       lnah = 0;
       /** for now, use particle material as wall materal in second V term **/
       real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
@@ -2995,6 +3002,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
+      //real alpha = 1.0;
 
       parts[i].iFy += (bc.vS == DIRICHLET) * (sqrt(-h*h*h)/denom
         - alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*Un);
@@ -3047,6 +3055,11 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     }
     if(h < 0) {
       Un = parts[i].v - bc.vND;
+      // if this is the first time step with contact, set St
+      // otherwise, use St that was set at the beginning of the contact
+      if(parts[i].St == -1.) {
+        parts[i].St = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
+      }
       lnah = 0;
       /** for now, use particle material as wall materal in second V term **/
       real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
@@ -3057,6 +3070,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
+      //real alpha = 1.0;
 
       parts[i].iFy -= (bc.vN == DIRICHLET) * (sqrt(-h*h*h)/denom
         - alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*Un);
@@ -3109,6 +3123,11 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     }
     if(h < 0) {
       Un = parts[i].w - bc.wBD;
+      // if this is the first time step with contact, set St
+      // otherwise, use St that was set at the beginning of the contact
+      if(parts[i].St == -1.) {
+        parts[i].St = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
+      }
       lnah = 0;
       // for now, use particle material as wall materal in second V term //
       real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
@@ -3119,6 +3138,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
+      //real alpha = 1.0;
 
       parts[i].iFz += (bc.wB == DIRICHLET) * (sqrt(-h*h*h)/denom
         - alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*Un);
@@ -3171,6 +3191,11 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     }
     if(h < 0) {
       Un = parts[i].w - bc.wTD;
+      // if this is the first time step with contact, set St
+      // otherwise, use St that was set at the beginning of the contact
+      if(parts[i].St == -1.) {
+        parts[i].St = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
+      }
       lnah = 0;
       // for now, use particle material as wall materal in second V term //
       real denom = 0.75*((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
@@ -3181,6 +3206,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
+      //real alpha = 1.0;
 
       parts[i].iFz -= (bc.wT == DIRICHLET) * (sqrt(-h*h*h)/denom
         - alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*Un);
