@@ -2195,8 +2195,6 @@ __global__ void collision_parts(part_struct *parts, int nparts,
  ******
  */
 
- __global__ void check(int *array, int N);
-
 /****f* cuda_bluebottle_kernel/collision_walls<<<>>>()
  * NAME
  *  collision_walls<<<>>>()

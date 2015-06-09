@@ -2470,14 +2470,6 @@ __global__ void bin_start(int *binStart, int *binEnd, int *partBin, int nparts)
   }
 }
 
-__global__ void check(int *array, int N) {
-  int index = threadIdx.x + blockIdx.x*blockDim.x;
-  if (index < N) {
-    printf("index = %d, val = %d\n", index, array[index]);
-  }
-  __syncthreads(); 
-}
-
 __global__ void collision_parts(part_struct *parts, int nparts,
   dom_struct *dom, real eps, real mu, BC bc, int *binStart, int *binEnd,
   int *partBin, int *partInd, dom_struct *binDom, int interactionLength)
