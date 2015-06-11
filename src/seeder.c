@@ -148,6 +148,7 @@ void seeder_read_input()
   printf("       N = %d\n", N);
 #ifdef DOUBLE
   printf("       (l/a) = %lf\n", loa);
+  printf("       r = %lf\n", a);
   printf("       (aFx, aFy, aFz) = (%lf, %lf, %lf)\n", aFx, aFy, aFz);
   printf("       (aLx, aLy, aLz) = (%lf, %lf, %lf)\n", aLx, aLy, aLz);
   printf("       rho = %lf\n", rho);
@@ -157,6 +158,7 @@ void seeder_read_input()
   printf("       l_rough = %lf\n", l_rough);
 #else
   printf("       (l/a) = %f\n", loa);
+  printf("       r = %f\n", a);
   printf("       (aFx, aFy, aFz) = (%f, %f, %f)\n", aFx, aFy, aFz);
   printf("       (aLx, aLy, aLz) = (%f, %f, %f)\n", aLx, aLy, aLz);
   printf("       rho = %f\n", rho);

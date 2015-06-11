@@ -603,19 +603,34 @@ int binDom_init(void)
   binDom.xe = Dom.xe;
   binDom.xl = Dom.xl;
   binDom.xn = floor(Dom.xl/(2.*rmax + interactionLength));
-  binDom.dx = Dom.xl / binDom.xn;
+  if (binDom.xn == 0) { // to avoid dividing by zero and having infinite bin
+    binDom.xn = 1;
+    binDom.dx = Dom.xl;
+  } else {
+    binDom.dx = Dom.xl / binDom.xn;
+  }
 
   binDom.ys = Dom.ys;
   binDom.ye = Dom.ye;
   binDom.yl = Dom.yl;
   binDom.yn = floor(Dom.yl/(2.*rmax + interactionLength));
-  binDom.dy = Dom.yl / binDom.yn;
+  if (binDom.yn == 0) {
+    binDom.yn = 1;
+    binDom.dy = Dom.yl;
+  } else {
+    binDom.dy = Dom.yl / binDom.yn;
+  }
 
   binDom.zs = Dom.zs;
   binDom.ze = Dom.ze;
   binDom.zl = Dom.zl;
   binDom.zn = floor(Dom.zl/(2.*rmax + interactionLength));
-  binDom.dz = Dom.zl / binDom.zn;
+  if (binDom.zn == 0) {
+    binDom.zn = 1;
+    binDom.dz = Dom.zl;
+  } else {
+    binDom.dz = Dom.zl / binDom.zn;
+  }
 
   binDom.E = 0;
   binDom.W = 0;
