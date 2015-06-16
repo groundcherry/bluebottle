@@ -262,9 +262,6 @@ void domain_read_input(void)
     bc.uN = DIRICHLET;
     fret = fscanf(infile, "%lf %lf", &bc.uNDm, &bc.uNDa);
     bc.uND = 0;
-    bc.uNDm = 0;
-    bc.uNDa = 0;
-    bc.uND = 0;
   }
   else if(strcmp(buf, "NEUMANN") == 0) {
     bc.uN = NEUMANN;
