@@ -2910,7 +2910,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].St = -1.;
     } 
     if(h < 0) {
-      Un = parts[i].u - bc.uED;
+      Un = -(parts[i].u - bc.uED);
       // if this is the first time step with contact, set St
       // otherwise, use St that was set at the beginning of the contact
       if(parts[i].St == -1.) {
@@ -3046,7 +3046,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].St = -1.;
     }
     if(h < 0) {
-      Un = parts[i].v - bc.vND;
+      Un = -(parts[i].v - bc.vND);
       // if this is the first time step with contact, set St
       // otherwise, use St that was set at the beginning of the contact
       if(parts[i].St == -1.) {
@@ -3182,7 +3182,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].St = -1.;
     }
     if(h < 0) {
-      Un = parts[i].w - bc.wTD;
+      Un = -(parts[i].w - bc.wTD);
       // if this is the first time step with contact, set St
       // otherwise, use St that was set at the beginning of the contact
       if(parts[i].St == -1.) {
