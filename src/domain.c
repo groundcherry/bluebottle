@@ -126,8 +126,10 @@ void domain_read_input(void)
   fret = fscanf(infile, "bc.pW %s", buf);
   if(strcmp(buf, "PERIODIC") == 0)
     bc.pW = PERIODIC;
+    bc.dsW = 0;
   else if(strcmp(buf, "NEUMANN") == 0)
     bc.pW = NEUMANN;
+    fret = fscanf(infile, "%lf", &bc.dsW);
   else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
@@ -136,8 +138,10 @@ void domain_read_input(void)
   fret = fscanf(infile, "bc.pE %s", buf);
   if(strcmp(buf, "PERIODIC") == 0)
     bc.pE = PERIODIC;
+    bc.dsE = 0;
   else if(strcmp(buf, "NEUMANN") == 0)
     bc.pE = NEUMANN;
+    fret = fscanf(infile, "%lf", &bc.dsE);
   else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
@@ -146,8 +150,10 @@ void domain_read_input(void)
   fret = fscanf(infile, "bc.pS %s", buf);
   if(strcmp(buf, "PERIODIC") == 0)
     bc.pS = PERIODIC;
+    bc.dsS = 0;
   else if(strcmp(buf, "NEUMANN") == 0)
     bc.pS = NEUMANN;
+    fret = fscanf(infile, "%lf", &bc.dsS);
   else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
@@ -156,8 +162,10 @@ void domain_read_input(void)
   fret = fscanf(infile, "bc.pN %s", buf);
   if(strcmp(buf, "PERIODIC") == 0)
     bc.pN = PERIODIC;
+    &bc.dsN = 0;
   else if(strcmp(buf, "NEUMANN") == 0)
     bc.pN = NEUMANN;
+    fret = fscanf(infile, "%lf", &bc.dsN);
   else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
@@ -166,8 +174,10 @@ void domain_read_input(void)
   fret = fscanf(infile, "bc.pB %s", buf);
   if(strcmp(buf, "PERIODIC") == 0)
     bc.pB = PERIODIC;
+    bc.dsB = 0;
   else if(strcmp(buf, "NEUMANN") == 0)
     bc.pB = NEUMANN;
+    fret = fscanf(infile, "%lf", &bc.dsB);
   else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
@@ -176,8 +186,10 @@ void domain_read_input(void)
   fret = fscanf(infile, "bc.pT %s", buf);
   if(strcmp(buf, "PERIODIC") == 0)
     bc.pT = PERIODIC;
+    bc.dsT = 0;
   else if(strcmp(buf, "NEUMANN") == 0)
     bc.pT = NEUMANN;
+    fret = fscanf(infile, "%lf", &bc.dsT);
   else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
@@ -793,8 +805,10 @@ void turb_read_input(void)
   fret = fscanf(infile, "bc.pW %s", buf);
   if(strcmp(buf, "PERIODIC") == 0)
     bc.pW = PERIODIC;
+    bc.dsW = 0;
   else if(strcmp(buf, "NEUMANN") == 0)
     bc.pW = NEUMANN;
+    fret = fscanf(infile, "%lf", &bc.dsW);
   else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
@@ -803,8 +817,10 @@ void turb_read_input(void)
   fret = fscanf(infile, "bc.pE %s", buf);
   if(strcmp(buf, "PERIODIC") == 0)
     bc.pE = PERIODIC;
+    bc.dsE = 0;
   else if(strcmp(buf, "NEUMANN") == 0)
     bc.pE = NEUMANN;
+    fret = fscanf(infile, "%lf", &bc.dsE);
   else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
@@ -813,8 +829,10 @@ void turb_read_input(void)
   fret = fscanf(infile, "bc.pS %s", buf);
   if(strcmp(buf, "PERIODIC") == 0)
     bc.pS = PERIODIC;
+    bc.dsS = 0;
   else if(strcmp(buf, "NEUMANN") == 0)
     bc.pS = NEUMANN;
+    fret = fscanf(infile, "%lf", &bc.dsS);
   else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
@@ -823,8 +841,10 @@ void turb_read_input(void)
   fret = fscanf(infile, "bc.pN %s", buf);
   if(strcmp(buf, "PERIODIC") == 0)
     bc.pN = PERIODIC;
+    bc.dsN = 0;
   else if(strcmp(buf, "NEUMANN") == 0)
     bc.pN = NEUMANN;
+    fret = fscanf(infile, "%lf", &bc.dsN);
   else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
@@ -833,8 +853,10 @@ void turb_read_input(void)
   fret = fscanf(infile, "bc.pB %s", buf);
   if(strcmp(buf, "PERIODIC") == 0)
     bc.pB = PERIODIC;
+    bc.dsB = 0;
   else if(strcmp(buf, "NEUMANN") == 0)
     bc.pB = NEUMANN;
+    fret = fscanf(infile, "%lf", &bc.dsB);
   else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
@@ -843,8 +865,10 @@ void turb_read_input(void)
   fret = fscanf(infile, "bc.pT %s", buf);
   if(strcmp(buf, "PERIODIC") == 0)
     bc.pT = PERIODIC;
+    bc.dsT = 0;
   else if(strcmp(buf, "NEUMANN") == 0)
     bc.pT = NEUMANN;
+    fret = fscanf(infile, "%lf", &bc.dsT);
   else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
@@ -1508,6 +1532,15 @@ void domain_show_config(void)
   if(bc.wB == DIRICHLET) printf(" %f", bc.wBDm);
   printf(", bc.wT = %d", bc.wT);
   if(bc.wT == DIRICHLET) printf(" %f", bc.wTDm);
+  printf("\n");
+
+  printf("Screen offsets:\n");
+  printf("  bc.dsW = %f\n", bc.dsW);
+  printf("  bc.dsE = %f\n", bc.dsE);
+  printf("  bc.dsS = %f\n", bc.dsS);
+  printf("  bc.dsN = %f\n", bc.dsN);
+  printf("  bc.dsB = %f\n", bc.dsB);
+  printf("  bc.dsT = %f\n", bc.dsT);
   printf("\n");
 
   printf("Applied Pressure Gradient:\n");

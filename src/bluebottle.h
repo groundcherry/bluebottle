@@ -1969,6 +1969,12 @@ typedef struct BC {
   real wTDm;
   real wTD;
   real wTDa;
+  real xs_net;
+  real xe_net;
+  real ys_net;
+  real ye_net;
+  real zs_net;
+  real ze_net;
 } BC;
 /*
  * PURPOSE
@@ -2065,6 +2071,12 @@ typedef struct BC {
  *  * wTDm -- the maximum DIRICHLET boundary condition value
  *  * wTD -- the current DIRICHLET boundary conditon value
  *  * wTDa -- the DIRICHLET boundary condition value acceleration
+ *  * dsW -- the SCREEN boundary condition offset value
+ *  * dsE -- the SCREEN boundary condition offset value
+ *  * dsS -- the SCREEN boundary condition offset value
+ *  * dsN -- the SCREEN boundary condition offset value
+ *  * dsB -- the SCREEN boundary condition offset value
+ *  * dsT -- the SCREEN boundary condition offset value
  ******
  */
 

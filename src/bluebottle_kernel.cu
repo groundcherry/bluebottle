@@ -2798,7 +2798,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     real Lox, Loy, Loz;
 
     // west wall
-    dx = fabs(parts[i].x - dom->xs);
+    dx = fabs(parts[i].x - (dom->xs + bc.dsW));
     h = dx - ai;
     if(h < hN && h > 0) {
       Un = parts[i].u - bc.uWD;
@@ -2865,7 +2865,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     }
 
     // east wall
-    dx = fabs(parts[i].x - dom->xe);
+    dx = fabs(parts[i].x - (dom->xe - bc.dsE));
     h = dx - ai;
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
@@ -2933,7 +2933,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     }
 
     // south wall
-    dy = fabs(parts[i].y - dom->ys);
+    dy = fabs(parts[i].y - (dom->ys + bc.dsS));
     h = dy - ai;
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
@@ -3001,7 +3001,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     }
 
     // north wall
-    dy = fabs(parts[i].y - dom->ye);
+    dy = fabs(parts[i].y - (dom->ye - bc.dsN));
     h = dy - ai;
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
@@ -3069,7 +3069,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     }
 
     // bottom wall
-    dz = fabs(parts[i].z - dom->zs);
+    dz = fabs(parts[i].z - (dom->zs + bc.dsB));
     h = dz - ai;
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
@@ -3137,7 +3137,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     }
 
     // top wall
-    dz = fabs(parts[i].z - dom->ze);
+    dz = fabs(parts[i].z - (dom->ze - bc.dsT));
     h = dz - ai;
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
