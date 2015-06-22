@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
     
     if(runseeder == 1) {
       printf("Seed particles according to parameters specified in");
-      printf(" parts.config? (Y/n)\n");
+      printf(" parts.config? (y/N)\n");
       fflush(stdout);
       int c = getchar();
       if (c == 'Y' || c == 'y') {
