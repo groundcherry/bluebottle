@@ -2863,9 +2863,9 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
 
-      real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(h));
+      real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
-      parts[i].iFx += isTrue * (sqrt(h*h*h)*k - eta*Un);
+      parts[i].iFx += isTrue * (sqrt(-h*h*h)*k - eta*Un);
     }
 
     // east wall
@@ -3139,9 +3139,9 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
 
-      real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(h));
+      real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
-      parts[i].iFz += isTrue * (sqrt(h*h*h)*k - eta*Un);
+      parts[i].iFz += isTrue * (sqrt(-h*h*h)*k - eta*Un);
     }
 
     // top wall
