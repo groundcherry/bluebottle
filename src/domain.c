@@ -124,65 +124,84 @@ void domain_read_input(void)
   fret = fscanf(infile, "BOUNDARY CONDITIONS\n");
   fret = fscanf(infile, "PRESSURE\n");
   fret = fscanf(infile, "bc.pW %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pW = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsW = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pW = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsW);
+  } else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pE %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pE = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsE = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pE = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsE);
+  } else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pS %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pS = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsS = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pS = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsS);
+  } else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pN %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pN = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsN = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pN = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsN);
+  } else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pB %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pB = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsB = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pB = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsB);
+  } else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pT %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pT = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsT = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pT = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsT);
+  } else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
+
+  if (bc.dsE < 0 || bc.dsW < 0 || 
+      bc.dsN < 0 || bc.dsS < 0 || 
+      bc.dsT < 0 || bc.dsB < 0) {
+    fprintf(stderr, "flow.config read error -- screen offsets must be >= 0\n");
+    exit(EXIT_FAILURE);
+  }
 
   fret = fscanf(infile, "X-VELOCITY\n");
 
@@ -791,61 +810,73 @@ void turb_read_input(void)
   fret = fscanf(infile, "BOUNDARY CONDITIONS\n");
   fret = fscanf(infile, "PRESSURE\n");
   fret = fscanf(infile, "bc.pW %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pW = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsW = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pW = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsW);
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pE %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pE = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsE = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pE = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsE);
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pS %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pS = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsS = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pS = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsS);
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pN %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pN = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsN = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pN = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsN);
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pB %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pB = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsB = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pB = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsB);
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pT %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pT = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsT = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pT = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsT);
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -1508,6 +1539,15 @@ void domain_show_config(void)
   if(bc.wB == DIRICHLET) printf(" %f", bc.wBDm);
   printf(", bc.wT = %d", bc.wT);
   if(bc.wT == DIRICHLET) printf(" %f", bc.wTDm);
+  printf("\n");
+
+  printf("Screen offsets:\n");
+  printf("  bc.dsW = %f\n", bc.dsW);
+  printf("  bc.dsE = %f\n", bc.dsE);
+  printf("  bc.dsS = %f\n", bc.dsS);
+  printf("  bc.dsN = %f\n", bc.dsN);
+  printf("  bc.dsB = %f\n", bc.dsB);
+  printf("  bc.dsT = %f\n", bc.dsT);
   printf("\n");
 
   printf("Applied Pressure Gradient:\n");

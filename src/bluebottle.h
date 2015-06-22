@@ -1969,6 +1969,12 @@ typedef struct BC {
   real wTDm;
   real wTD;
   real wTDa;
+  real dsW;
+  real dsE;
+  real dsS;
+  real dsN;
+  real dsB;
+  real dsT;
 } BC;
 /*
  * PURPOSE
@@ -2065,6 +2071,12 @@ typedef struct BC {
  *  * wTDm -- the maximum DIRICHLET boundary condition value
  *  * wTD -- the current DIRICHLET boundary conditon value
  *  * wTDa -- the DIRICHLET boundary condition value acceleration
+ *  * dsW -- the SCREEN boundary condition offset value
+ *  * dsE -- the SCREEN boundary condition offset value
+ *  * dsS -- the SCREEN boundary condition offset value
+ *  * dsN -- the SCREEN boundary condition offset value
+ *  * dsB -- the SCREEN boundary condition offset value
+ *  * dsT -- the SCREEN boundary condition offset value
  ******
  */
 
@@ -2709,9 +2721,9 @@ void cuda_collisions(void);
  ******
  */
 
-/****f* bluebottle/seeder()
+/****f* bluebottle/seeder_read_input()
  * NAME
- *  seeder()
+ *  seeder_read_input()
  * USAGE
  */
 void seeder_read_input();
