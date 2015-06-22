@@ -852,7 +852,7 @@ __global__ void part_BC_p(real *p, real *p_rhs, int *phase, int *phase_shell,
   real x, y, z;         // pressure node location Cartesian
   real X, Y, Z;         // particle position
   real r, theta, phi;   // velocity node location spherical
-  real pp_tmp, pp_tmp00;// temporary pressure
+  real pp_tmp;//, pp_tmp00;// temporary pressure
   int P;            // particle number
   real a;               // particle radius
   int order;            // particle order
@@ -909,19 +909,19 @@ __global__ void part_BC_p(real *p, real *p_rhs, int *phase, int *phase_shell,
       real ar = a / r;
       real ra = r / a;
       pp_tmp = X_pn(0, theta, phi, pnm_re, pnm_im, P, stride);
-      pp_tmp00 = X_pn(0, theta, phi, pnm_re00, pnm_im00, P, stride);
+      //pp_tmp00 = X_pn(0, theta, phi, pnm_re00, pnm_im00, P, stride);
       for(int n = 1; n <= order; n++) {
         pp_tmp += (1.-0.5*n*(2.*n-1.)/(n+1.)*pow(ar,2.*n+1.))*pow(ra,n)
           * X_pn(n, theta, phi, pnm_re, pnm_im, P, stride);
-        pp_tmp00 += (1.-0.5*n*(2.*n-1.)/(n+1.)*pow(ar,2.*n+1.))*pow(ra,n)
-          * X_pn(n, theta, phi, pnm_re00, pnm_im00, P, stride);
+        //pp_tmp00 += (1.-0.5*n*(2.*n-1.)/(n+1.)*pow(ar,2.*n+1.))*pow(ra,n)
+          //* X_pn(n, theta, phi, pnm_re00, pnm_im00, P, stride);
         pp_tmp -= n*(2.*n-1.)*(2.*n+1.)/(n+1.)*pow(ar,n+1.)
           * X_phin(n, theta, phi, phinm_re, phinm_im, P, stride);
-        pp_tmp00 -= n*(2.*n-1.)*(2.*n+1.)/(n+1.)*pow(ar,n+1.)
-          * X_phin(n, theta, phi, phinm_re00, phinm_im00, P, stride);
+        //pp_tmp00 -= n*(2.*n-1.)*(2.*n+1.)/(n+1.)*pow(ar,n+1.)
+          //* X_phin(n, theta, phi, phinm_re00, phinm_im00, P, stride);
       }
       pp_tmp *= mu*nu/(a*a);
-      pp_tmp00 *= mu*nu/(a*a);
+      //pp_tmp00 *= mu*nu/(a*a);
       real ocrossr2 = (oy*z - oz*y) * (oy*z - oz*y);
       ocrossr2 += (ox*z - oz*x) * (ox*z - oz*x);
       ocrossr2 += (ox*y - oy*x) * (ox*y - oy*x);
@@ -929,12 +929,90 @@ __global__ void part_BC_p(real *p, real *p_rhs, int *phase, int *phase_shell,
       real accdotr = (-gradP.x/rhoV - udot)*x + (-gradP.y/rhoV - vdot)*y
         + (-gradP.z/rhoV - wdot)*z;
       pp_tmp += 0.5 * rho_f * ocrossr2 + rho_f * accdotr;
-      pp_tmp00 += 0.5 * rho_f * ocrossr2 + rho_f * accdotr;
+      //pp_tmp00 += 0.5 * rho_f * ocrossr2 + rho_f * accdotr;
       // write BC if flagged, otherwise leave alone
       p_rhs[C] = (real) phase_shell[CC] * p_rhs[C]
         + (real) (1 - phase_shell[CC])
-        * (((pp_tmp) - p[CC]) + 0.5*nu*dt*p_rhs[C]);
+        * ((pp_tmp - p[CC]) + 0.5*nu*dt*p_rhs[C]);
       p_rhs[C] = (real) (phase[CC] < 0 && phase_shell[CC]) * p_rhs[C];
+#endif
+    }
+  }
+}
+
+__global__ void part_BC_p_fill(real *p, int *phase,
+  part_struct *parts, dom_struct *dom,
+  real mu, real nu, real rho_f, gradP_struct gradP, int stride,
+  real *pnm_re, real *pnm_im)
+{
+  int tj = blockDim.x*blockIdx.x + threadIdx.x + dom->Gcc._js;
+  int tk = blockDim.y*blockIdx.y + threadIdx.y + dom->Gcc._ks;
+  int CC;
+  real x, y, z;         // pressure node location Cartesian
+  real X, Y, Z;         // particle position
+  real r, theta, phi;   // velocity node location spherical
+  real pp_tmp;//, pp_tmp00;// temporary pressure
+  int P;            // particle number
+  real a;               // particle radius
+  real ox, oy, oz;      // particle angular velocity
+  real udot, vdot, wdot;// particle acceleration
+
+  if(tj < dom->Gcc._je && tk < dom->Gcc._ke) {
+    for(int i = dom->Gcc._is; i < dom->Gcc._ie; i++) {
+      CC = i + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b;
+      // get particle number
+      P = phase[CC];
+      if(P > -1) {
+        a = parts[P].r;
+        X = parts[P].x;
+        Y = parts[P].y;
+        Z = parts[P].z;
+        ox = parts[P].ox;
+        oy = parts[P].oy;
+        oz = parts[P].oz;
+        udot = parts[P].udot;
+        vdot = parts[P].vdot;
+        wdot = parts[P].wdot;
+      } else {
+        P = 0;
+        a = (dom->dx + dom->dy + dom->dz) / 3.;
+        X = (i-0.5) * dom->dx + dom->xs + a;
+        Y = (tj-0.5) * dom->dy + dom->ys + a;
+        Z = (tk-0.5) * dom->dz + dom->zs + a;
+        ox = 0;
+        oy = 0;
+        oz = 0;
+        udot = 0;
+        vdot = 0;
+        wdot = 0;
+      }
+      x = (i-0.5) * dom->dx + dom->xs - X;
+      if(x < dom->xs) x += dom->xl;
+      if(x > dom->xe) x -= dom->xl;
+      y = (tj-0.5) * dom->dy + dom->ys - Y;
+      if(y < dom->ys) y += dom->yl;
+      if(y > dom->ye) y -= dom->yl;
+      z = (tk-0.5) * dom->dz + dom->zs - Z;
+      if(z < dom->zs) z += dom->zl;
+      if(z > dom->ze) z -= dom->zl;
+      xyz2rtp(x, y, z, &r, &theta, &phi);
+
+      // calculate analytic solution
+#ifdef STEPS
+      p[CC] = phase_shell[CC] * p[CC];
+#else
+      pp_tmp = X_pn(0, theta, phi, pnm_re, pnm_im, P, stride);
+      pp_tmp *= mu*nu/(a*a);
+      real ocrossr2 = (oy*z - oz*y) * (oy*z - oz*y);
+      ocrossr2 += (ox*z - oz*x) * (ox*z - oz*x);
+      ocrossr2 += (ox*y - oy*x) * (ox*y - oy*x);
+      real rhoV = rho_f;
+      real accdotr = (-gradP.x/rhoV - udot)*x + (-gradP.y/rhoV - vdot)*y
+        + (-gradP.z/rhoV - wdot)*z;
+      pp_tmp += 0.5 * rho_f * ocrossr2 + rho_f * accdotr;
+      // write BC if inside particle, otherwise leave alone
+      p[CC] = (real) (phase[CC] > -1) * pp_tmp
+        + (1 - (phase[CC] > -1)) * p[CC];
 #endif
     }
   }

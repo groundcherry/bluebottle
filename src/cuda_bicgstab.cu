@@ -807,6 +807,82 @@ void cuda_PP_bicgstab(int rank)
     coeffs_particle<<<numBlocks_x, dimBlocks_x>>>(_dom[dev], _A_p->values.pitch,
       thrust::raw_pointer_cast(&_A_p->values.values[0]), _phase[dev]);
 
+/*    cusp::dia_matrix<int, real, cusp::host_memory> AA = *_A_p;
+    FILE *mat = fopen("mat.txt", "w");
+    for(int i = 0; i < dom[dev].Gcc.s3; i++) {
+      for(int j = 0; j < dom[dev].Gcc.s3; j++) {
+        if(j == AA.diagonal_offsets[0] + i)
+          if(AA.values(i, 0) == 0)
+            fprintf(mat,"%f ", 0.);
+          else
+            fprintf(mat,"%f ", AA.values(i, 0));
+        else if(j == AA.diagonal_offsets[1] + i)
+          if(AA.values(i, 1) == 0)
+            fprintf(mat,"%f ", 0.);
+          else
+            fprintf(mat,"%f ", AA.values(i, 1));
+        else if(j == AA.diagonal_offsets[2] + i)
+          if(AA.values(i, 2) == 0)
+            fprintf(mat,"%f ", 0.);
+          else
+            fprintf(mat,"%f ", AA.values(i, 2));
+        else if(j == AA.diagonal_offsets[3] + i)
+          if(AA.values(i, 3) == 0)
+            fprintf(mat,"%f ", 0.);
+          else
+            fprintf(mat,"%f ", AA.values(i, 3));
+        else if(j == AA.diagonal_offsets[4] + i)
+          if(AA.values(i, 4) == 0)
+            fprintf(mat,"%f ", 0.);
+          else
+            fprintf(mat,"%f ", AA.values(i, 4));
+        else if(j == AA.diagonal_offsets[5] + i)
+          if(AA.values(i, 5) == 0)
+            fprintf(mat,"%f ", 0.);
+          else
+            fprintf(mat,"%f ", AA.values(i, 5));
+        else if(j == AA.diagonal_offsets[6] + i)
+          if(AA.values(i, 6) == 0)
+            fprintf(mat,"%f ", 0.);
+          else
+            fprintf(mat,"%f ", AA.values(i, 6));
+        else if(j == AA.diagonal_offsets[7] + i)
+          if(AA.values(i, 7) == 0)
+            fprintf(mat,"%f ", 0.);
+          else
+            fprintf(mat,"%f ", AA.values(i, 7));
+        else if(j == AA.diagonal_offsets[8] + i)
+          if(AA.values(i, 8) == 0)
+            fprintf(mat,"%f ", 0.);
+          else
+            fprintf(mat,"%f ", AA.values(i, 8));
+        else if(j == AA.diagonal_offsets[9] + i)
+          if(AA.values(i, 9) == 0)
+            fprintf(mat,"%f ", 0.);
+          else
+            fprintf(mat,"%f ", AA.values(i, 9));
+        else if(j == AA.diagonal_offsets[10] + i)
+          if(AA.values(i, 10) == 0)
+            fprintf(mat,"%f ", 0.);
+          else
+            fprintf(mat,"%f ", AA.values(i, 10));
+        else if(j == AA.diagonal_offsets[11] + i)
+          if(AA.values(i, 11) == 0)
+            fprintf(mat,"%f ", 0.);
+          else
+            fprintf(mat,"%f ", AA.values(i, 11));
+        else if(j == AA.diagonal_offsets[12] + i)
+          if(AA.values(i, 12) == 0)
+            fprintf(mat,"%f ", 0.);
+          else
+            fprintf(mat,"%f ", AA.values(i, 12));
+        else
+            fprintf(mat,"%f ", 0.);
+      }
+    }
+    fclose(mat);
+*/
+
     // copy p0 to array without ghost cells and use it as an initial guess and solution space
     real *_phinoghost;
     checkCudaErrors(cudaMalloc((void**) &_phinoghost,

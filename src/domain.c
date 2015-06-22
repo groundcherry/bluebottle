@@ -124,65 +124,84 @@ void domain_read_input(void)
   fret = fscanf(infile, "BOUNDARY CONDITIONS\n");
   fret = fscanf(infile, "PRESSURE\n");
   fret = fscanf(infile, "bc.pW %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pW = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsW = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pW = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsW);
+  } else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pE %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pE = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsE = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pE = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsE);
+  } else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pS %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pS = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsS = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pS = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsS);
+  } else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pN %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pN = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsN = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pN = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsN);
+  } else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pB %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pB = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsB = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pB = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsB);
+  } else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pT %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pT = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsT = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pT = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsT);
+  } else {
     fprintf(stderr, "flow.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
+
+  if (bc.dsE < 0 || bc.dsW < 0 || 
+      bc.dsN < 0 || bc.dsS < 0 || 
+      bc.dsT < 0 || bc.dsB < 0) {
+    fprintf(stderr, "flow.config read error -- screen offsets must be >= 0\n");
+    exit(EXIT_FAILURE);
+  }
 
   fret = fscanf(infile, "X-VELOCITY\n");
 
@@ -194,9 +213,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.uWDm, &bc.uWDa);
     bc.uWD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.uW = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.uWDm = 0;
+    bc.uWDa = 0;
+    bc.uWD = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.uW = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.uWDm, &bc.uWDa);
     bc.uWD = 0;
@@ -214,9 +236,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.uEDm, &bc.uEDa);
     bc.uED = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.uE = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.uEDm = 0;
+    bc.uEDa = 0;
+    bc.uED = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.uE = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.uEDm, &bc.uEDa);
     bc.uED = 0;
@@ -234,9 +259,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.uSDm, &bc.uSDa);
     bc.uSD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.uS = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.uSDm = 0;
+    bc.uSDa = 0;
+    bc.uSD = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.uS = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.uSDm, &bc.uSDa);
     bc.uSD = 0;
@@ -254,9 +282,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.uNDm, &bc.uNDa);
     bc.uND = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.uN = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.uNDm = 0;
+    bc.uNDa = 0;
+    bc.uND = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.uN = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.uNDm, &bc.uNDa);
     bc.uND = 0;
@@ -274,9 +305,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.uBDm, &bc.uBDa);
     bc.uBD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.uB = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.uBDm = 0;
+    bc.uBDa = 0;
+    bc.uBD = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.uB = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.uBDm, &bc.uBDa);
     bc.uBD = 0;
@@ -294,9 +328,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.uTDm, &bc.uTDa);
     bc.uTD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.uT = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.uTDm = 0;
+    bc.uTDa = 0;
+    bc.uTD = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.uT = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.uTDm, &bc.uTDa);
     bc.uTD = 0;
@@ -317,9 +354,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.vWDm, &bc.vWDa);
     bc.vWD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.vW = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.vWDm = 0;
+    bc.vWDa = 0;
+    bc.vWD = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.vW = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.vWDm, &bc.vWDa);
     bc.vWD = 0;
@@ -337,9 +377,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.vEDm, &bc.vEDa);
     bc.vED = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.vE = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.vEDm = 0;
+    bc.vEDa = 0;
+    bc.vED = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.vE = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.vEDm, &bc.vEDa);
     bc.vED = 0;
@@ -357,9 +400,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.vSDm, &bc.vSDa);
     bc.vSD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.vS = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.vSDm = 0;
+    bc.vSDa = 0;
+    bc.vSD = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.vS = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.vSDm, &bc.vSDa);
     bc.vSD = 0;
@@ -377,9 +423,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.vNDm, &bc.vNDa);
     bc.vND = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.vN = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.vNDm = 0;
+    bc.vNDa = 0;
+    bc.vND = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.vN = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.vNDm, &bc.vNDa);
     bc.vND = 0;
@@ -397,9 +446,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.vBDm, &bc.vBDa);
     bc.vBD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.vB = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.vBDm = 0;
+    bc.vBDa = 0;
+    bc.vBD = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.vB = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.vBDm, &bc.vBDa);
     bc.vBD = 0;
@@ -417,9 +469,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.vTDm, &bc.vTDa);
     bc.vTD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.vT = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.vTDm = 0;
+    bc.vTDa = 0;
+    bc.vTD = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.vT = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.vTDm, &bc.vTDa);
     bc.vTD = 0;
@@ -440,9 +495,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.wWDm, &bc.wWDa);
     bc.wWD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.wW = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.wWDm = 0;
+    bc.wWDa = 0;
+    bc.wWD = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.wW = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.wWDm, &bc.wWDa);
     bc.wWD = 0;
@@ -460,9 +518,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.wEDm, & bc.wEDa);
     bc.wED = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.wE = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.wEDm = 0;
+    bc.wEDa = 0;
+    bc.wED = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.wE = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.wEDm, &bc.wEDa);
     bc.wED = 0;
@@ -480,9 +541,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.wSDm, &bc.wSDa);
     bc.wSD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.wS = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.wSDm = 0;
+    bc.wSDa = 0;
+    bc.wSD = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.wS = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.wSDm, &bc.wSDa);
     bc.wSD = 0;
@@ -500,9 +564,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.wNDm, &bc.wNDa);
     bc.wND = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.wN = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.wNDm = 0;
+    bc.wNDa = 0;
+    bc.wND = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.wN = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.wNDm, &bc.wNDa);
     bc.wND = 0;
@@ -520,9 +587,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.wBDm, &bc.wBDa);
     bc.wBD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.wB = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.wBDm = 0;
+    bc.wBDa = 0;
+    bc.wBD = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.wB = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.wBDm, &bc.wBDa);
     bc.wBD = 0;
@@ -540,9 +610,12 @@ void domain_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.wTDm, &bc.wTDa);
     bc.wTD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.wT = NEUMANN;
-  else if(strcmp(buf, "PRECURSOR") == 0) {
+    bc.wTDm = 0;
+    bc.wTDa = 0;
+    bc.wTD = 0;
+  } else if(strcmp(buf, "PRECURSOR") == 0) {
     bc.wT = PRECURSOR;
     fret = fscanf(infile, "%lf %lf", &bc.wTDm, &bc.wTDa);
     bc.wTD = 0;
@@ -737,61 +810,73 @@ void turb_read_input(void)
   fret = fscanf(infile, "BOUNDARY CONDITIONS\n");
   fret = fscanf(infile, "PRESSURE\n");
   fret = fscanf(infile, "bc.pW %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pW = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsW = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pW = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsW);
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pE %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pE = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsE = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pE = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsE);
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pS %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pS = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsS = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pS = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsS);
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pN %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pN = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsN = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pN = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsN);
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pB %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pB = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsB = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pB = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsB);
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
   fret = fscanf(infile, "\n");
   fret = fscanf(infile, "bc.pT %s", buf);
-  if(strcmp(buf, "PERIODIC") == 0)
+  if(strcmp(buf, "PERIODIC") == 0) {
     bc.pT = PERIODIC;
-  else if(strcmp(buf, "NEUMANN") == 0)
+    bc.dsT = 0;
+  } else if(strcmp(buf, "NEUMANN") == 0) {
     bc.pT = NEUMANN;
-  else {
+    fret = fscanf(infile, "%lf", &bc.dsT);
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -807,9 +892,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.uWDm, &bc.uWDa);
     bc.uWD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.uW = NEUMANN;
-  else {
+    bc.uWDm = 0;
+    bc.uWDa = 0;
+    bc.uWD = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -822,9 +910,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.uEDm, &bc.uEDa);
     bc.uED = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.uE = NEUMANN;
-  else {
+    bc.uEDm = 0;
+    bc.uEDa = 0;
+    bc.uED = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -837,9 +928,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.uSDm, &bc.uSDa);
     bc.uSD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.uS = NEUMANN;
-  else {
+    bc.uSDm = 0;
+    bc.uSDa = 0;
+    bc.uSD = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -852,9 +946,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.uNDm, &bc.uNDa);
     bc.uND = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.uN = NEUMANN;
-  else {
+    bc.uNDm = 0;
+    bc.uNDa = 0;
+    bc.uND = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -867,9 +964,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.uBDm, &bc.uBDa);
     bc.uBD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.uB = NEUMANN;
-  else {
+    bc.uBDm = 0;
+    bc.uBDa = 0;
+    bc.uBD = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -882,9 +982,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.uTDm, &bc.uTDa);
     bc.uTD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.uT = NEUMANN;
-  else {
+    bc.uTDm = 0;
+    bc.uTDa = 0;
+    bc.uTD = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -900,9 +1003,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.vWDm, &bc.vWDa);
     bc.vWD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.vW = NEUMANN;
-  else {
+    bc.vWDm = 0;
+    bc.vWDa = 0;
+    bc.vWD = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -915,9 +1021,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.vEDm, &bc.vEDa);
     bc.vED = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.vE = NEUMANN;
-  else {
+    bc.vEDm = 0;
+    bc.vEDa = 0;
+    bc.vED = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -930,9 +1039,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.vSDm, &bc.vSDa);
     bc.vSD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.vS = NEUMANN;
-  else {
+    bc.vSDm = 0;
+    bc.vSDa = 0;
+    bc.vSD = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -945,9 +1057,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.vNDm, &bc.vNDa);
     bc.vND = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.vN = NEUMANN;
-  else {
+    bc.vNDm = 0;
+    bc.vNDa = 0;
+    bc.vND = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -960,9 +1075,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.vBDm, &bc.vBDa);
     bc.vBD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.vB = NEUMANN;
-  else {
+    bc.vBDm = 0;
+    bc.vBDa = 0;
+    bc.vBD = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -975,9 +1093,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.vTDm, &bc.vTDa);
     bc.vTD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.vT = NEUMANN;
-  else {
+    bc.vTDm = 0;
+    bc.vTDa = 0;
+    bc.vTD = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -993,9 +1114,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.wWDm, &bc.wWDa);
     bc.wWD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.wW = NEUMANN;
-  else {
+    bc.wWDm = 0;
+    bc.wWDa = 0;
+    bc.wWD = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -1008,9 +1132,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.wEDm, & bc.wEDa);
     bc.wED = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.wE = NEUMANN;
-  else {
+    bc.wEDm = 0;
+    bc.wEDa = 0;
+    bc.wED = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -1023,9 +1150,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.wSDm, &bc.wSDa);
     bc.wSD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.wS = NEUMANN;
-  else {
+    bc.wSDm = 0;
+    bc.wSDa = 0;
+    bc.wSD = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -1038,9 +1168,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.wNDm, &bc.wNDa);
     bc.wND = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.wN = NEUMANN;
-  else {
+    bc.wNDm = 0;
+    bc.wNDa = 0;
+    bc.wND = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -1053,9 +1186,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.wBDm, &bc.wBDa);
     bc.wBD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.wB = NEUMANN;
-  else {
+    bc.wBDm = 0;
+    bc.wBDa = 0;
+    bc.wBD = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -1068,9 +1204,12 @@ void turb_read_input(void)
     fret = fscanf(infile, "%lf %lf", &bc.wTDm, &bc.wTDa);
     bc.wTD = 0;
   }
-  else if(strcmp(buf, "NEUMANN") == 0)
+  else if(strcmp(buf, "NEUMANN") == 0) {
     bc.wT = NEUMANN;
-  else {
+    bc.wTDm = 0;
+    bc.wTDa = 0;
+    bc.wTD = 0;
+  } else {
     fprintf(stderr, "turb.config read error.\n");
     exit(EXIT_FAILURE);
   }
@@ -1400,6 +1539,15 @@ void domain_show_config(void)
   if(bc.wB == DIRICHLET) printf(" %f", bc.wBDm);
   printf(", bc.wT = %d", bc.wT);
   if(bc.wT == DIRICHLET) printf(" %f", bc.wTDm);
+  printf("\n");
+
+  printf("Screen offsets:\n");
+  printf("  bc.dsW = %f\n", bc.dsW);
+  printf("  bc.dsE = %f\n", bc.dsE);
+  printf("  bc.dsS = %f\n", bc.dsS);
+  printf("  bc.dsN = %f\n", bc.dsN);
+  printf("  bc.dsB = %f\n", bc.dsB);
+  printf("  bc.dsT = %f\n", bc.dsT);
   printf("\n");
 
   printf("Applied Pressure Gradient:\n");
@@ -2784,6 +2932,31 @@ int domain_init_turb(void)
       }
     }
   }
+
+  for(k = Dom.Gfx.ks; k < Dom.Gfx.ke; k++) {
+    for(j = Dom.Gfx.js; j < Dom.Gfx.je; j++) {
+      for(i = Dom.Gfx.is; i < Dom.Gfx.ie-1; i++) {
+        C = i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
+        umean += u[C];
+      }
+    }
+  }
+  for(k = Dom.Gfy.ks; k < Dom.Gfy.ke; k++) {
+    for(j = Dom.Gfy.js; j < Dom.Gfy.je-1; j++) {
+      for(i = Dom.Gfy.is; i < Dom.Gfy.ie; i++) {
+        C = i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
+        vmean += v[C];
+      }
+    }
+  }
+  for(k = Dom.Gfz.ks; k < Dom.Gfz.ke-1; k++) {
+    for(j = Dom.Gfz.js; j < Dom.Gfz.je; j++) {
+      for(i = Dom.Gfz.is; i < Dom.Gfz.ie; i++) {
+        C = i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b;
+        wmean += w[C];
+      }
+    }
+  } 
 
   umean /= vol;
   vmean /= vol;

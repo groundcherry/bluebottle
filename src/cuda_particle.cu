@@ -538,6 +538,10 @@ void cuda_build_cages(void)
     threads_x = MAX_THREADS_DIM/2;
     threads_y = MAX_THREADS_DIM/2;
     threads_z = MAX_THREADS_DIM/2;
+
+    int xPer = (bc.uE == PERIODIC);
+    int yPer = (bc.vN == PERIODIC);
+    int zPer = (bc.wT == PERIODIC);
     for(i = 0; i < nparts; i++) {
       blocks_x = (int)ceil((real)parts[i].cage.in/(real)threads_x);
       blocks_y = (int)ceil((real)parts[i].cage.jn/(real)threads_y);
@@ -548,9 +552,9 @@ void cuda_build_cages(void)
 
       if(blocks_x > 0 && blocks_y > 0 && blocks_z > 0) {
         // center - is < ibs, js < jbs, ks < kbs
-        X = parts[i].x + (parts[i].x < dom[dev].xs + parts[i].r)*dom[dev].xl;
-        Y = parts[i].y + (parts[i].y < dom[dev].ys + parts[i].r)*dom[dev].yl;
-        Z = parts[i].z + (parts[i].z < dom[dev].zs + parts[i].r)*dom[dev].zl;
+        X = parts[i].x + (parts[i].x < dom[dev].xs + parts[i].r)*dom[dev].xl*xPer;
+        Y = parts[i].y + (parts[i].y < dom[dev].ys + parts[i].r)*dom[dev].yl*yPer;
+        Z = parts[i].z + (parts[i].z < dom[dev].zs + parts[i].r)*dom[dev].zl*zPer;
         build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
           _phase[dev], _dom[dev], X, Y, Z,
           parts[i].cage.is, parts[i].cage.ibs,
@@ -559,11 +563,11 @@ void cuda_build_cages(void)
         // WE split - ibe < ie, js < jbs, ks < kbs
         if(parts[i].cage.ibe < parts[i].cage.ie) {
           X = parts[i].x
-            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r));
+            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r))*xPer;
           Y = parts[i].y
-            + dom[dev].yl*(parts[i].y < (dom[dev].ys + parts[i].r));
+            + dom[dev].yl*(parts[i].y < (dom[dev].ys + parts[i].r))*yPer;
           Z = parts[i].z
-            + dom[dev].zl*(parts[i].z < (dom[dev].zs + parts[i].r));
+            + dom[dev].zl*(parts[i].z < (dom[dev].zs + parts[i].r))*zPer;
 
           build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
             _phase[dev], _dom[dev], X, Y, Z,
@@ -574,11 +578,11 @@ void cuda_build_cages(void)
         // SN split - is < ibs, jbe < je, ks < kbs
         if(parts[i].cage.jbe < parts[i].cage.je) {
           X = parts[i].x
-            + dom[dev].xl*(parts[i].x < (dom[dev].xs + parts[i].r));
+            + dom[dev].xl*(parts[i].x < (dom[dev].xs + parts[i].r))*xPer;
           Y = parts[i].y
-            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r));
+            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r))*yPer;
           Z = parts[i].z
-            + dom[dev].zl*(parts[i].z < (dom[dev].zs + parts[i].r));
+            + dom[dev].zl*(parts[i].z < (dom[dev].zs + parts[i].r))*zPer;
           build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
             _phase[dev], _dom[dev], X, Y, Z,
             parts[i].cage.is, parts[i].cage.ibs,
@@ -588,11 +592,11 @@ void cuda_build_cages(void)
         // BT split - is < ibs, js < jbs, kbe < ke
         if(parts[i].cage.kbe < parts[i].cage.ke) {
           X = parts[i].x
-            + dom[dev].xl*(parts[i].x < (dom[dev].xs + parts[i].r));
+            + dom[dev].xl*(parts[i].x < (dom[dev].xs + parts[i].r))*xPer;
           Y = parts[i].y
-            + dom[dev].yl*(parts[i].y < (dom[dev].ys + parts[i].r));
+            + dom[dev].yl*(parts[i].y < (dom[dev].ys + parts[i].r))*yPer;
           Z = parts[i].z
-            - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r));
+            - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r))*zPer;
           build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
             _phase[dev], _dom[dev], X, Y, Z,
             parts[i].cage.is, parts[i].cage.ibs,
@@ -603,11 +607,11 @@ void cuda_build_cages(void)
         if(parts[i].cage.ibe < parts[i].cage.ie && 
             parts[i].cage.jbe < parts[i].cage.je) {
           X = parts[i].x
-            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r));
+            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r))*xPer;
           Y = parts[i].y
-            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r));
+            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r))*yPer;
           Z = parts[i].z
-            + dom[dev].zl*(parts[i].z < (dom[dev].zs + parts[i].r));
+            + dom[dev].zl*(parts[i].z < (dom[dev].zs + parts[i].r))*zPer;
           build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
             _phase[dev], _dom[dev], X, Y, Z,
             parts[i].cage.ibe, parts[i].cage.ie,
@@ -618,11 +622,11 @@ void cuda_build_cages(void)
         if(parts[i].cage.ibe < parts[i].cage.ie && 
             parts[i].cage.kbe < parts[i].cage.ke) {
           X = parts[i].x
-            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r));
+            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r))*xPer;
           Y = parts[i].y
-            + dom[dev].yl*(parts[i].y < (dom[dev].ys + parts[i].r));
+            + dom[dev].yl*(parts[i].y < (dom[dev].ys + parts[i].r))*yPer;
           Z = parts[i].z
-           - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r));
+            - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r))*zPer;
           build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
             _phase[dev], _dom[dev], X, Y, Z,
             parts[i].cage.ibe, parts[i].cage.ie,
@@ -633,11 +637,11 @@ void cuda_build_cages(void)
         if(parts[i].cage.jbe < parts[i].cage.je && 
             parts[i].cage.kbe < parts[i].cage.ke) {
           X = parts[i].x
-            + dom[dev].xl*(parts[i].x < (dom[dev].xs + parts[i].r));
+            + dom[dev].xl*(parts[i].x < (dom[dev].xs + parts[i].r))*xPer;
           Y = parts[i].y
-            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r));
+            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r))*yPer;
           Z = parts[i].z
-            - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r));
+            - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r))*zPer;
           build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
             _phase[dev], _dom[dev], X, Y, Z,
             parts[i].cage.is, parts[i].cage.ibs,
@@ -649,11 +653,11 @@ void cuda_build_cages(void)
             parts[i].cage.jbe < parts[i].cage.je && 
             parts[i].cage.kbe < parts[i].cage.ke) {
           X = parts[i].x
-            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r));
+            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r))*xPer;
           Y = parts[i].y
-            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r));
+            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r))*yPer;
           Z = parts[i].z
-            - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r));
+            - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r))*zPer;
           build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
             _phase[dev], _dom[dev], X, Y, Z,
             parts[i].cage.ibe, parts[i].cage.ie,
@@ -1010,6 +1014,34 @@ void cuda_part_BC_p(int dev)
     _pnm_re[dev], _pnm_im[dev],
     _phinm_re[dev], _phinm_im[dev], _chinm_re[dev], _chinm_im[dev]);
 }
+
+
+extern "C"
+void cuda_part_p_fill(void)
+{
+  // parallize across domains
+  #pragma omp parallel num_threads(nsubdom)
+  {
+    int dev = omp_get_thread_num();
+    checkCudaErrors(cudaSetDevice(dev + dev_start));
+
+    int threads_c = MAX_THREADS_DIM;
+    int blocks_y = 0;
+    int blocks_z = 0;
+
+    blocks_y = (int)ceil((real) dom[dev].Gcc.jn / (real) threads_c);
+    blocks_z = (int)ceil((real) dom[dev].Gcc.kn / (real) threads_c);
+
+    dim3 dimblocks_c(threads_c, threads_c);
+    dim3 numblocks_c(blocks_y, blocks_z);
+
+    part_BC_p_fill<<<numblocks_c, dimblocks_c>>>(_p[dev], _phase[dev],
+      _parts[dev], _dom[dev],
+      mu, nu, rho_f, gradP, coeff_stride,
+      _pnm_re[dev], _pnm_im[dev]);
+  }
+}
+
 
 extern "C"
 void cuda_store_coeffs(void)
