@@ -156,6 +156,7 @@ void seeder_read_input()
   printf("       sigma = %lf\n", sigma);
   printf("       e_dry = %lf\n", e_dry);
   printf("       l_rough = %lf\n", l_rough);
+  printf("       order = %d\n", order);
 #else
   printf("       (l/a) = %f\n", loa);
   printf("       r = %f\n", a);

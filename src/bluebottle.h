@@ -2320,6 +2320,20 @@ void cuda_part_BC_p(int dev);
  ******
  */
 
+/****f* bluebottle/cuda_part_p_fill()
+ * NAME
+ *  cuda_part_p_fill()
+ * USAGE
+ */
+void cuda_part_p_fill();
+/*
+ * FUNCTION
+ *  Enforce boundary conditions in pressure-Poisson problem.
+ * ARGUMENTS
+ *  * dev -- the device number
+ ******
+ */
+
 /****f* bluebottle/cuda_solvability()
  * NAME
  *  cuda_solvability()

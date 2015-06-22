@@ -562,6 +562,7 @@ int main(int argc, char *argv[]) {
             cuda_update_p();
             if(nparts > 0) {
               cuda_part_BC();
+              cuda_part_p_fill();
             }
             cuda_dom_BC_p();
 
@@ -583,10 +584,10 @@ int main(int argc, char *argv[]) {
             iter++;
             // check iteration limit
             if(iter == lamb_max_iter) {
-              lambflag = !lambflag;
-              printf("Reached the maximum number of Lamb's");
-              printf(" coefficient iterations.");
-              printf(" Ending simulation.\n");
+              //lambflag = !lambflag;
+              //printf("Reached the maximum number of Lamb's");
+              //printf(" coefficient iterations.");
+              //printf(" CONTINUING simulation.\n");
               break;
             }
           }

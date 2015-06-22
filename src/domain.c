@@ -2785,6 +2785,31 @@ int domain_init_turb(void)
     }
   }
 
+  for(k = Dom.Gfx.ks; k < Dom.Gfx.ke; k++) {
+    for(j = Dom.Gfx.js; j < Dom.Gfx.je; j++) {
+      for(i = Dom.Gfx.is; i < Dom.Gfx.ie-1; i++) {
+        C = i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
+        umean += u[C];
+      }
+    }
+  }
+  for(k = Dom.Gfy.ks; k < Dom.Gfy.ke; k++) {
+    for(j = Dom.Gfy.js; j < Dom.Gfy.je-1; j++) {
+      for(i = Dom.Gfy.is; i < Dom.Gfy.ie; i++) {
+        C = i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
+        vmean += v[C];
+      }
+    }
+  }
+  for(k = Dom.Gfz.ks; k < Dom.Gfz.ke-1; k++) {
+    for(j = Dom.Gfz.js; j < Dom.Gfz.je; j++) {
+      for(i = Dom.Gfz.is; i < Dom.Gfz.ie; i++) {
+        C = i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b;
+        wmean += w[C];
+      }
+    }
+  } 
+
   umean /= vol;
   vmean /= vol;
   wmean /= vol;

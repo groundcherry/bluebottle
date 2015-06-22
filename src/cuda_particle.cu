@@ -1011,6 +1011,34 @@ void cuda_part_BC_p(int dev)
     _phinm_re[dev], _phinm_im[dev], _chinm_re[dev], _chinm_im[dev]);
 }
 
+
+extern "C"
+void cuda_part_p_fill(void)
+{
+  // parallize across domains
+  #pragma omp parallel num_threads(nsubdom)
+  {
+    int dev = omp_get_thread_num();
+    checkCudaErrors(cudaSetDevice(dev + dev_start));
+
+    int threads_c = MAX_THREADS_DIM;
+    int blocks_y = 0;
+    int blocks_z = 0;
+
+    blocks_y = (int)ceil((real) dom[dev].Gcc.jn / (real) threads_c);
+    blocks_z = (int)ceil((real) dom[dev].Gcc.kn / (real) threads_c);
+
+    dim3 dimblocks_c(threads_c, threads_c);
+    dim3 numblocks_c(blocks_y, blocks_z);
+
+    part_BC_p_fill<<<numblocks_c, dimblocks_c>>>(_p[dev], _phase[dev],
+      _parts[dev], _dom[dev],
+      mu, nu, rho_f, gradP, coeff_stride,
+      _pnm_re[dev], _pnm_im[dev]);
+  }
+}
+
+
 extern "C"
 void cuda_store_coeffs(void)
 {

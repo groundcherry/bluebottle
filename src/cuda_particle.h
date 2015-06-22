@@ -655,6 +655,55 @@ __global__ void part_BC_p(real *p, real *p_rhs, int *phase, int *phase_shell,
  ******
  */
 
+/****f* cuda_particle_kernel/part_BC_p<<<>>>()
+ * NAME
+ *  part_BC_p<<<>>>()
+ * USAGE
+ */
+__global__ void part_BC_p_fill(real *p, int *phase,
+  part_struct *parts, dom_struct *dom,
+  real mu, real nu, real rho_f, gradP_struct gradP,
+  int stride, real *pnm_re, real *pnm_im);
+/*
+ * FUNCTION
+ *  Apply pressure boundary condition to particle i. This routine uses the
+ *  Lamb's coefficients calculated previously to determine velocity boundary
+ *  conditions on the particle.
+ * ARGUMENTS
+ *  * p -- the device flow velocity field
+ *  * p_rhs -- the Poisson problem right-hand side
+ *  * phase_shell -- the particle shell boundary flag on pressure
+ *  * phase -- the particle boundary flag on pressure
+ *  * parts -- the device particle array subdomain
+ *  * dom -- the device subdomain
+ *  * mu -- the fluid dynamic viscosity
+ *  * nu -- the fluid kinematic viscosity
+ *  * dt -- time step size
+ *  * gradP -- the body force
+ *  * rho_f -- fluid density
+ *  * stride -- stride length for Lamb's coefficient storage arrays
+ *  * pnm_re00 -- the real part of Lamb's coefficient p_{nm} (last timestep)
+ *  * pnm_im00 -- the imaginary part of Lamb's coefficient p_{nm}
+        (last timestep)
+ *  * phinm_re00 -- the real part of Lamb's coefficient phi_{nm}
+        (last timestep)
+ *  * phinm_im00 -- the imaginary part of Lamb's coefficient phi_{nm}
+        (last timestep)
+ *  * chinm_re00 -- the real part of Lamb's coefficient chi_{nm}
+        (last timestep)
+ *  * chinm_im00 -- the imaginary part of Lamb's coefficient chi_{nm}
+        (last timestep)
+ *  * pnm_re -- the real part of Lamb's coefficient p_{nm}
+ *  * pnm_im -- the imaginary part of Lamb's coefficient p_{nm}
+ *  * phinm_re -- the real part of Lamb's coefficient phi_{nm}
+ *  * phinm_im -- the imaginary part of Lamb's coefficient phi_{nm}
+ *  * chinm_re -- the real part of Lamb's coefficient chi_{nm}
+ *  * chinm_im -- the imaginary part of Lamb's coefficient chi_{nm}
+ ******
+ */
+
+
+
 /****f* cuda_particle/xyz2rtp<<<>>>()
  * NAME
  *  xyz2rtp<<<>>>()
