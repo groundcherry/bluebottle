@@ -2797,9 +2797,12 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     real Fnx, Fny, Fnz, Ftx, Fty, Ftz;
     real Lox, Loy, Loz;
 
+    int isTrue = 0;
+
     // west wall
-    dx = fabs(parts[i].x - dom->xs);
+    dx = fabs(parts[i].x - (dom->xs + bc.dsW));
     h = dx - ai;
+    isTrue = (bc.pW == NEUMANN); // collision force applied ifTrue
     if(h < hN && h > 0) {
       Un = parts[i].u - bc.uWD;
       if(h < eps*parts[i].r) h = eps*parts[i].r;
@@ -2831,12 +2834,12 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Loy += -8.*PI*mu*ai*ai*ai*omy*2./5.*lnah;
       Loz += -8.*PI*mu*ai*ai*ai*omz*2./5.*lnah;
 
-      parts[i].iFx += (bc.uW == DIRICHLET) * (Fnx + Ftx);
-      parts[i].iFy += (bc.uW == DIRICHLET) * (Fny + Fty);
-      parts[i].iFz += (bc.uW == DIRICHLET) * (Fnz + Ftz);
-      parts[i].iLx += (bc.uW == DIRICHLET) * Lox;
-      parts[i].iLy += (bc.uW == DIRICHLET) * Loy;
-      parts[i].iLz += (bc.uW == DIRICHLET) * Loz;
+      parts[i].iFx += isTrue * (Fnx + Ftx);
+      parts[i].iFy += isTrue * (Fny + Fty);
+      parts[i].iFz += isTrue * (Fnz + Ftz);
+      parts[i].iLx += isTrue * Lox;
+      parts[i].iLy += isTrue * Loy;
+      parts[i].iLz += isTrue * Loz;
 
       // if no contact, mark with a -1
       parts[i].St = -1.;
@@ -2862,12 +2865,13 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(h));
 
-      parts[i].iFx += (bc.uW == DIRICHLET) * (sqrt(h*h*h)*k - eta*Un);
+      parts[i].iFx += isTrue * (sqrt(h*h*h)*k - eta*Un);
     }
 
     // east wall
-    dx = fabs(parts[i].x - dom->xe);
+    dx = fabs(parts[i].x - (dom->xe - bc.dsE));
     h = dx - ai;
+    isTrue = (bc.pE == NEUMANN);
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
@@ -2899,12 +2903,12 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Loy += -8.*PI*mu*ai*ai*ai*omy*2./5.*lnah;
       Loz += -8.*PI*mu*ai*ai*ai*omz*2./5.*lnah;
 
-      parts[i].iFx += (bc.uE == DIRICHLET) * (Fnx + Ftx);
-      parts[i].iFy += (bc.uE == DIRICHLET) * (Fny + Fty);
-      parts[i].iFz += (bc.uE == DIRICHLET) * (Fnz + Ftz);
-      parts[i].iLx += (bc.uE == DIRICHLET) * Lox;
-      parts[i].iLy += (bc.uE == DIRICHLET) * Loy;
-      parts[i].iLz += (bc.uE == DIRICHLET) * Loz;
+      parts[i].iFx += isTrue * (Fnx + Ftx);
+      parts[i].iFy += isTrue * (Fny + Fty);
+      parts[i].iFz += isTrue * (Fnz + Ftz);
+      parts[i].iLx += isTrue * Lox;
+      parts[i].iLy += isTrue * Loy;
+      parts[i].iLz += isTrue * Loz;
 
       // if no contact, mark with a -1
       parts[i].St = -1.;
@@ -2930,12 +2934,13 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
-      parts[i].iFx -= (bc.uE == DIRICHLET) * (sqrt(-h*h*h)*k - eta*Un);
+      parts[i].iFx -= isTrue * (sqrt(-h*h*h)*k - eta*Un);
     }
 
     // south wall
-    dy = fabs(parts[i].y - dom->ys);
+    dy = fabs(parts[i].y - (dom->ys + bc.dsS));
     h = dy - ai;
+    isTrue = (bc.pS == NEUMANN);
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
@@ -2967,12 +2972,12 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Loy += 0.;
       Loz += -8.*PI*mu*ai*ai*ai*omz*2./5.*lnah;
 
-      parts[i].iFx += (bc.vS == DIRICHLET) * (Fnx + Ftx);
-      parts[i].iFy += (bc.vS == DIRICHLET) * (Fny + Fty);
-      parts[i].iFz += (bc.vS == DIRICHLET) * (Fnz + Ftz);
-      parts[i].iLx += (bc.vS == DIRICHLET) * Lox;
-      parts[i].iLy += (bc.vS == DIRICHLET) * Loy;
-      parts[i].iLz += (bc.vS == DIRICHLET) * Loz;
+      parts[i].iFx += isTrue * (Fnx + Ftx);
+      parts[i].iFy += isTrue * (Fny + Fty);
+      parts[i].iFz += isTrue * (Fnz + Ftz);
+      parts[i].iLx += isTrue * Lox;
+      parts[i].iLy += isTrue * Loy;
+      parts[i].iLz += isTrue * Loz;
 
       // if no contact, mark with a -1
       parts[i].St = -1.;
@@ -2998,12 +3003,13 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
-      parts[i].iFy += (bc.vS == DIRICHLET) * (sqrt(-h*h*h)*k - eta*Un);
+      parts[i].iFy += isTrue * (sqrt(-h*h*h)*k - eta*Un);
     }
 
     // north wall
-    dy = fabs(parts[i].y - dom->ye);
+    dy = fabs(parts[i].y - (dom->ye - bc.dsN));
     h = dy - ai;
+    isTrue = (bc.pN == NEUMANN);
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
@@ -3035,12 +3041,12 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Loy += 0.;
       Loz += -8.*PI*mu*ai*ai*ai*omz*2./5.*lnah;
 
-      parts[i].iFx += (bc.vN == DIRICHLET) * (Fnx + Ftx);
-      parts[i].iFy += (bc.vN == DIRICHLET) * (Fny + Fty);
-      parts[i].iFz += (bc.vN == DIRICHLET) * (Fnz + Ftz);
-      parts[i].iLx += (bc.vN == DIRICHLET) * Lox;
-      parts[i].iLy += (bc.vN == DIRICHLET) * Loy;
-      parts[i].iLz += (bc.vN == DIRICHLET) * Loz;
+      parts[i].iFx += isTrue * (Fnx + Ftx);
+      parts[i].iFy += isTrue * (Fny + Fty);
+      parts[i].iFz += isTrue * (Fnz + Ftz);
+      parts[i].iLx += isTrue * Lox;
+      parts[i].iLy += isTrue * Loy;
+      parts[i].iLz += isTrue * Loz;
 
       // if no contact, mark with a -1
       parts[i].St = -1.;
@@ -3066,12 +3072,13 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
-      parts[i].iFy -= (bc.vN == DIRICHLET) * (sqrt(-h*h*h)*k - eta*Un);
+      parts[i].iFy -= isTrue * (sqrt(-h*h*h)*k - eta*Un);
     }
 
     // bottom wall
-    dz = fabs(parts[i].z - dom->zs);
+    dz = fabs(parts[i].z - (dom->zs + bc.dsB));
     h = dz - ai;
+    isTrue = (bc.pB == NEUMANN);
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
@@ -3103,12 +3110,12 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Loy += -8.*PI*mu*ai*ai*ai*omy*2./5.*lnah;
       Loz += 0.;
 
-      parts[i].iFx += (bc.wB == DIRICHLET) * (Fnx + Ftx);
-      parts[i].iFy += (bc.wB == DIRICHLET) * (Fny + Fty);
-      parts[i].iFz += (bc.wB == DIRICHLET) * (Fnz + Ftz);
-      parts[i].iLx += (bc.wB == DIRICHLET) * Lox;
-      parts[i].iLy += (bc.wB == DIRICHLET) * Loy;
-      parts[i].iLz += (bc.wB == DIRICHLET) * Loz;
+      parts[i].iFx += isTrue * (Fnx + Ftx);
+      parts[i].iFy += isTrue * (Fny + Fty);
+      parts[i].iFz += isTrue * (Fnz + Ftz);
+      parts[i].iLx += isTrue * Lox;
+      parts[i].iLy += isTrue * Loy;
+      parts[i].iLz += isTrue * Loz;
 
       // if no contact, mark with a -1
       parts[i].St = -1.;
@@ -3134,12 +3141,13 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(h));
 
-      parts[i].iFz += (bc.wB == DIRICHLET) * (sqrt(h*h*h)*k - eta*Un);
+      parts[i].iFz += isTrue * (sqrt(h*h*h)*k - eta*Un);
     }
 
     // top wall
-    dz = fabs(parts[i].z - dom->ze);
+    dz = fabs(parts[i].z - (dom->ze - bc.dsT));
     h = dz - ai;
+    isTrue = (bc.pT == NEUMANN);
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
@@ -3171,12 +3179,12 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Loy += -8.*PI*mu*ai*ai*ai*omy*2./5.*lnah;
       Loz += 0.;
 
-      parts[i].iFx += (bc.wT == DIRICHLET) * (Fnx + Ftx);
-      parts[i].iFy += (bc.wT == DIRICHLET) * (Fny + Fty);
-      parts[i].iFz += (bc.wT == DIRICHLET) * (Fnz + Ftz);
-      parts[i].iLx += (bc.wT == DIRICHLET) * Lox;
-      parts[i].iLy += (bc.wT == DIRICHLET) * Loy;
-      parts[i].iLz += (bc.wT == DIRICHLET) * Loz;
+      parts[i].iFx += isTrue * (Fnx + Ftx);
+      parts[i].iFy += isTrue * (Fny + Fty);
+      parts[i].iFz += isTrue * (Fnz + Ftz);
+      parts[i].iLx += isTrue * Lox;
+      parts[i].iLy += isTrue * Loy;
+      parts[i].iLz += isTrue * Loz;
 
       // if no contact, mark with a -1
       parts[i].St = -1.;
@@ -3202,7 +3210,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
-      parts[i].iFz -= (bc.wB == DIRICHLET) * (sqrt(-h*h*h)*k - eta*Un);
+      parts[i].iFz -= isTrue * (sqrt(-h*h*h)*k - eta*Un);
     }
   }
 }
