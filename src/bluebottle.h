@@ -1969,12 +1969,12 @@ typedef struct BC {
   real wTDm;
   real wTD;
   real wTDa;
-  real xs_net;
-  real xe_net;
-  real ys_net;
-  real ye_net;
-  real zs_net;
-  real ze_net;
+  real dsW;
+  real dsE;
+  real dsS;
+  real dsN;
+  real dsB;
+  real dsT;
 } BC;
 /*
  * PURPOSE
@@ -2721,9 +2721,9 @@ void cuda_collisions(void);
  ******
  */
 
-/****f* bluebottle/seeder()
+/****f* bluebottle/seeder_read_input()
  * NAME
- *  seeder()
+ *  seeder_read_input()
  * USAGE
  */
 void seeder_read_input();

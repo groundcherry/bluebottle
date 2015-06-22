@@ -2201,7 +2201,8 @@ __global__ void collision_parts(part_struct *parts, int nparts,
  * USAGE
  */
 __global__ void collision_walls(dom_struct *dom, part_struct *parts,
-  int nparts, BC bc, real eps, real mu, real rho_f, real nu, int interactionLength);
+  int nparts, BC bc, real eps, real mu, real rho_f, real nu, 
+  int interactionLength);
 /*
  * FUNCTION
  *  Calculate collision forcing between particle i and all other particles.

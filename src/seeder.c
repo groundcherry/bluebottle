@@ -203,6 +203,13 @@ void seeder(int N, real loa, real a, real aFx, real aFy, real aFz,
   int fail = 0;
   int redo = 1;
 
+  // seed the random number generator
+  srand(time(NULL));
+
+  // read domain input
+  domain_read_input();
+  domain_init();
+
   // domain size accounting for screen
   real xs = Dom.xs + bc.dsW;
   real xe = Dom.xe - bc.dsE;
@@ -213,14 +220,7 @@ void seeder(int N, real loa, real a, real aFx, real aFy, real aFz,
   real zs = Dom.zs + bc.dsB;
   real ze = Dom.ze - bc.dsT;
   real zl = Dom.zl - bc.dsT - bc.dsB;
-
-  // seed the random number generator
-  srand(time(NULL));
-
-  // read domain input
-  domain_read_input();
-  domain_init();
-
+  
   nparts = N;
 
   // allocate particle list
