@@ -122,6 +122,11 @@ void domain_read_input(void)
   fret = fscanf(infile, "\n");
 
   fret = fscanf(infile, "BOUNDARY CONDITIONS\n");
+#ifdef DOUBLE
+  fret = fscanf(infile, "vel_tDelay %lf\n", &vel_tDelay);
+#else  
+  fret = fscanf(infile, "vel_tDelay %f\n", &vel_tDelay);
+#endif
   fret = fscanf(infile, "PRESSURE\n");
   fret = fscanf(infile, "bc.pW %s", buf);
   if(strcmp(buf, "PERIODIC") == 0) {
@@ -670,6 +675,11 @@ void domain_read_input(void)
   fret = fscanf(infile, "\n");
 
   fret = fscanf(infile, "SIMULATION DRIVING CONDITIONS\n");
+#ifdef DOUBLE
+  fret = fscanf(infile, "p_tDelay %lf\n", &p_tDelay);
+#else  
+  fret = fscanf(infile, "p_tDelay %f\n", &p_tDelay);
+#endif
   turbA = 0.; // prevent turbulence linear forcing from being used
 #ifdef DOUBLE
   fret = fscanf(infile, "gradP.x %lf %lf\n", &gradP.xm, &gradP.xa);
@@ -678,6 +688,11 @@ void domain_read_input(void)
   gradP.y = 0;
   fret = fscanf(infile, "gradP.z %lf %lf\n", &gradP.zm, &gradP.za);
   gradP.z = 0;
+#ifdef DOUBLE
+  fret = fscanf(infile, "g_tDelay %lf\n", &g_tDelay);
+#else  
+  fret = fscanf(infile, "g_tDelay %f\n", &g_tDelay);
+#endif
   fret = fscanf(infile, "g.x %lf %lf\n", &g.xm, &g.xa);
   g.x = 0;
   fret = fscanf(infile, "g.y %lf %lf\n", &g.ym, &g.ya);
@@ -808,6 +823,7 @@ void turb_read_input(void)
   fret = fscanf(infile, "\n");
 
   fret = fscanf(infile, "BOUNDARY CONDITIONS\n");
+  vel_tDelay = 0;
   fret = fscanf(infile, "PRESSURE\n");
   fret = fscanf(infile, "bc.pW %s", buf);
   if(strcmp(buf, "PERIODIC") == 0) {
@@ -1248,6 +1264,7 @@ void turb_read_input(void)
   fret = fscanf(infile, "turbA %f\n", &turbA);
 #endif
   // these are unnecessary in the precursor
+  p_tDelay = 0;
   gradP.x = 0.;
   gradP.xm = 0.;
   gradP.xa = 0.;
@@ -1257,6 +1274,7 @@ void turb_read_input(void)
   gradP.z = 0.;
   gradP.zm = 0.;
   gradP.za = 0.;
+  g_tDelay = 0; 
   g.x = 0.;
   g.xm = 0.;
   g.xa = 0.;
@@ -3086,78 +3104,81 @@ void domain_clean(void)
 
 void compute_vel_BC(void)
 {
-  // uWD
-  if(bc.uWDa == 0) bc.uWD = bc.uWDm;
-  else if(fabs(ttime*bc.uWDa) > fabs(bc.uWDm)) bc.uWD = bc.uWDm;
-  else bc.uWD = ttime*bc.uWDa;
-  // uED
-  if(bc.uEDa == 0) bc.uED = bc.uEDm;
-  else if(fabs(ttime*bc.uEDa) > fabs(bc.uEDm)) bc.uED = bc.uEDm;
-  else bc.uED = ttime*bc.uEDa;
-  // uSD
-  if(bc.uSDa == 0) bc.uSD = bc.uSDm;
-  else if(fabs(ttime*bc.uSDa) > fabs(bc.uSDm)) bc.uSD = bc.uSDm;
-  else bc.uSD = ttime*bc.uSDa;
-  // uND
-  if(bc.uNDa == 0) bc.uND = bc.uNDm;
-  else if(fabs(ttime*bc.uNDa) > fabs(bc.uNDm)) bc.uND = bc.uNDm;
-  else bc.uND = ttime*bc.uNDa;
-  // uBD
-  if(bc.uBDa == 0) bc.uBD = bc.uBDm;
-  else if(fabs(ttime*bc.uBDa) > fabs(bc.uBDm)) bc.uBD = bc.uBDm;
-  else bc.uBD = ttime*bc.uBDa;
-  // uTD
-  if(bc.uTDa == 0) bc.uTD = bc.uTDm;
-  else if(fabs(ttime*bc.uTDa) > fabs(bc.uTDm)) bc.uTD = bc.uTDm;
-  else bc.uTD = ttime*bc.uTDa;
-  // vWD
-  if(bc.vWDa == 0) bc.vWD = bc.vWDm;
-  else if(fabs(ttime*bc.vWDa) > fabs(bc.vWDm)) bc.vWD = bc.vWDm;
-  else bc.vWD = ttime*bc.vWDa;
-  // vED
-  if(bc.vEDa == 0) bc.vED = bc.vEDm;
-  else if(fabs(ttime*bc.vEDa) > fabs(bc.vEDm)) bc.vED = bc.vEDm;
-  else bc.vED = ttime*bc.vEDa;
-  // vSD
-  if(bc.vSDa == 0) bc.vSD = bc.vSDm;
-  else if(fabs(ttime*bc.vSDa) > fabs(bc.vSDm)) bc.vSD = bc.vSDm;
-  else bc.vSD = ttime*bc.vSDa;
-  // vND
-  if(bc.vNDa == 0) bc.vND = bc.vNDm;
-  else if(fabs(ttime*bc.vNDa) > fabs(bc.vNDm)) bc.vND = bc.vNDm;
-  else bc.vND = ttime*bc.vNDa;
-  // vBD
-  if(bc.vBDa == 0) bc.vBD = bc.vBDm;
-  else if(fabs(ttime*bc.vBDa) > fabs(bc.vBDm)) bc.vBD = bc.vBDm;
-  else bc.vBD = ttime*bc.vBDa;
-  // vTD
-  if(bc.vTDa == 0) bc.vTD = bc.vTDm;
-  else if(fabs(ttime*bc.vTDa) > fabs(bc.vTDm)) bc.vTD = bc.vTDm;
-  else bc.vTD = ttime*bc.vTDa;
-  // wWD
-  if(bc.wWDa == 0) bc.wWD = bc.wWDm;
-  else if(fabs(ttime*bc.wWDa) > fabs(bc.wWDm)) bc.wWD = bc.wWDm;
-  else bc.wWD = ttime*bc.wWDa;
-  // wED
-  if(bc.wEDa == 0) bc.wED = bc.wEDm;
-  else if(fabs(ttime*bc.wEDa) > fabs(bc.wEDm)) bc.wED = bc.wEDm;
-  else bc.wED = ttime*bc.wEDa;
-  // wSD
-  if(bc.wSDa == 0) bc.wSD = bc.wSDm;
-  else if(fabs(ttime*bc.wSDa) > fabs(bc.wSDm)) bc.wSD = bc.wSDm;
-  else bc.wSD = ttime*bc.wSDa;
-  // wND
-  if(bc.wNDa == 0) bc.wND = bc.wNDm;
-  else if(fabs(ttime*bc.wNDa) > fabs(bc.wNDm)) bc.wND = bc.wNDm;
-  else bc.wND = ttime*bc.wNDa;
-  // wBD
-  if(bc.wBDa == 0) bc.wBD = bc.wBDm;
-  else if(fabs(ttime*bc.wBDa) > fabs(bc.wBDm)) bc.wBD = bc.wBDm;
-  else bc.wBD = ttime*bc.wBDa;
-  // wTD
-  if(bc.wTDa == 0) bc.wTD = bc.wTDm;
-  else if(fabs(ttime*bc.wTDa) > fabs(bc.wTDm)) bc.wTD = bc.wTDm;
-  else bc.wTD = ttime*bc.wTDa;
+  real delta = ttime - vel_tDelay;
+  if (delta >= 0) { // this works since bc.u*D is initialized to zero
+    // uWD
+    if(bc.uWDa == 0) bc.uWD = bc.uWDm;
+    else if(fabs(delta*bc.uWDa) > fabs(bc.uWDm)) bc.uWD = bc.uWDm;
+    else bc.uWD = delta*bc.uWDa;
+    // uED
+    if(bc.uEDa == 0) bc.uED = bc.uEDm;
+    else if(fabs(delta*bc.uEDa) > fabs(bc.uEDm)) bc.uED = bc.uEDm;
+    else bc.uED = delta*bc.uEDa;
+    // uSD
+    if(bc.uSDa == 0) bc.uSD = bc.uSDm;
+    else if(fabs(delta*bc.uSDa) > fabs(bc.uSDm)) bc.uSD = bc.uSDm;
+    else bc.uSD = delta*bc.uSDa;
+    // uND
+    if(bc.uNDa == 0) bc.uND = bc.uNDm;
+    else if(fabs(delta*bc.uNDa) > fabs(bc.uNDm)) bc.uND = bc.uNDm;
+    else bc.uND = delta*bc.uNDa;
+    // uBD
+    if(bc.uBDa == 0) bc.uBD = bc.uBDm;
+    else if(fabs(delta*bc.uBDa) > fabs(bc.uBDm)) bc.uBD = bc.uBDm;
+    else bc.uBD = delta*bc.uBDa;
+    // uTD
+    if(bc.uTDa == 0) bc.uTD = bc.uTDm;
+    else if(fabs(delta*bc.uTDa) > fabs(bc.uTDm)) bc.uTD = bc.uTDm;
+    else bc.uTD = delta*bc.uTDa;
+    // vWD
+    if(bc.vWDa == 0) bc.vWD = bc.vWDm;
+    else if(fabs(delta*bc.vWDa) > fabs(bc.vWDm)) bc.vWD = bc.vWDm;
+    else bc.vWD = delta*bc.vWDa;
+    // vED
+    if(bc.vEDa == 0) bc.vED = bc.vEDm;
+    else if(fabs(delta*bc.vEDa) > fabs(bc.vEDm)) bc.vED = bc.vEDm;
+    else bc.vED = delta*bc.vEDa;
+    // vSD
+    if(bc.vSDa == 0) bc.vSD = bc.vSDm;
+    else if(fabs(delta*bc.vSDa) > fabs(bc.vSDm)) bc.vSD = bc.vSDm;
+    else bc.vSD = delta*bc.vSDa;
+    // vND
+    if(bc.vNDa == 0) bc.vND = bc.vNDm;
+    else if(fabs(delta*bc.vNDa) > fabs(bc.vNDm)) bc.vND = bc.vNDm;
+    else bc.vND = delta*bc.vNDa;
+    // vBD
+    if(bc.vBDa == 0) bc.vBD = bc.vBDm;
+    else if(fabs(delta*bc.vBDa) > fabs(bc.vBDm)) bc.vBD = bc.vBDm;
+    else bc.vBD = delta*bc.vBDa;
+    // vTD
+    if(bc.vTDa == 0) bc.vTD = bc.vTDm;
+    else if(fabs(delta*bc.vTDa) > fabs(bc.vTDm)) bc.vTD = bc.vTDm;
+    else bc.vTD = delta*bc.vTDa;
+    // wWD
+    if(bc.wWDa == 0) bc.wWD = bc.wWDm;
+    else if(fabs(delta*bc.wWDa) > fabs(bc.wWDm)) bc.wWD = bc.wWDm;
+    else bc.wWD = delta*bc.wWDa;
+    // wED
+    if(bc.wEDa == 0) bc.wED = bc.wEDm;
+    else if(fabs(delta*bc.wEDa) > fabs(bc.wEDm)) bc.wED = bc.wEDm;
+    else bc.wED = delta*bc.wEDa;
+    // wSD
+    if(bc.wSDa == 0) bc.wSD = bc.wSDm;
+    else if(fabs(delta*bc.wSDa) > fabs(bc.wSDm)) bc.wSD = bc.wSDm;
+    else bc.wSD = delta*bc.wSDa;
+    // wND
+    if(bc.wNDa == 0) bc.wND = bc.wNDm;
+    else if(fabs(delta*bc.wNDa) > fabs(bc.wNDm)) bc.wND = bc.wNDm;
+    else bc.wND = delta*bc.wNDa;
+    // wBD
+    if(bc.wBDa == 0) bc.wBD = bc.wBDm;
+    else if(fabs(delta*bc.wBDa) > fabs(bc.wBDm)) bc.wBD = bc.wBDm;
+    else bc.wBD = delta*bc.wBDa;
+    // wTD
+    if(bc.wTDa == 0) bc.wTD = bc.wTDm;
+    else if(fabs(delta*bc.wTDa) > fabs(bc.wTDm)) bc.wTD = bc.wTDm;
+    else bc.wTD = delta*bc.wTDa;
+  }
 }
 
 void out_restart(void)
