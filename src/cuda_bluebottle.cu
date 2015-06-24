@@ -3598,63 +3598,72 @@ void cuda_compute_forcing(real *pid_int, real *pid_back, real Kp, real Ki,
     forcing_reset_z<<<numBlocks_z, dimBlocks_z>>>(_f_z[dev], _dom[dev]);
 
     // linearly accelerate pressure gradient from zero
-    if(gradP.xa == 0) gradP.x = gradP.xm;
-    else if(fabs(ttime*gradP.xa) > fabs(gradP.xm)) gradP.x = gradP.xm;
-    else gradP.x = ttime*gradP.xa;
+    real delta = ttime - p_tDelay;
+    if (delta >= 0 ) {
+      if(gradP.xa == 0) gradP.x = gradP.xm;
+      else if(fabs(delta*gradP.xa) > fabs(gradP.xm)) gradP.x = gradP.xm;
+      else gradP.x = delta*gradP.xa;
 
-    if(gradP.ya == 0) gradP.y = gradP.ym;
-    else if(fabs(ttime*gradP.ya) > fabs(gradP.ym)) gradP.y = gradP.ym;
-    else gradP.y = ttime*gradP.ya;
+      if(gradP.ya == 0) gradP.y = gradP.ym;
+      else if(fabs(delta*gradP.ya) > fabs(gradP.ym)) gradP.y = gradP.ym;
+      else gradP.y = delta*gradP.ya;
 
-    // turn off if PID controller is being used
-    if(!(Kp > 0 || Ki > 0 || Kd > 0)) {
-      if(gradP.za == 0) gradP.z = gradP.zm;
-      else if(fabs(ttime*gradP.za) > fabs(gradP.zm)) gradP.z = gradP.zm;
-      else gradP.z = ttime*gradP.za;
+      // turn off if PID controller is being used
+      if(!(Kp > 0 || Ki > 0 || Kd > 0)) {
+        if(gradP.za == 0) gradP.z = gradP.zm;
+        else if(fabs(delta*gradP.za) > fabs(gradP.zm)) gradP.z = gradP.zm;
+        else gradP.z = delta*gradP.za;
+      }
     }
 
     // linearly accelerate gravitational acceleration from zero
-    if(g.xa == 0) g.x = g.xm;
-    else if(fabs(ttime*g.xa) > fabs(g.xm)) g.x = g.xm;
-    else g.x = ttime*g.xa;
+    delta = ttime - g_tDelay;
+    if (delta >= 0) {
+      if(g.xa == 0) g.x = g.xm;
+      else if(fabs(delta*g.xa) > fabs(g.xm)) g.x = g.xm;
+      else g.x = delta*g.xa;
 
-    if(g.ya == 0) g.y = g.ym;
-    else if(fabs(ttime*g.ya) > fabs(g.ym)) g.y = g.ym;
-    else g.y = ttime*g.ya;
+      if(g.ya == 0) g.y = g.ym;
+      else if(fabs(delta*g.ya) > fabs(g.ym)) g.y = g.ym;
+      else g.y = delta*g.ya;
 
-    if(g.za == 0) g.z = g.zm;
-    else if(fabs(ttime*g.za) > fabs(g.zm)) g.z = g.zm;
-    else g.z = ttime*g.za;
-
-    // PID controller  TODO: make this into a kernel function
-    if(Kp > 0 || Ki > 0 || Kd > 0) {
-      cuda_part_pull();
-      real acc_z = 0;
-      real volp = 0;
-      real massp = 0;
-      for(int i = 0; i < nparts; i++) {
-        volp += parts[i].r*parts[i].r*parts[i].r;
-        massp += parts[i].rho*parts[i].r*parts[i].r*parts[i].r;
-        acc_z += parts[i].wdot;
-      }
-      volp *= 4./3.*PI;
-      massp *= 4./3.*PI;
-      real volfrac = volp / (Dom.xl * Dom.yl * Dom.zl);
-      real rho_avg = massp/volp*volfrac + rho_f*(1.-volfrac);
-      acc_z /= nparts;
-
-      *pid_int = *pid_int + acc_z*dt;
-      gradP.z = gradP.z
-        + (Kp*acc_z + Ki*(*pid_int)/ttime + (Kd)*(acc_z-*pid_back))*rho_avg;
-      *pid_back = acc_z;
+      if(g.za == 0) g.z = g.zm;
+      else if(fabs(delta*g.za) > fabs(g.zm)) g.z = g.zm;
+      else g.z = delta*g.za;
     }
 
+    delta = ttime - p_tDelay;
+    // PID controller  TODO: make this into a kernel function
+    if (delta >= 0) {
+      if(Kp > 0 || Ki > 0 || Kd > 0) {
+        cuda_part_pull();
+        real acc_z = 0;
+        real volp = 0;
+        real massp = 0;
+        for(int i = 0; i < nparts; i++) {
+          volp += parts[i].r*parts[i].r*parts[i].r;
+          massp += parts[i].rho*parts[i].r*parts[i].r*parts[i].r;
+          acc_z += parts[i].wdot;
+        }
+        volp *= 4./3.*PI;
+        massp *= 4./3.*PI;
+        real volfrac = volp / (Dom.xl * Dom.yl * Dom.zl);
+        real rho_avg = massp/volp*volfrac + rho_f*(1.-volfrac);
+        acc_z /= nparts;
+
+        *pid_int = *pid_int + acc_z*dt;
+        gradP.z = gradP.z
+          + (Kp*acc_z + Ki*(*pid_int)/ttime + (Kd)*(acc_z-*pid_back))*rho_avg;
+        *pid_back = acc_z;
+      }
+    }
     forcing_add_x_const<<<numBlocks_x, dimBlocks_x>>>(-gradP.x / rho_f,
       _f_x[dev], _dom[dev]);
     forcing_add_y_const<<<numBlocks_y, dimBlocks_y>>>(-gradP.y / rho_f,
       _f_y[dev], _dom[dev]);
     forcing_add_z_const<<<numBlocks_z, dimBlocks_z>>>(-gradP.z / rho_f,
       _f_z[dev], _dom[dev]);
+
   }
 }
 
