@@ -1373,6 +1373,42 @@ extern real ttime;
  ******
  */
 
+/****v* bluebottle/vel_tDelay
+  * NAME
+  * vel_tDelay
+  * TYPE
+  */
+extern real vel_tDelay;
+/*
+  * PURPOSE
+  *  The time when the dirichlet velocity boundary conditions should be applied
+  ******
+  */
+
+/****v* bluebottle/p_tDelay
+  * NAME
+  * p_tDelay
+  * TYPE
+  */
+extern real p_tDelay;
+/*
+  * PURPOSE
+  *  The time when the applied pressure should be applied
+  ******
+  */
+ 
+/****v* bluebottle/g_tDelay
+  * NAME
+  * g_tDelay
+  * TYPE
+  */
+extern real g_tDelay;
+/*
+  * PURPOSE
+  *  The time when the applied gravity should be applied
+  ******
+  */
+
 /****v* bluebottle/dt
  * NAME
  *  dt
