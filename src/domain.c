@@ -2807,7 +2807,7 @@ int domain_init_turb(void)
   cpumem += Dom.Gfz.s3b * sizeof(real);
 
   // set up the random number generator
-  srand(43);//time(NULL));
+  srand(time(NULL));
 
   for(i = 0; i < Dom.Gcc.s3b; i++) {
     p0[i] = 0.;
