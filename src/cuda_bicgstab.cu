@@ -900,6 +900,14 @@ void cuda_PP_bicgstab(int rank)
     _pp = new cusp::array1d<real, cusp::device_memory>(_ptr_p,
       _ptr_p + dom[dev].Gcc._s3);
 
+/*
+printf("%e\n", dt);
+printf("_p_sol_in\n");
+cusp::print(*_p_sol);
+printf("_pp\n");
+cusp::print(*_pp);
+*/
+
     // normalize the problem by the right-hand side before sending to CUSP
     real norm = cusp::blas::nrm2(*_pp);
     if(norm == 0)
@@ -933,6 +941,11 @@ void cuda_PP_bicgstab(int rank)
     // subtract average value from pressure
     cusp::array1d<real, cusp::device_memory> ones(dom[dev].Gcc.s3, 1.);
     cusp::blas::axpy(ones, *_p_sol, -p_avg);
+
+/*
+printf("_p_sol_out\n");
+cusp::print(*_p_sol);
+*/
 
     // copy solution back to pressure field
     copy_p_ghost<<<numBlocks_x, dimBlocks_x>>>(_phi[dev],

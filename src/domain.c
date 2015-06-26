@@ -2309,8 +2309,8 @@ int domain_init(void)
   if(Dom.dz < dx_min) dx_min = Dom.dz;
 
   dt = 2. * nu / (dx_min * dx_min);
-  //dt += 2. * nu / (Dom.dy * Dom.dy);
-  //dt += 2. * nu / (Dom.dz * Dom.dz);
+  dt += 2. * nu / (Dom.dy * Dom.dy);
+  dt += 2. * nu / (Dom.dz * Dom.dz);
   dt = CFL / dt;
   dt0 = -1.;
   stepnum = 0;
@@ -3223,7 +3223,7 @@ void out_restart(void)
 #ifndef IMPLICIT
   fwrite(diff0_w, sizeof(real), Dom.Gfz.s3b, rest);
 #endif
-  fwrite(conv0_v, sizeof(real), Dom.Gfz.s3b, rest);
+  fwrite(conv0_w, sizeof(real), Dom.Gfz.s3b, rest);
   fwrite(diff_w, sizeof(real), Dom.Gfz.s3b, rest);
   fwrite(conv_w, sizeof(real), Dom.Gfz.s3b, rest);
   fwrite(w_star, sizeof(real), Dom.Gfz.s3b, rest);
@@ -3270,7 +3270,7 @@ void out_restart(void)
   fwrite(&rec_precursor_ttime_out, sizeof(real), 1, rest);
   fwrite(&pid_int, sizeof(real), 1, rest);
   fwrite(&pid_back, sizeof(real), 1, rest);
-  fwrite(&gradP.z, sizeof(real), 1, rest);
+  fwrite(&gradP.z, sizeof(real), 2, rest);
 
   // close the file
   fclose(rest);
@@ -3369,15 +3369,6 @@ void in_restart(void)
   fret = fread(&pid_back, sizeof(real), 1, infile);
   fret = fread(&gradP.z, sizeof(real), 1, infile);
 
-  fret = fread(&rec_flow_field_ttime_out, sizeof(real), 1, infile);
-  fret = fread(&rec_paraview_ttime_out, sizeof(real), 1, infile);
-  fret = fread(&rec_particle_ttime_out, sizeof(real), 1, infile);
-  fret = fread(&rec_restart_ttime_out, sizeof(real), 1, infile);
-  fret = fread(&rec_precursor_ttime_out, sizeof(real), 1, infile);
-  fret = fread(&pid_int, sizeof(real), 1, infile);
-  fret = fread(&pid_back, sizeof(real), 1, infile);
-  fret = fread(&gradP.z, sizeof(real), 1, infile);
-
   // close file
   fclose(infile);
 }
@@ -3424,7 +3415,7 @@ void out_restart_turb(void)
 #ifndef IMPLICIT
   fwrite(diff0_w, sizeof(real), Dom.Gfz.s3b, rest);
 #endif
-  fwrite(conv0_v, sizeof(real), Dom.Gfz.s3b, rest);
+  fwrite(conv0_w, sizeof(real), Dom.Gfz.s3b, rest);
   fwrite(diff_w, sizeof(real), Dom.Gfz.s3b, rest);
   fwrite(conv_w, sizeof(real), Dom.Gfz.s3b, rest);
   fwrite(w_star, sizeof(real), Dom.Gfz.s3b, rest);
