@@ -21,6 +21,7 @@
  ******************************************************************************/
 
 #include "recorder.h"
+#include <unistd.h>
 
 void recorder_read_config(void)
 {
@@ -317,47 +318,52 @@ void cgns_grid(void)
   int zn;
   int gn;
   int cn;
-  cg_open(fname, CG_MODE_WRITE, &fn);
-  cg_base_write(fn, "Base", 3, 3, &bn);
-  cgsize_t size[9];
-  size[0] = Dom.xn+1; // cells -> vertices
-  size[1] = Dom.yn+1;
-  size[2] = Dom.zn+1;
-  size[3] = Dom.xn;
-  size[4] = Dom.yn;
-  size[5] = Dom.zn;
-  size[6] = 0;
-  size[7] = 0;
-  size[8] = 0;
-  cg_zone_write(fn, bn, "Zone0", size, Structured, &zn);
-  cg_grid_write(fn, bn, zn, "GridCoordinates", &gn);
+  if (access(fname, F_OK) != -1) {
+    // file exists
+  } else {
+    // file does not exist
+    cg_open(fname, CG_MODE_WRITE, &fn);
+    cg_base_write(fn, "Base", 3, 3, &bn);
+    cgsize_t size[9];
+    size[0] = Dom.xn+1; // cells -> vertices
+    size[1] = Dom.yn+1;
+    size[2] = Dom.zn+1;
+    size[3] = Dom.xn;
+    size[4] = Dom.yn;
+    size[5] = Dom.zn;
+    size[6] = 0;
+    size[7] = 0;
+    size[8] = 0;
+    cg_zone_write(fn, bn, "Zone0", size, Structured, &zn);
+    cg_grid_write(fn, bn, zn, "GridCoordinates", &gn);
 
-  real *x = malloc((Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real));
-  // cpumem = (Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real);
-  real *y = malloc((Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real));
-  // cpumem = (Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real);
-  real *z = malloc((Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real));
-  // cpumem = (Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real);
-  for(int k = Dom.Gcc.ks; k < Dom.Gcc.ke+1; k++) {
-    for(int j = Dom.Gcc.js; j < Dom.Gcc.je+1; j++) {
-      for(int i = Dom.Gcc.is; i < Dom.Gcc.ie+1; i++) {
-        int C = (i-1) + (j-1)*(Dom.xn+1) + (k-1)*(Dom.xn+1)*(Dom.yn+1);
-        x[C] = Dom.xs + (i-1)*Dom.dx;
-        y[C] = Dom.ys + (j-1)*Dom.dy;
-        z[C] = Dom.zs + (k-1)*Dom.dz;
+    real *x = malloc((Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real));
+    // cpumem = (Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real);
+    real *y = malloc((Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real));
+    // cpumem = (Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real);
+    real *z = malloc((Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real));
+    // cpumem = (Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real);
+    for(int k = Dom.Gcc.ks; k < Dom.Gcc.ke+1; k++) {
+      for(int j = Dom.Gcc.js; j < Dom.Gcc.je+1; j++) {
+        for(int i = Dom.Gcc.is; i < Dom.Gcc.ie+1; i++) {
+          int C = (i-1) + (j-1)*(Dom.xn+1) + (k-1)*(Dom.xn+1)*(Dom.yn+1);
+          x[C] = Dom.xs + (i-1)*Dom.dx;
+          y[C] = Dom.ys + (j-1)*Dom.dy;
+          z[C] = Dom.zs + (k-1)*Dom.dz;
+        }
       }
     }
+
+    cg_coord_write(fn, bn, zn, RealDouble, "CoordinateX", x, &cn);
+    cg_coord_write(fn, bn, zn, RealDouble, "CoordinateY", y, &cn);
+    cg_coord_write(fn, bn, zn, RealDouble, "CoordinateZ", z, &cn);
+
+    free(x);
+    free(y);
+    free(z);
+
+    cg_close(fn);
   }
-
-  cg_coord_write(fn, bn, zn, RealDouble, "CoordinateX", x, &cn);
-  cg_coord_write(fn, bn, zn, RealDouble, "CoordinateY", y, &cn);
-  cg_coord_write(fn, bn, zn, RealDouble, "CoordinateZ", z, &cn);
-
-  free(x);
-  free(y);
-  free(z);
-
-  cg_close(fn);
 }
 
 void cgns_flow_field(real dtout)
@@ -1592,6 +1598,13 @@ void recorder_bicgstab(char *name, int niter, real resid)
   char path[FILE_NAME_SIZE] = "";
   sprintf(path, "%s/record/%s", ROOT_DIR, name);
   FILE *rec = fopen(path, "r+");
+  if(rec == NULL) {
+    recorder_bicgstab_init("solver_flow.rec");
+    rec = fopen(path, "r+");
+    #ifdef IMPLICIT
+      recorder_bicgstab_init("solver_helmholtz_flow.rec");
+    #endif
+  }
 
   // move to the end of the file
   fseek(rec, 0, SEEK_END);
@@ -1613,6 +1626,10 @@ void recorder_lamb(char *name, int iter)
   char path[FILE_NAME_SIZE] = "";
   sprintf(path, "%s/record/%s", ROOT_DIR, name);
   FILE *rec = fopen(path, "r+");
+  if(rec == NULL) {
+    recorder_lamb_init("lamb.rec");
+    rec = fopen(path, "r+");
+  }
 
   int n = 0;
   int m = 0;
@@ -1646,46 +1663,6 @@ void recorder_lamb(char *name, int iter)
       }
     }
   }
-
-  // close the file
-  fclose(rec);
-}
-
-void recorder_cfl_init(char *name)
-{
-  // create the file
-  char path[FILE_NAME_SIZE] = "";
-  sprintf(path, "%s/record/%s", ROOT_DIR, name);
-  FILE *rec = fopen(path, "w");
-  if(rec == NULL) {
-    fprintf(stderr, "Could not open file %s\n", name);
-    exit(EXIT_FAILURE);
-  }
-
-  fprintf(rec, "%-12s", "stepnum");
-  fprintf(rec, "%-15s", "ttime");
-  fprintf(rec, "%-15s", "dt");
-  fprintf(rec, "%-15s", "cfl");
-
-  // close the file
-  fclose(rec);
-}
-
-void recorder_cfl(char *name, real cfl)
-{
-  // open the file
-  char path[FILE_NAME_SIZE] = "";
-  sprintf(path, "%s/record/%s", ROOT_DIR, name);
-  FILE *rec = fopen(path, "r+");
-
-  // move to the end of the file
-  fseek(rec, 0, SEEK_END);
-
-  fprintf(rec, "\n");
-  fprintf(rec, "%-12d", stepnum);
-  fprintf(rec, "%-15e", ttime);
-  fprintf(rec, "%-15e", dt);
-  fprintf(rec, "%-15e", cfl);
 
   // close the file
   fclose(rec);

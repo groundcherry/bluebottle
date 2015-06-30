@@ -116,21 +116,6 @@ void recorder_lamb_init(char *name);
  ******
  */
 
-/****f* recorder/recorder_cfl_init()
- * NAME
- *  recorder_cfl_init()
- * TYPE
- */
-void recorder_cfl_init(char *name);
-/*
- * FUNCTION
- *  Create the file name for writing and summarize fields to be written for the
- *  CFL condition
- * ARGUMENTS
- *  * name -- the name of the file to be written
- ******
- */
-
 /****f* recorder/recorder_bicgstab()
  * NAME
  *  recorder_bicgstab()
@@ -159,21 +144,6 @@ void recorder_lamb(char *name, int iter);
  * ARGUMENTS
  *  * name -- the name of the file to which to write
  *  * iter -- the number of the iteration
- ******
- */
-
-/****f* recorder/recorder_cfl()
- * NAME
- *  recorder_cfl()
- * TYPE
- */
-void recorder_cfl(char *name, real cfl);
-/*
- * FUNCTION 
- *  Write out BICGSTAB solver information to file name.
- * ARGUMENTS
- *  * name -- the name of the file to which to write
- *  * cfl -- the cfl number
  ******
  */
 
