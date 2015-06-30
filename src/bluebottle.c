@@ -382,6 +382,7 @@ int main(int argc, char *argv[]) {
         cuda_part_push();
         printf("done.\n");
         fflush(stdout);
+        cgns_grid();
         if(ttime >= duration) {
           printf("\n...simulation completed.\n");
           restart_stop = 1;
@@ -901,6 +902,7 @@ int main(int argc, char *argv[]) {
       cuda_part_push();
       printf("done.\n");
       fflush(stdout);
+      cgns_grid();
     }
 
     // initialize timestep size since turbulent velocity is nonzero

@@ -831,7 +831,6 @@ void cuda_dom_pull(void)
     checkCudaErrors(cudaMemcpy(convww, _conv_w[dev],
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyDeviceToHost));
 
-#ifdef DEBUG // run test code
     real *uu_star = (real*) malloc(dom[dev].Gfx.s3b * sizeof(real));
     // cpumem += dom[dev].Gfx.s3b * sizeof(real);
     real *vv_star = (real*) malloc(dom[dev].Gfy.s3b * sizeof(real));
@@ -845,6 +844,7 @@ void cuda_dom_pull(void)
     checkCudaErrors(cudaMemcpy(ww_star, _w_star[dev],
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyDeviceToHost)); 
 
+#ifdef DEBUG // run test code
     // fill in apropriate subdomain (copy back ghost cells)
     // p
     for(k = dom[dev].Gcc.ksb; k < dom[dev].Gcc.keb; k++) {
@@ -1062,6 +1062,46 @@ void cuda_dom_pull(void)
       }
     }
 
+    // u
+    for(k = dom[dev].Gfx.ksb; k < dom[dev].Gfx.keb; k++) {
+      for(j = dom[dev].Gfx.jsb; j < dom[dev].Gfx.jeb; j++) {
+        for(i = dom[dev].Gfx.isb; i < dom[dev].Gfx.ieb; i++) {
+          ii = i - dom[dev].Gfx.isb;
+          jj = j - dom[dev].Gfx.jsb;
+          kk = k - dom[dev].Gfx.ksb;
+          C = i + j * Dom.Gfx.s1b + k * Dom.Gfx.s2b;
+          CC = ii + jj * dom[dev].Gfx.s1b + kk * dom[dev].Gfx.s2b;
+          u_star[C] = uu_star[CC];
+        }
+      }
+    }
+    // v
+    for(k = dom[dev].Gfy.ksb; k < dom[dev].Gfy.keb; k++) {
+      for(j = dom[dev].Gfy.jsb; j < dom[dev].Gfy.jeb; j++) {
+        for(i = dom[dev].Gfy.isb; i < dom[dev].Gfy.ieb; i++) {
+          ii = i - dom[dev].Gfy.isb;
+          jj = j - dom[dev].Gfy.jsb;
+          kk = k - dom[dev].Gfy.ksb;
+          C = i + j * Dom.Gfy.s1b + k * Dom.Gfy.s2b;
+          CC = ii + jj * dom[dev].Gfy.s1b + kk * dom[dev].Gfy.s2b;
+          v_star[C] = vv_star[CC];
+        }
+      }
+    }
+    // w
+    for(k = dom[dev].Gfz.ksb; k < dom[dev].Gfz.keb; k++) {
+      for(j = dom[dev].Gfz.jsb; j < dom[dev].Gfz.jeb; j++) {
+        for(i = dom[dev].Gfz.isb; i < dom[dev].Gfz.ieb; i++) {
+          ii = i - dom[dev].Gfz.isb;
+          jj = j - dom[dev].Gfz.jsb;
+          kk = k - dom[dev].Gfz.ksb;
+          C = i + j * Dom.Gfz.s1b + k * Dom.Gfz.s2b;
+          CC = ii + jj * dom[dev].Gfz.s1b + kk * dom[dev].Gfz.s2b;
+          w_star[C] = ww_star[CC];
+        }
+      }
+    }
+
 #endif
 
     // free host subdomain working arrays
@@ -1087,6 +1127,9 @@ void cuda_dom_pull(void)
     free(convuu);
     free(convvv);
     free(convww);
+    free(uu_star);
+    free(vv_star);
+    free(ww_star);
   }
 }
 
@@ -4061,50 +4104,56 @@ void cuda_solvability(void)
       case WEST:
         // normalize eps by face surface area
         eps_x = eps_x/dom[dev].yl/dom[dev].zl;
-        eps_y = eps_y/dom[dev].yl/dom[dev].zl;
-        eps_z = eps_z/dom[dev].yl/dom[dev].zl;
+        //eps_y = eps_y/dom[dev].yl/dom[dev].zl;
+        //eps_z = eps_z/dom[dev].yl/dom[dev].zl;
         plane_eps_x_W<<<numBlocks_x, dimBlocks_x>>>
-          (eps_x+eps_y+eps_z, _u_star[dev], _dom[dev]);
+          //(eps_x+eps_y+eps_z, _u_star[dev], _dom[dev]);
+          (eps_x, _u_star[dev], _dom[dev]);
         break;
       case EAST:
         // normalize eps by face surface area
         eps_x = eps_x/dom[dev].yl/dom[dev].zl;
-        eps_y = eps_y/dom[dev].yl/dom[dev].zl;
-        eps_z = eps_z/dom[dev].yl/dom[dev].zl;
+        //eps_y = eps_y/dom[dev].yl/dom[dev].zl;
+        //eps_z = eps_z/dom[dev].yl/dom[dev].zl;
         plane_eps_x_E<<<numBlocks_x, dimBlocks_x>>>
-          (eps_x+eps_y+eps_z, _u_star[dev], _dom[dev]);
+          //(eps_x+eps_y+eps_z, _u_star[dev], _dom[dev]);
+          (eps_x, _u_star[dev], _dom[dev]);
         break;
       case SOUTH:
         // normalize eps by face surface area
-        eps_x = eps_x/dom[dev].zl/dom[dev].xl;
+        //eps_x = eps_x/dom[dev].zl/dom[dev].xl;
         eps_y = eps_y/dom[dev].zl/dom[dev].xl;
-        eps_z = eps_z/dom[dev].zl/dom[dev].xl;
+        //eps_z = eps_z/dom[dev].zl/dom[dev].xl;
         plane_eps_y_S<<<numBlocks_y, dimBlocks_y>>>
-          (eps_x+eps_y+eps_z, _v_star[dev], _dom[dev]);
+          //(eps_x+eps_y+eps_z, _v_star[dev], _dom[dev]);
+          (eps_y, _v_star[dev], _dom[dev]);
         break;
       case NORTH:
         // normalize eps by face surface area
-        eps_x = eps_x/dom[dev].zl/dom[dev].xl;
+        //eps_x = eps_x/dom[dev].zl/dom[dev].xl;
         eps_y = eps_y/dom[dev].zl/dom[dev].xl;
-        eps_z = eps_z/dom[dev].zl/dom[dev].xl;
+        //eps_z = eps_z/dom[dev].zl/dom[dev].xl;
         plane_eps_y_N<<<numBlocks_y, dimBlocks_y>>>
-          (eps_x+eps_y+eps_z, _v_star[dev], _dom[dev]);
+          //(eps_x+eps_y+eps_z, _v_star[dev], _dom[dev]);
+          (eps_y, _v_star[dev], _dom[dev]);
         break;
       case BOTTOM:
         // normalize eps by face surface area
-        eps_x = eps_x/dom[dev].xl/dom[dev].yl;
-        eps_y = eps_y/dom[dev].xl/dom[dev].yl;
+        //eps_x = eps_x/dom[dev].xl/dom[dev].yl;
+        //eps_y = eps_y/dom[dev].xl/dom[dev].yl;
         eps_z = eps_z/dom[dev].xl/dom[dev].yl;
         plane_eps_z_B<<<numBlocks_z, dimBlocks_z>>>
-          (eps_x+eps_y+eps_z, _w_star[dev], _dom[dev]);
+          //(eps_x+eps_y+eps_z, _w_star[dev], _dom[dev]);
+          (eps_z, _w_star[dev], _dom[dev]);
         break;
       case TOP:
         // normalize eps by face surface area
-        eps_x = eps_x/dom[dev].xl/dom[dev].yl;
-        eps_y = eps_y/dom[dev].xl/dom[dev].yl;
+        //eps_x = eps_x/dom[dev].xl/dom[dev].yl;
+        //eps_y = eps_y/dom[dev].xl/dom[dev].yl;
         eps_z = eps_z/dom[dev].xl/dom[dev].yl;
         plane_eps_z_T<<<numBlocks_z, dimBlocks_z>>>
-          (eps_x+eps_y+eps_z, _w_star[dev], _dom[dev]);
+          //(eps_x+eps_y+eps_z, _w_star[dev], _dom[dev]);
+          (eps_z, _w_star[dev], _dom[dev]);
         break;
       case HOMOGENEOUS:
         // spread the errors over the entire domain
