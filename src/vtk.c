@@ -57,7 +57,11 @@ void out_VTK(void)
   sprintf(fname_vtp, "out_%d.vtp", rec_paraview_stepnum_out);
   sprintf(fnamenodes_vtp, "out_nodes_%d.vtp", rec_paraview_stepnum_out);
 
-  FILE *pvdfile= fopen(fname_pvd, "r+");
+  FILE *pvdfile = fopen(fname_pvd, "r+");
+  if(pvdfile == NULL) {
+    init_VTK();
+    pvdfile = fopen(fname_pvd, "r+");
+  }
   // moves back 2 lines from the end of the file (above the footer)
   fseek(pvdfile, -24, SEEK_END);
 
@@ -348,6 +352,10 @@ void out_VTK_turb(void)
   sprintf(fname_pvtr, "out_turb_%d.pvtr", rec_precursor_stepnum_out);
 
   FILE *pvdfile= fopen(fname_pvd, "r+");
+  if (pvdfile == NULL) {
+    init_VTK_turb();
+    pvdfile= fopen(fname_pvd, "r+");
+  }
   // moves back 2 lines from the end of the file (above the footer)
   fseek(pvdfile, -24, SEEK_END);
 
@@ -634,6 +642,10 @@ void out_VTK_ghost(void)
   sprintf(fname_vtp, "out_%d.vtp", rec_paraview_stepnum_out);
 
   FILE *pvdfile= fopen(fname_pvd, "r+");
+  if (pvdfile == NULL) {
+    init_VTK_ghost();
+    pvdfile= fopen(fname_pvd, "r+");
+  }
   // moves back 2 lines from the end of the file (above the footer)
   fseek(pvdfile, -24, SEEK_END);
 
