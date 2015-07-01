@@ -59,12 +59,38 @@ void cgns_grid(void);
  ******
  */
 
+/****f* recorder/cgns_turb_grid()
+ * NAME
+ *  cgns_turb_grid()
+ * TYPE
+ */
+void cgns_turb_grid(void);
+/*
+ * FUNCTION
+ *  Write the CGNS grid output file.
+ ******
+ */
+
 /****f* recorder/cgns_flow_field()
  * NAME
  *  cgns_flow_field()
  * TYPE
  */
 void cgns_flow_field(real dtout);
+/*
+ * FUNCTION
+ *  Write the CGNS flow_field output file.
+ * ARGUMENTS
+ *  * dtout -- the output timestep size
+ ******
+ */
+
+/****f* recorder/cgns_turb_flow_field()
+ * NAME
+ *  cgns_turb_flow_field()
+ * TYPE
+ */
+void cgns_turb_flow_field(real dtout);
 /*
  * FUNCTION
  *  Write the CGNS flow_field output file.

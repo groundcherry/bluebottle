@@ -128,11 +128,17 @@ int rec_flow_field_stepnum_out;
 int rec_paraview_stepnum_out;
 int rec_particle_stepnum_out;
 int rec_precursor_stepnum_out;
+int rec_turb_flow_field_stepnum_out;
 real rec_flow_field_dt;
 real rec_flow_field_ttime_out;
 int rec_flow_field_vel;
 int rec_flow_field_p;
 int rec_flow_field_phase;
+real rec_turb_flow_field_dt;
+real rec_turb_flow_field_ttime_out;
+int rec_turb_flow_field_vel;
+int rec_turb_flow_field_p;
+int rec_turb_flow_field_phase;
 real rec_paraview_dt;
 real rec_paraview_ttime_out;
 real rec_particle_dt;
@@ -929,12 +935,22 @@ int main(int argc, char *argv[]) {
       printf("done.               \n");
       fflush(stdout);
     }
-
+    if(rec_turb_flow_field_dt > 0 && runrestart != 1) {
+      cuda_dom_pull();
+      printf("Writing turbulence flow field file t = %e...", ttime);
+      fflush(stdout);
+      cgns_turb_grid();
+      cgns_turb_flow_field(rec_turb_flow_field_dt);
+      rec_turb_flow_field_stepnum_out++;
+      printf("done.               \n");
+      fflush(stdout);            
+    }
     /***************************************************************/
     /** Begin the main timestepping loop in the precursor domain. **/
     /***************************************************************/
     while(ttime <= duration) {
       ttime += dt;
+      rec_turb_flow_field_ttime_out += dt;
       rec_precursor_ttime_out += dt;
       rec_restart_ttime_out += dt;
       stepnum++;
@@ -1005,7 +1021,18 @@ int main(int argc, char *argv[]) {
           rec_precursor_ttime_out = rec_precursor_ttime_out - rec_precursor_dt;
         }
       }
-
+      if(rec_turb_flow_field_dt > 0) {
+       if(rec_turb_flow_field_ttime_out >= rec_turb_flow_field_dt) {
+          // pull back data and write fields
+          cuda_dom_pull();
+          cgns_turb_flow_field(rec_turb_flow_field_dt);  
+          printf("  Writing precursor flow field file %d (t = %e)...done.\n",
+            rec_turb_flow_field_stepnum_out, ttime);
+          fflush(stdout);
+          rec_turb_flow_field_ttime_out = rec_turb_flow_field_ttime_out - rec_turb_flow_field_dt;
+          rec_turb_flow_field_stepnum_out++;
+        }        
+      }
       // write a restart file and exit when the time is appropriate
       int rest_com;
       prec_comm_restart_write(np, &rest_com, rank, status);

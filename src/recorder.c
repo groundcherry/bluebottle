@@ -52,6 +52,11 @@ void recorder_read_config(void)
   rec_precursor_dt = -1;
   rec_restart_stop = 0;
 
+  rec_turb_flow_field_dt = -1;
+  rec_turb_flow_field_vel = 0;
+  rec_turb_flow_field_p = 0;
+  rec_turb_flow_field_phase = 0;  
+
   // read the config file
   char fname[FILE_NAME_SIZE] = "";
   sprintf(fname, "%s/input/record.config", ROOT_DIR);
@@ -65,7 +70,7 @@ void recorder_read_config(void)
 
   /** list of recognized output configurations **/
   char ***configs;
-  int nconfigs = 6;
+  int nconfigs = 7;
   int *nconfigsn = (int*) malloc(nconfigs * sizeof(int));
   // cpumem += nconfigs * sizeof(int);
   configs = (char***) malloc(nconfigs * sizeof(char**));
@@ -132,6 +137,18 @@ void recorder_read_config(void)
     // cpumem += CHAR_BUF_SIZE * sizeof(char);
   }
   sprintf(configs[N][0], "RESTART_STOP");
+  // turbulence flow field info
+  N = 6;
+  nconfigsn[N] = 3;
+  configs[N] = (char**) malloc(nconfigsn[N] * sizeof(char*));
+  // cpumem += nconfigsn[N] * sizeof(char*);
+  for(i = 0; i < nconfigsn[N]; i++) {
+    configs[N][i] = (char*) malloc(CHAR_BUF_SIZE * sizeof(char));
+    // cpumem += CHAR_BUF_SIZE * sizeof(char);
+  }
+  sprintf(configs[N][0], "TURB_FLOW_FIELD");
+  sprintf(configs[N][1], "velocity");
+  sprintf(configs[N][2], "pressure"); 
 
   // read config file
   char bufconfig[CHAR_BUF_SIZE];
@@ -272,6 +289,51 @@ void recorder_read_config(void)
             // read next line
             fret = fgets(buf, CHAR_BUF_SIZE, infile);
             break;
+          case 6: // PRECURSOR FLOW_FIELD
+            rec_turb_flow_field_dt = dtout;
+            fret = fgets(buf, CHAR_BUF_SIZE, infile);
+            /* while(strcmp("\n", buf) != 0) {
+              int foundj = 0;
+              // remove trailing newline
+              int ln = strlen(buf) - 1;
+              if(buf[ln] == '\n') buf[ln] = '\0';
+              // check options
+              for(j = 1; j < nconfigsn[i]; j++) {
+                if(strcmp(configs[i][j], buf) == 0) {
+                  foundj = 1;
+                  switch(j) {
+                    case 1: // velocity
+                      rec_turb_flow_field_vel = 1;
+                      break;
+                    case 2: // pressure
+                      rec_turb_flow_field_p = 1;
+                      break;
+                    case 3: // phase
+                      rec_turb_flow_field_phase = 1;
+                      break;
+                    default:
+                      printf("UNRECOGNIZED OPTION\n");
+                  }
+                }
+              }
+              if(!foundj) {
+                fprintf(stderr, "Unrecognized record.config ");
+                fprintf(stderr, "%s option %s\n", bufconfig, buf);
+
+                // clean up
+                fclose(infile);
+                for(i = 0; i < nconfigs; i++) {
+                  for(j = 0; j < nconfigsn[i]; j++) {
+                    free(configs[i][j]);
+                  }
+                  free(configs[i]);
+                }
+                free(configs);
+                free(nconfigsn);
+
+                exit(EXIT_FAILURE);
+              }*/
+            break;  
           default:
             printf("UNRECOGNIZED TYPE\n");
         }
@@ -364,6 +426,59 @@ void cgns_grid(void)
 
     cg_close(fn);
   }
+}
+
+void cgns_turb_grid(void)
+{
+    // create the file
+    char fname[FILE_NAME_SIZE] = "";
+    sprintf(fname, "%s/output/%s", ROOT_DIR, "turb-grid.cgns");
+    int fn;
+    int bn;
+    int zn;
+    int gn;
+    int cn;
+    cg_open(fname, CG_MODE_WRITE, &fn);
+    cg_base_write(fn, "Base", 3, 3, &bn);
+    cgsize_t size[9];
+    size[0] = Dom.xn+1; // cells -> vertices
+    size[1] = Dom.yn+1;
+    size[2] = Dom.zn+1;
+    size[3] = Dom.xn;
+    size[4] = Dom.yn;
+    size[5] = Dom.zn;
+    size[6] = 0;
+    size[7] = 0;
+    size[8] = 0;
+    cg_zone_write(fn, bn, "Zone0", size, Structured, &zn);
+    cg_grid_write(fn, bn, zn, "GridCoordinates", &gn);
+    
+    real *x = malloc((Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real));
+    // cpumem = (Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real);
+    real *y = malloc((Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real));
+    // cpumem = (Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real);
+    real *z = malloc((Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real));
+    // cpumem = (Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real);
+    for(int k = Dom.Gcc.ks; k < Dom.Gcc.ke+1; k++) {
+        for(int j = Dom.Gcc.js; j < Dom.Gcc.je+1; j++) {
+            for(int i = Dom.Gcc.is; i < Dom.Gcc.ie+1; i++) {
+                int C = (i-1) + (j-1)*(Dom.xn+1) + (k-1)*(Dom.xn+1)*(Dom.yn+1);
+                x[C] = Dom.xs + (i-1)*Dom.dx;
+                y[C] = Dom.ys + (j-1)*Dom.dy;
+                z[C] = Dom.zs + (k-1)*Dom.dz;
+            }
+        }
+    }
+    
+    cg_coord_write(fn, bn, zn, RealDouble, "CoordinateX", x, &cn);
+    cg_coord_write(fn, bn, zn, RealDouble, "CoordinateY", y, &cn);
+    cg_coord_write(fn, bn, zn, RealDouble, "CoordinateZ", z, &cn);
+    
+    free(x);
+    free(y);
+    free(z);
+    
+    cg_close(fn);
 }
 
 void cgns_flow_field(real dtout)
@@ -595,6 +710,160 @@ void cgns_flow_field(real dtout)
 //    free(label);
 //    free(bitername);
 //  }
+}
+
+void cgns_turb_flow_field(real dtout)
+{
+  // create the solution file
+  char fname[FILE_NAME_SIZE] = "";
+  char fname2[FILE_NAME_SIZE] = "";
+  char fnameall[FILE_NAME_SIZE] = "";
+  char fnameall2[FILE_NAME_SIZE] = "";
+  char gname[FILE_NAME_SIZE] = "";
+  char gnameall[FILE_NAME_SIZE] = "";
+  real tout = ttime; //  = rec_flow_field_stepnum_out * dtout;
+  char format[CHAR_BUF_SIZE] = "";
+  char snodename[CHAR_BUF_SIZE] = "";
+  char snodenameall[CHAR_BUF_SIZE] = "";
+  int sigfigs = ceil(log10(1. / dtout));
+  if(sigfigs < 1) sigfigs = 1;
+  sprintf(format, "%%.%df", sigfigs);
+  sprintf(fname2, "turb-flow-%s.cgns", format);
+  sprintf(fnameall2, "%s/output/turb-flow-%s.cgns", ROOT_DIR, format);
+  sprintf(snodename, "Solution-");
+  sprintf(snodenameall, "/Base/Zone0/Solution-");
+  sprintf(snodename, "%s%s", snodename, format);
+  sprintf(snodenameall, "%s%s", snodenameall, format);
+  sprintf(fname, fname2, tout);
+  sprintf(fnameall, fnameall2, tout);
+  sprintf(snodename, snodename, tout);
+  sprintf(snodenameall, snodenameall, tout);
+  sprintf(gname, "grid.cgns");
+  sprintf(gnameall, "%s/output/%s", ROOT_DIR, "grid.cgns");
+  int fn;
+  int bn;
+  int zn;
+  int sn;
+  int fnpress;
+  int fnphase;
+  int fnu;
+  int fnv;
+  int fnw;
+  cg_open(fnameall, CG_MODE_WRITE, &fn);
+  cg_base_write(fn, "Base", 3, 3, &bn);
+  cgsize_t size[9];
+  size[0] = Dom.xn+1; // cells -> vertices
+  size[1] = Dom.yn+1;
+  size[2] = Dom.zn+1;
+  size[3] = Dom.xn;
+  size[4] = Dom.yn;
+  size[5] = Dom.zn;
+  size[6] = 0;
+  size[7] = 0;
+  size[8] = 0;
+  cg_zone_write(fn, bn, "Zone0", size, Structured, &zn);
+  cg_goto(fn, bn, "Zone_t", zn, "end");
+  // check that grid.cgns exists
+  /*int fng;
+  if(cg_open(gnameall, CG_MODE_READ, &fng) != 0) {
+    fprintf(stderr, "CGNS flow field write failure: no grid.cgns\n");
+    exit(EXIT_FAILURE);
+  } else {
+    cg_close(fng);
+  }
+    cg_close(fng);
+*/
+  
+  cg_link_write("GridCoordinates", gname, "Base/Zone0/GridCoordinates");
+
+  cg_sol_write(fn, bn, zn, "Solution", CellCenter, &sn);
+  real *pout = malloc(Dom.Gcc.s3 * sizeof(real));
+  // cpumem += Dom.Gcc.s3 * sizeof(real);
+  for(int k = Dom.Gcc.ks; k < Dom.Gcc.ke; k++) {
+    for(int j = Dom.Gcc.js; j < Dom.Gcc.je; j++) {
+      for(int i = Dom.Gcc.is; i < Dom.Gcc.ie; i++) {
+        int C = (i-DOM_BUF) + (j-DOM_BUF)*Dom.Gcc.s1 + (k-DOM_BUF)*Dom.Gcc.s2;
+        int CC = i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b;
+        pout[C] = p[CC];
+      }
+    }
+  }
+  cg_field_write(fn, bn, zn, sn, RealDouble, "Pressure", pout, &fnpress);
+
+  real *uout = malloc(Dom.Gcc.s3 * sizeof(real));
+  // cpumem += Dom.Gcc.s3 * sizeof(real);
+  for(int k = Dom.Gfx.ks; k < Dom.Gfx.ke; k++) {
+    for(int j = Dom.Gfx.js; j < Dom.Gfx.je; j++) {
+      for(int i = Dom.Gfx.is; i < Dom.Gfx.ie-1; i++) {
+        int C = (i-DOM_BUF) + (j-DOM_BUF)*Dom.Gcc.s1 + (k-DOM_BUF)*Dom.Gcc.s2;
+        int CC0 = (i-1) + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
+        int CC1 = i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
+        int CC2 = (i+1) + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
+        int CC3 = (i+2) + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
+        uout[C] = -0.0625*u[CC0] + 0.5625*u[CC1] + 0.5625*u[CC2] - 0.0625*u[CC3];
+      }
+    }
+  }
+  cg_field_write(fn, bn, zn, sn, RealDouble, "VelocityX", uout, &fnu);
+
+  real *vout = malloc(Dom.Gcc.s3 * sizeof(real));
+  // cpumem += Dom.Gcc.s3 * sizeof(real);
+  for(int k = Dom.Gfy.ks; k < Dom.Gfy.ke; k++) {
+    for(int j = Dom.Gfy.js; j < Dom.Gfy.je-1; j++) {
+      for(int i = Dom.Gfy.is; i < Dom.Gfy.ie; i++) {
+        int C = (i-DOM_BUF) + (j-DOM_BUF)*Dom.Gcc.s1 + (k-DOM_BUF)*Dom.Gcc.s2;
+        int CC0 = i + (j-1)*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
+        int CC1 = i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
+        int CC2 = i + (j+1)*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
+        int CC3 = i + (j+2)*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
+        vout[C] = -0.0625*v[CC0] + 0.5625*v[CC1] + 0.5625*v[CC2] - 0.0625*v[CC3];
+      }
+    }
+  }
+  cg_field_write(fn, bn, zn, sn, RealDouble, "VelocityY", vout, &fnv);
+
+  real *wout = malloc(Dom.Gcc.s3 * sizeof(real));
+  // cpumem += Dom.Gcc.s3 * sizeof(real);
+  for(int k = Dom.Gfz.ks; k < Dom.Gfz.ke-1; k++) {
+    for(int j = Dom.Gfz.js; j < Dom.Gfz.je; j++) {
+      for(int i = Dom.Gfz.is; i < Dom.Gfz.ie; i++) {
+        int C = (i-DOM_BUF) + (j-DOM_BUF)*Dom.Gcc.s1 + (k-DOM_BUF)*Dom.Gcc.s2;
+        int CC0 = i + j*Dom.Gfz.s1b + (k-1)*Dom.Gfz.s2b;
+        int CC1 = i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b;
+        int CC2 = i + j*Dom.Gfz.s1b + (k+1)*Dom.Gfz.s2b;
+        int CC3 = i + j*Dom.Gfz.s1b + (k+2)*Dom.Gfz.s2b;
+        wout[C] = -0.0625*w[CC0] + 0.5625*w[CC1] + 0.5625*w[CC2] - 0.0625*w[CC3];
+      }
+    }
+  }
+  cg_field_write(fn, bn, zn, sn, RealDouble, "VelocityZ", wout, &fnw);
+
+  int *phaseout = malloc(Dom.Gcc.s3 * sizeof(int));
+  // cpumem += Dom.Gcc.s3 * sizeof(real);
+  for(int k = Dom.Gcc.ks; k < Dom.Gcc.ke; k++) {
+    for(int j = Dom.Gcc.js; j < Dom.Gcc.je; j++) {
+      for(int i = Dom.Gcc.is; i < Dom.Gcc.ie; i++) {
+        int C = (i-DOM_BUF) + (j-DOM_BUF)*Dom.Gcc.s1 + (k-DOM_BUF)*Dom.Gcc.s2;
+        int CC = i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b;
+        phaseout[C] = phase[CC];
+      }
+    }
+  }
+  cg_field_write(fn, bn, zn, sn, Integer, "Phase", phaseout, &fnphase);
+
+  cg_user_data_write("Etc");
+  cg_goto(fn, bn, "Zone_t", zn, "Etc", 0, "end");
+  cgsize_t *N = malloc(sizeof(cgsize_t));
+  N[0] = 1;
+  cg_array_write("Time", RealDouble, 1, N, &ttime);
+  free(N);
+
+  cg_close(fn);
+  free(pout);
+  free(uout);
+  free(vout);
+  free(wout);
+  free(phaseout);
 }
 
 void cgns_particles(real dtout)
