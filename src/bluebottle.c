@@ -296,7 +296,9 @@ int main(int argc, char *argv[]) {
           recorder_bicgstab_init("solver_helmholtz_expd.rec");
         #endif
         // start Lamb's coefficient recorder
-        recorder_lamb_init("lamb.rec");
+        // commented out because it should now automatically init itself
+        // from recorder_lamb(...) if the file doesn't already exist
+        //recorder_lamb_init("lamb.rec");
       }
 
       // initialize the domain
