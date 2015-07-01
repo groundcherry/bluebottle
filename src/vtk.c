@@ -349,7 +349,7 @@ void out_VTK_turb(void)
   char fname_pvtr[FILE_NAME_SIZE] = ""; // pvtr filename
 
   sprintf(fname_pvd, "%sout_turb.pvd", OUTPUT_DIR);
-  sprintf(fname_pvtr, "out_turb_%d.pvtr", rec_precursor_stepnum_out);
+  sprintf(fname_pvtr, "out_turb_%d.pvtr", rec_prec_stepnum_out);
 
   FILE *pvdfile= fopen(fname_pvd, "r+");
   if (pvdfile == NULL) {
@@ -383,7 +383,7 @@ void dom_out_VTK_turb(void)
   int ncy_l, ncy_s, ncy_e;  
   int ncz_l, ncz_s, ncz_e;  
 
-  sprintf(fname, "%sout_turb_%d.pvtr", OUTPUT_DIR, rec_precursor_stepnum_out);
+  sprintf(fname, "%sout_turb_%d.pvtr", OUTPUT_DIR, rec_prec_stepnum_out);
   FILE *outfile = fopen(fname, "w");
   if(outfile == NULL) {
     fprintf(stderr, "Could not open file %s\n", fname);
@@ -425,7 +425,7 @@ void dom_out_VTK_turb(void)
     fprintf(outfile, "%d %d ", ncx_s, ncx_e);
     fprintf(outfile, "%d %d ", ncy_s, ncy_e);
     fprintf(outfile, "%d %d\" ", ncz_s, ncz_e);
-    sprintf(fname_dom, "out_turb_%d_%d.vtr", rec_precursor_stepnum_out, l/6);
+    sprintf(fname_dom, "out_turb_%d_%d.vtr", rec_prec_stepnum_out, l/6);
     fprintf(outfile, "Source=\"%s\"/>\n", fname_dom);
   }
   fprintf(outfile, "</PRectilinearGrid>\n");
@@ -479,7 +479,7 @@ void dom_out_VTK_turb(void)
     ncz_e = ncz_s + ncz_l;
 
     // open file for writing
-    sprintf(fname, "%s/out_turb_%d_%d.vtr", OUTPUT_DIR, rec_precursor_stepnum_out, l/6);
+    sprintf(fname, "%s/out_turb_%d_%d.vtr", OUTPUT_DIR, rec_prec_stepnum_out, l/6);
     FILE *outfile = fopen(fname, "w");
     if(outfile == NULL) {
       fprintf(stderr, "Could not open file %s\n", fname);

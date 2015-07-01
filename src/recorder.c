@@ -49,13 +49,13 @@ void recorder_read_config(void)
   rec_particle_moment = 0;
 
   rec_restart_dt = -1;
-  rec_precursor_dt = -1;
+  rec_prec_dt = -1;
   rec_restart_stop = 0;
 
-  rec_turb_flow_field_dt = -1;
-  rec_turb_flow_field_vel = 0;
-  rec_turb_flow_field_p = 0;
-  rec_turb_flow_field_phase = 0;  
+  rec_prec_flow_field_dt = -1;
+  rec_prec_flow_field_vel = 0;
+  rec_prec_flow_field_p = 0;
+  rec_prec_flow_field_phase = 0;
 
   // read the config file
   char fname[FILE_NAME_SIZE] = "";
@@ -126,7 +126,7 @@ void recorder_read_config(void)
   for(i = 0; i < nconfigsn[N]; i++) {
     configs[N][i] = (char*) malloc(CHAR_BUF_SIZE * sizeof(char));
   }
-  sprintf(configs[N][0], "PRECURSOR");
+  sprintf(configs[N][0], "PRECURSOR_VTK");
   // restart_stop info
   N = 5;
   nconfigsn[N] = 1;
@@ -146,9 +146,9 @@ void recorder_read_config(void)
     configs[N][i] = (char*) malloc(CHAR_BUF_SIZE * sizeof(char));
     // cpumem += CHAR_BUF_SIZE * sizeof(char);
   }
-  sprintf(configs[N][0], "TURB_FLOW_FIELD");
+  sprintf(configs[N][0], "PRECURSOR");
   sprintf(configs[N][1], "velocity");
-  sprintf(configs[N][2], "pressure"); 
+  sprintf(configs[N][2], "pressure");
 
   // read config file
   char bufconfig[CHAR_BUF_SIZE];
@@ -279,8 +279,8 @@ void recorder_read_config(void)
             // read next line
             fret = fgets(buf, CHAR_BUF_SIZE, infile);
             break;
-          case 4: // PRECURSOR
-            rec_precursor_dt = dtout;
+          case 4: // PRECURSOR_VTK
+            rec_prec_dt = dtout;
             // read next line
             fret = fgets(buf, CHAR_BUF_SIZE, infile);
             break;
@@ -289,8 +289,8 @@ void recorder_read_config(void)
             // read next line
             fret = fgets(buf, CHAR_BUF_SIZE, infile);
             break;
-          case 6: // PRECURSOR FLOW_FIELD
-            rec_turb_flow_field_dt = dtout;
+          case 6: // PRECURSOR
+            rec_prec_flow_field_dt = dtout;
             fret = fgets(buf, CHAR_BUF_SIZE, infile);
             /* while(strcmp("\n", buf) != 0) {
               int foundj = 0;
@@ -303,13 +303,13 @@ void recorder_read_config(void)
                   foundj = 1;
                   switch(j) {
                     case 1: // velocity
-                      rec_turb_flow_field_vel = 1;
+                      rec_prec_flow_field_vel = 1;
                       break;
                     case 2: // pressure
-                      rec_turb_flow_field_p = 1;
+                      rec_prec_flow_field_p = 1;
                       break;
                     case 3: // phase
-                      rec_turb_flow_field_phase = 1;
+                      rec_prec_flow_field_phase = 1;
                       break;
                     default:
                       printf("UNRECOGNIZED OPTION\n");
@@ -333,7 +333,7 @@ void recorder_read_config(void)
 
                 exit(EXIT_FAILURE);
               }*/
-            break;  
+            break;
           default:
             printf("UNRECOGNIZED TYPE\n");
         }
@@ -415,7 +415,6 @@ void cgns_grid(void)
         }
       }
     }
-
     cg_coord_write(fn, bn, zn, RealDouble, "CoordinateX", x, &cn);
     cg_coord_write(fn, bn, zn, RealDouble, "CoordinateY", y, &cn);
     cg_coord_write(fn, bn, zn, RealDouble, "CoordinateZ", z, &cn);
@@ -430,14 +429,17 @@ void cgns_grid(void)
 
 void cgns_turb_grid(void)
 {
-    // create the file
-    char fname[FILE_NAME_SIZE] = "";
-    sprintf(fname, "%s/output/%s", ROOT_DIR, "turb-grid.cgns");
-    int fn;
-    int bn;
-    int zn;
-    int gn;
-    int cn;
+  // create the file
+  char fname[FILE_NAME_SIZE] = "";
+  sprintf(fname, "%s/output/%s", ROOT_DIR, "prec-grid.cgns");
+  int fn;
+  int bn;
+  int zn;
+  int gn;
+  int cn;
+  if(access(fname, F_OK) != -1) {
+    // file exists
+  } else {
     cg_open(fname, CG_MODE_WRITE, &fn);
     cg_base_write(fn, "Base", 3, 3, &bn);
     cgsize_t size[9];
@@ -452,7 +454,7 @@ void cgns_turb_grid(void)
     size[8] = 0;
     cg_zone_write(fn, bn, "Zone0", size, Structured, &zn);
     cg_grid_write(fn, bn, zn, "GridCoordinates", &gn);
-    
+
     real *x = malloc((Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real));
     // cpumem = (Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real);
     real *y = malloc((Dom.xn+1)*(Dom.yn+1)*(Dom.zn+1) * sizeof(real));
@@ -469,16 +471,17 @@ void cgns_turb_grid(void)
             }
         }
     }
-    
+
     cg_coord_write(fn, bn, zn, RealDouble, "CoordinateX", x, &cn);
     cg_coord_write(fn, bn, zn, RealDouble, "CoordinateY", y, &cn);
     cg_coord_write(fn, bn, zn, RealDouble, "CoordinateZ", z, &cn);
-    
+
     free(x);
     free(y);
     free(z);
-    
+
     cg_close(fn);
+  }
 }
 
 void cgns_flow_field(real dtout)
@@ -728,8 +731,8 @@ void cgns_turb_flow_field(real dtout)
   int sigfigs = ceil(log10(1. / dtout));
   if(sigfigs < 1) sigfigs = 1;
   sprintf(format, "%%.%df", sigfigs);
-  sprintf(fname2, "turb-flow-%s.cgns", format);
-  sprintf(fnameall2, "%s/output/turb-flow-%s.cgns", ROOT_DIR, format);
+  sprintf(fname2, "prec-flow-%s.cgns", format);
+  sprintf(fnameall2, "%s/output/prec-flow-%s.cgns", ROOT_DIR, format);
   sprintf(snodename, "Solution-");
   sprintf(snodenameall, "/Base/Zone0/Solution-");
   sprintf(snodename, "%s%s", snodename, format);
@@ -738,8 +741,8 @@ void cgns_turb_flow_field(real dtout)
   sprintf(fnameall, fnameall2, tout);
   sprintf(snodename, snodename, tout);
   sprintf(snodenameall, snodenameall, tout);
-  sprintf(gname, "grid.cgns");
-  sprintf(gnameall, "%s/output/%s", ROOT_DIR, "grid.cgns");
+  sprintf(gname, "prec-grid.cgns");
+  sprintf(gnameall, "%s/output/%s", ROOT_DIR, "prec-grid.cgns");
   int fn;
   int bn;
   int zn;
@@ -773,7 +776,7 @@ void cgns_turb_flow_field(real dtout)
   }
     cg_close(fng);
 */
-  
+
   cg_link_write("GridCoordinates", gname, "Base/Zone0/GridCoordinates");
 
   cg_sol_write(fn, bn, zn, "Solution", CellCenter, &sn);
@@ -1868,10 +1871,10 @@ void recorder_bicgstab(char *name, int niter, real resid)
   sprintf(path, "%s/record/%s", ROOT_DIR, name);
   FILE *rec = fopen(path, "r+");
   if(rec == NULL) {
-    recorder_bicgstab_init("solver_flow.rec");
+    recorder_bicgstab_init(name);
     rec = fopen(path, "r+");
     #ifdef IMPLICIT
-      recorder_bicgstab_init("solver_helmholtz_flow.rec");
+      recorder_bicgstab_init(name);
     #endif
   }
 
@@ -1896,7 +1899,7 @@ void recorder_lamb(char *name, int iter)
   sprintf(path, "%s/record/%s", ROOT_DIR, name);
   FILE *rec = fopen(path, "r+");
   if(rec == NULL) {
-    recorder_lamb_init("lamb.rec");
+    recorder_lamb_init(name);
     rec = fopen(path, "r+");
   }
 

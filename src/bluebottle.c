@@ -127,18 +127,18 @@ int stepnum;
 int rec_flow_field_stepnum_out;
 int rec_paraview_stepnum_out;
 int rec_particle_stepnum_out;
-int rec_precursor_stepnum_out;
-int rec_turb_flow_field_stepnum_out;
+int rec_prec_stepnum_out;
+int rec_prec_flow_field_stepnum_out;
 real rec_flow_field_dt;
 real rec_flow_field_ttime_out;
 int rec_flow_field_vel;
 int rec_flow_field_p;
 int rec_flow_field_phase;
-real rec_turb_flow_field_dt;
-real rec_turb_flow_field_ttime_out;
-int rec_turb_flow_field_vel;
-int rec_turb_flow_field_p;
-int rec_turb_flow_field_phase;
+real rec_prec_flow_field_dt;
+real rec_prec_flow_field_ttime_out;
+int rec_prec_flow_field_vel;
+int rec_prec_flow_field_p;
+int rec_prec_flow_field_phase;
 real rec_paraview_dt;
 real rec_paraview_ttime_out;
 real rec_particle_dt;
@@ -146,8 +146,8 @@ real rec_particle_ttime_out;
 real rec_restart_dt;
 int rec_restart_stop;
 real rec_restart_ttime_out;
-real rec_precursor_dt;
-real rec_precursor_ttime_out;
+real rec_prec_dt;
+real rec_prec_ttime_out;
 int rec_particle_pos;
 int rec_particle_a;
 int rec_particle_vel;
@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
       domain_read_input();
       parts_read_input(turb);
       fflush(stdout);
-      //printf("FLOW: Using devices %d through %d.\n\n", dev_start, dev_end);
+      //printf("EXPD: Using devices %d through %d.\n\n", dev_start, dev_end);
       //fflush(stdout);
 
       /********* Messy hack for taking advantage of CUDA_VISIBLE_DEVICES
@@ -290,10 +290,10 @@ int main(int argc, char *argv[]) {
 
       if(runrestart != 1) {
         // start BICGSTAB recorder
-        recorder_bicgstab_init("solver_flow.rec");
+        recorder_bicgstab_init("solver_expd.rec");
         #ifdef IMPLICIT
           // start Helmholtz recorder
-          recorder_bicgstab_init("solver_helmholtz_flow.rec");
+          recorder_bicgstab_init("solver_helmholtz_expd.rec");
         #endif
         // start Lamb's coefficient recorder
         recorder_lamb_init("lamb.rec");
@@ -425,7 +425,7 @@ int main(int argc, char *argv[]) {
         rec_paraview_stepnum_out = -1;
         rec_particle_stepnum_out = -1;
         //rec_restart_stepnum_out = -1;
-        rec_precursor_stepnum_out = -1;
+        rec_prec_stepnum_out = -1;
         cuda_part_pull();
         //cuda_BC_test();
         //cuda_U_star_test_exp();
@@ -518,7 +518,7 @@ int main(int argc, char *argv[]) {
           rec_particle_ttime_out += dt;
           rec_restart_ttime_out += dt;
           stepnum++;
-          printf("FLOW: Time = %e of %e (dt = %e).\n", ttime, duration, dt);
+          printf("EXPD: Time = %e of %e (dt = %e).\n", ttime, duration, dt);
           fflush(stdout);
 
           cuda_compute_forcing(&pid_int, &pid_back, Kp, Ki, Kd);
@@ -800,7 +800,7 @@ int main(int argc, char *argv[]) {
     turb_read_input();
     parts_read_input(turb);
 
-    //printf("TURB: Using devices %d through %d.\n\n", dev_start, dev_end);
+    //printf("PREC: Using devices %d through %d.\n\n", dev_start, dev_end);
     //fflush(stdout);
 
     /********* Messy hack for taking advantage of CUDA_VISIBLE_DEVICES
@@ -843,7 +843,11 @@ int main(int argc, char *argv[]) {
 
     if(runrestart != 1) {
       // start BICGSTAB recorder
-      recorder_bicgstab_init("solver_turb.rec");
+      recorder_bicgstab_init("solver_prec.rec");
+      #ifdef IMPLICIT
+        // start Helmholtz recorder
+        recorder_bicgstab_init("solver_helmholtz_prec.rec");
+      #endif
     }
 
     // initialize the domain
@@ -880,11 +884,11 @@ int main(int argc, char *argv[]) {
     //count_mem();
 
     // initialize ParaView VTK output PVD file
-    if(rec_precursor_dt > 0) {
+    if(rec_prec_dt > 0) {
       init_VTK_turb();
     }
 
-    real rec_precursor_ttime_out = 0.;
+    real rec_prec_ttime_out = 0.;
     real rec_restart_ttime_out = 0.;
 
     cuda_build_cages();
@@ -925,36 +929,36 @@ int main(int argc, char *argv[]) {
     cuda_dom_BC();
 
     // write initial fields
-    if(rec_precursor_dt > 0 && runrestart != 1) {
+    if(rec_prec_dt > 0 && runrestart != 1) {
       cuda_dom_pull();
       printf("Writing precursor file %d (t = %e)...",
-        rec_precursor_stepnum_out, ttime);
+        rec_prec_stepnum_out, ttime);
       fflush(stdout);
       out_VTK_turb();
-      rec_precursor_stepnum_out++;
+      rec_prec_stepnum_out++;
       printf("done.               \n");
       fflush(stdout);
     }
-    if(rec_turb_flow_field_dt > 0 && runrestart != 1) {
+    if(rec_prec_flow_field_dt > 0 && runrestart != 1) {
       cuda_dom_pull();
       printf("Writing turbulence flow field file t = %e...", ttime);
       fflush(stdout);
       cgns_turb_grid();
-      cgns_turb_flow_field(rec_turb_flow_field_dt);
-      rec_turb_flow_field_stepnum_out++;
+      cgns_turb_flow_field(rec_prec_flow_field_dt);
+      rec_prec_flow_field_stepnum_out++;
       printf("done.               \n");
-      fflush(stdout);            
+      fflush(stdout);
     }
     /***************************************************************/
     /** Begin the main timestepping loop in the precursor domain. **/
     /***************************************************************/
     while(ttime <= duration) {
       ttime += dt;
-      rec_turb_flow_field_ttime_out += dt;
-      rec_precursor_ttime_out += dt;
+      rec_prec_flow_field_ttime_out += dt;
+      rec_prec_ttime_out += dt;
       rec_restart_ttime_out += dt;
       stepnum++;
-      printf("TURB: Time = %e of %e (dt = %e).\n", ttime, duration, dt);
+      printf("PREC: Time = %e of %e (dt = %e).\n", ttime, duration, dt);
 
       cuda_compute_forcing(&pid_int, &pid_back, Kp, Ki, Kd);
       cuda_compute_turb_forcing();
@@ -999,14 +1003,14 @@ int main(int argc, char *argv[]) {
       // communicate the boundary condition with the experimental domain
       prec_send_BC(np, rank, status);
 
-      if(rec_precursor_dt > 0) {
-        if(rec_precursor_ttime_out >= rec_precursor_dt) {
+      if(rec_prec_dt > 0) {
+        if(rec_prec_ttime_out >= rec_prec_dt) {
           // pull back data and write fields
           cuda_dom_pull();
           #ifndef BATCHRUN
             printf("  Writing precursor output file");
             printf(" %d (t = %e)...                  \r",
-              rec_precursor_stepnum_out, ttime);
+              rec_prec_stepnum_out, ttime);
             fflush(stdout);
           #endif
           #ifdef DEBUG
@@ -1015,23 +1019,24 @@ int main(int argc, char *argv[]) {
             out_VTK_turb();
           #endif
           printf("  Writing precursor file %d (t = %e)...done.\n",
-            rec_precursor_stepnum_out, ttime);
-          rec_precursor_stepnum_out++;
+            rec_prec_stepnum_out, ttime);
+          rec_prec_stepnum_out++;
           fflush(stdout);
-          rec_precursor_ttime_out = rec_precursor_ttime_out - rec_precursor_dt;
+          rec_prec_ttime_out = rec_prec_ttime_out - rec_prec_dt;
         }
       }
-      if(rec_turb_flow_field_dt > 0) {
-       if(rec_turb_flow_field_ttime_out >= rec_turb_flow_field_dt) {
+      if(rec_prec_flow_field_dt > 0) {
+       if(rec_prec_flow_field_ttime_out >= rec_prec_flow_field_dt) {
           // pull back data and write fields
           cuda_dom_pull();
-          cgns_turb_flow_field(rec_turb_flow_field_dt);  
-          printf("  Writing precursor flow field file %d (t = %e)...done.\n",
-            rec_turb_flow_field_stepnum_out, ttime);
+          cgns_turb_flow_field(rec_prec_flow_field_dt);
+          printf("  Writing precursor flow field file t = %e...done.\n",
+            ttime);
           fflush(stdout);
-          rec_turb_flow_field_ttime_out = rec_turb_flow_field_ttime_out - rec_turb_flow_field_dt;
-          rec_turb_flow_field_stepnum_out++;
-        }        
+          rec_prec_flow_field_ttime_out = rec_prec_flow_field_ttime_out
+            - rec_prec_flow_field_dt;
+          rec_prec_flow_field_stepnum_out++;
+        }
       }
       // write a restart file and exit when the time is appropriate
       int rest_com;

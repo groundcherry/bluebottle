@@ -2317,12 +2317,12 @@ int domain_init(void)
   rec_flow_field_stepnum_out = 0;
   rec_paraview_stepnum_out = 0;
   rec_particle_stepnum_out = 0;
-  rec_precursor_stepnum_out = 0;
+  rec_prec_stepnum_out = 0;
   rec_flow_field_ttime_out = 0;
   rec_paraview_ttime_out = 0;
   rec_particle_ttime_out = 0;
   rec_restart_ttime_out = 0;
-  rec_precursor_ttime_out = 0;
+  rec_prec_ttime_out = 0;
 
   turbl = 0.; // integral scale
               // (prevent turbulence linear forcing from being used)
@@ -3048,12 +3048,12 @@ int domain_init_turb(void)
   rec_flow_field_stepnum_out = 0;
   rec_paraview_stepnum_out = 0;
   rec_particle_stepnum_out = 0;
-  rec_precursor_stepnum_out = 0;
+  rec_prec_stepnum_out = 0;
   rec_flow_field_ttime_out = 0;
   rec_paraview_ttime_out = 0;
   rec_particle_ttime_out = 0;
   rec_restart_ttime_out = 0;
-  rec_precursor_ttime_out = 0;
+  rec_prec_ttime_out = 0;
 
   return EXIT_SUCCESS;
 }
@@ -3267,7 +3267,7 @@ void out_restart(void)
   fwrite(&rec_paraview_ttime_out, sizeof(real), 1, rest);
   fwrite(&rec_particle_ttime_out, sizeof(real), 1, rest);
   fwrite(&rec_restart_ttime_out, sizeof(real), 1, rest);
-  fwrite(&rec_precursor_ttime_out, sizeof(real), 1, rest);
+  fwrite(&rec_prec_ttime_out, sizeof(real), 1, rest);
   fwrite(&pid_int, sizeof(real), 1, rest);
   fwrite(&pid_back, sizeof(real), 1, rest);
   fwrite(&gradP.z, sizeof(real), 2, rest);
@@ -3364,7 +3364,7 @@ void in_restart(void)
   fret = fread(&rec_paraview_ttime_out, sizeof(real), 1, infile);
   fret = fread(&rec_particle_ttime_out, sizeof(real), 1, infile);
   fret = fread(&rec_restart_ttime_out, sizeof(real), 1, infile);
-  fret = fread(&rec_precursor_ttime_out, sizeof(real), 1, infile);
+  fret = fread(&rec_prec_ttime_out, sizeof(real), 1, infile);
   fret = fread(&pid_int, sizeof(real), 1, infile);
   fret = fread(&pid_back, sizeof(real), 1, infile);
   fret = fread(&gradP.z, sizeof(real), 1, infile);
@@ -3432,8 +3432,8 @@ void out_restart_turb(void)
 
   fwrite(bc_plane_pos, sizeof(real), 9, rest);
 
-  fwrite(&rec_precursor_ttime_out, sizeof(real), 1, rest);
-  fwrite(&rec_turb_flow_field_ttime_out, sizeof(real), 1, rest);
+  fwrite(&rec_prec_ttime_out, sizeof(real), 1, rest);
+  fwrite(&rec_prec_flow_field_ttime_out, sizeof(real), 1, rest);
   // close the file
   fclose(rest);
 }
@@ -3499,8 +3499,8 @@ void in_restart_turb(void)
 
   fret = fread(bc_plane_pos, sizeof(real), 9, infile);
 
-  fret = fread(&rec_precursor_ttime_out, sizeof(real), 1, infile);
-  fret = fread(&rec_turb_flow_field_ttime_out, sizeof(real), 1, infile);
+  fret = fread(&rec_prec_ttime_out, sizeof(real), 1, infile);
+  fret = fread(&rec_prec_flow_field_ttime_out, sizeof(real), 1, infile);
   // close file
   fclose(infile);
 }

@@ -283,10 +283,10 @@ for(int i = 0; i < dom[dev].Gfx.s3; i++) {
     cusp::krylov::cg(*_A_ustar, ustar_tmp, *_ustar_rhs, monitor, M);
     // write convergence data to file
     if(rank == 0)
-      recorder_bicgstab("solver_helmholtz_flow.rec", monitor.iteration_count(),
+      recorder_bicgstab("solver_helmholtz_expd.rec", monitor.iteration_count(),
         monitor.residual_norm());
     else
-      recorder_bicgstab("solver_helmholtz_turb.rec", monitor.iteration_count(),
+      recorder_bicgstab("solver_helmholtz_prec.rec", monitor.iteration_count(),
         monitor.residual_norm());
     if(!monitor.converged()) {
       printf("The u_star Helmholtz equation did not converge.              \n");
@@ -478,10 +478,10 @@ void cuda_vstar_helmholtz(int rank)
     cusp::krylov::cg(*_A_vstar, vstar_tmp, *_vstar_rhs, monitor, M);
     // write convergence data to file
     if(rank == 0)
-      recorder_bicgstab("solver_helmholtz_flow.rec", monitor.iteration_count(),
+      recorder_bicgstab("solver_helmholtz_expd.rec", monitor.iteration_count(),
         monitor.residual_norm());
     else
-      recorder_bicgstab("solver_helmholtz_turb.rec", monitor.iteration_count(),
+      recorder_bicgstab("solver_helmholtz_prec.rec", monitor.iteration_count(),
         monitor.residual_norm());
     if(!monitor.converged()) {
       printf("The v_star Helmholtz equation did not converge.              \n");
@@ -673,10 +673,10 @@ void cuda_wstar_helmholtz(int rank)
     cusp::krylov::cg(*_A_wstar, wstar_tmp, *_wstar_rhs, monitor, M);
     // write convergence data to file
     if(rank == 0)
-      recorder_bicgstab("solver_helmholtz_flow.rec", monitor.iteration_count(),
+      recorder_bicgstab("solver_helmholtz_expd.rec", monitor.iteration_count(),
         monitor.residual_norm());
     else
-      recorder_bicgstab("solver_helmholtz_turb.rec", monitor.iteration_count(),
+      recorder_bicgstab("solver_helmholtz_prec.rec", monitor.iteration_count(),
         monitor.residual_norm());
     if(!monitor.converged()) {
       printf("The w_star Helmholtz equation did not converge.              \n");
@@ -921,10 +921,10 @@ cusp::print(*_pp);
     cusp::krylov::bicgstab(*_A_p, *_p_sol, *_pp, monitor, M);
     // write convergence data to file
     if(rank == 0)
-      recorder_bicgstab("solver_flow.rec", monitor.iteration_count(),
+      recorder_bicgstab("solver_expd.rec", monitor.iteration_count(),
         monitor.residual_norm());
     else
-      recorder_bicgstab("solver_turb.rec", monitor.iteration_count(),
+      recorder_bicgstab("solver_prec.rec", monitor.iteration_count(),
         monitor.residual_norm());
     if(!monitor.converged()) {
       printf("The pressure-Poisson equation did not converge.              \n");
