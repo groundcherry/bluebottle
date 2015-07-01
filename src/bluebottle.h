@@ -1562,6 +1562,19 @@ extern int rec_flow_field_stepnum_out;
  ******
  */
 
+/****v* bluebottle/rec_turb_flow_field_stepnum_out
+ * NAME
+ *  rec_turb_flow_field_stepnum_out
+ * TYPE
+ */
+extern int rec_turb_flow_field_stepnum_out;
+/*
+ * PURPOSE
+ *  The output timestep number for the simulation.  The initial configuration
+ *  is given by stepnum = 0.
+ ******
+ */
+
 /****v* bluebottle/rec_paraview_stepnum_out
  * NAME
  *  rec_paraview_stepnum_out
@@ -1659,6 +1672,73 @@ extern int rec_flow_field_phase;
  * PURPOSE
  *  Recorder flow field output phase field boolean.
  ******
+ */
+
+/****v* bluebottle/rec_turb_flow_field_dt
+ * NAME
+ *  rec_turb_flow_field_dt
+ * TYPE
+ */
+
+extern real rec_turb_flow_field_dt;
+/*
+ * PURPOSE
+ *  Recorder turbulence flow field output timestep size.
+ ******
+ */
+
+/****v* bluebottle/rec_turb_flow_field_ttime_out
+ * NAME
+ *  rec_turb_flow_field_ttime_out
+ * TYPE
+ */
+extern real rec_turb_flow_field_ttime_out;
+/*
+ * PURPOSE
+ *  Recorder turbulence flow field output time since last output.
+ ******
+ */
+
+/****v* bluebottle/rec_turb_flow_field_vel
+ * NAME
+ *  rec_turb_flow_field_vel
+ * TYPE
+ */
+extern int rec_turb_flow_field_vel;
+/*
+ * PURPOSE
+ *  Recorder turbulence flow field output velocity field boolean.
+ ******
+ */
+
+/****v* bluebottle/rec_turb_flow_field_p
+ * NAME
+ *  rec_turb_flow_field_p
+ * TYPE
+ */
+extern int rec_turb_flow_field_p;
+/*
+ * PURPOSE
+ *  Recorder turbulence flow field output pressure field boolean.
+ ******
+ */
+
+/****v* bluebottle/rec_turb_flow_field_phase
+ * NAME
+ *  rec_turb_flow_field_phase
+ * TYPE
+ */
+extern int rec_turb_flow_field_phase;
+/*
+ * PURPOSE
+ *  Recorder turbulence flow field output phase field boolean.
+ ******
+ */
+
+/****v* bluebottle/rec_paraview_dt
+ * NAME
+ *  rec_paraview_dt
+ * TYPE
  */
 
 /****v* bluebottle/rec_paraview_dt

@@ -3433,7 +3433,7 @@ void out_restart_turb(void)
   fwrite(bc_plane_pos, sizeof(real), 9, rest);
 
   fwrite(&rec_precursor_ttime_out, sizeof(real), 1, rest);
-
+  fwrite(&rec_turb_flow_field_ttime_out, sizeof(real), 1, rest);
   // close the file
   fclose(rest);
 }
@@ -3500,7 +3500,7 @@ void in_restart_turb(void)
   fret = fread(bc_plane_pos, sizeof(real), 9, infile);
 
   fret = fread(&rec_precursor_ttime_out, sizeof(real), 1, infile);
-
+  fret = fread(&rec_turb_flow_field_ttime_out, sizeof(real), 1, infile);
   // close file
   fclose(infile);
 }
