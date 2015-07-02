@@ -894,6 +894,7 @@ int main(int argc, char *argv[]) {
       printf("\nRestart requested.\n\n");
       printf("Reading restart file...");
       fflush(stdout);
+      cgns_turb_grid();
       in_restart_turb();
       printf("done.\n");
       fflush(stdout);
