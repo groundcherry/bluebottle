@@ -154,12 +154,10 @@ void recorder_read_config(void)
   while(fgets(buf, CHAR_BUF_SIZE, infile) != NULL) {
     // compare first line with predefined configurations
     int foundi = 0;
-    real dtout = 0;
-    sscanf(buf, "%s %lf\n", bufconfig, &dtout);
     for(i = 0; i < nconfigs; i++) {
       // remove newline character
-      //real dtout = 0;
-      //sscanf(buf, "%s %lf\n", bufconfig, &dtout);
+      real dtout = 0;
+      sscanf(buf, "%s %lf\n", bufconfig, &dtout);
       // check config list
       if(strcmp(configs[i][0], bufconfig) == 0) {
         // found: continue reading config
