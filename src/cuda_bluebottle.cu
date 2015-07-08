@@ -943,9 +943,6 @@ void cuda_dom_pull(void)
         }
       }
     }
-    free(uu_star);
-    free(vv_star);
-    free(ww_star);
 
 #else // run simulation
     // fill in apropriate subdomain
