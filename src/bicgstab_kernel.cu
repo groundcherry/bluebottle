@@ -22,7 +22,7 @@
 
 #include "cuda_bicgstab.h"
 
-#include <cusp/dia_matrix.h>
+//#include <cusp/dia_matrix.h>
 
 __global__ void ustar_rhs(real rho_f, real nu, real *u, real *v, real *w,
   real *p, real *f, real *conv0, real *conv, real *u_star, dom_struct *dom,

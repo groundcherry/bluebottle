@@ -20,6 +20,18 @@
  *  commercial and/or for-profit applications.
  ******************************************************************************/
 
+#include <cuda.h>
+#include <helper_cuda.h>
+#include <cusp/array1d.h>
+#include <cusp/blas/blas.h>
+#include <cusp/dia_matrix.h>
+#include <cusp/monitor.h>
+#include <cusp/precond/diagonal.h>
+#include <cusp/krylov/bicgstab.h>
+#include <cusp/krylov/cg.h>
+#include <cusp/print.h>
+#include <thrust/device_ptr.h>
+
 #include "cuda_bicgstab.h"
 #include "cuda_bluebottle.h"
 #include "entrySearch.h"
@@ -28,18 +40,6 @@
 #ifdef TEST
 #include "cuda_testing.h"
 #endif
-
-#include <cuda.h>
-#include <helper_cuda.h>
-#include <cusp/array1d.h>
-#include <cusp/blas.h>
-#include <cusp/dia_matrix.h>
-#include <cusp/monitor.h>
-#include <cusp/precond/diagonal.h>
-#include <cusp/krylov/bicgstab.h>
-#include <cusp/krylov/cg.h>
-#include <cusp/print.h>
-#include <thrust/device_ptr.h>
 
 extern "C"
 void cuda_ustar_helmholtz(int rank)
@@ -276,18 +276,21 @@ for(int i = 0; i < dom[dev].Gfx.s3; i++) {
     cusp::blas::scal(*_ustar_rhs, 1. / norm);
 
     // call BiCGSTAB to solve for ustar_tmp
-    cusp::convergence_monitor<real> monitor(*_ustar_rhs, pp_max_iter,
+    cusp::monitor<real> monitor(*_ustar_rhs, pp_max_iter,
       pp_residual);
     cusp::precond::diagonal<real, cusp::device_memory> M(*_A_ustar);
     //cusp::krylov::bicgstab(*_A_ustar, ustar_tmp, *_ustar_rhs, monitor, M);
     cusp::krylov::cg(*_A_ustar, ustar_tmp, *_ustar_rhs, monitor, M);
     // write convergence data to file
-    if(rank == 0)
-      recorder_bicgstab("solver_helmholtz_expd.rec", monitor.iteration_count(),
+    if(rank == 0) {
+      char nam[FILE_NAME_SIZE] = "solver_helmholtz_expd.rec";
+      recorder_bicgstab(nam, monitor.iteration_count(),
         monitor.residual_norm());
-    else
-      recorder_bicgstab("solver_helmholtz_prec.rec", monitor.iteration_count(),
+    } else { 
+      char nam[FILE_NAME_SIZE] = "solver_helmholtz_prec.rec";
+      recorder_bicgstab(nam, monitor.iteration_count(),
         monitor.residual_norm());
+    }
     if(!monitor.converged()) {
       printf("The u_star Helmholtz equation did not converge.              \n");
       exit(EXIT_FAILURE);
@@ -471,18 +474,21 @@ void cuda_vstar_helmholtz(int rank)
     cusp::blas::scal(*_vstar_rhs, 1. / norm);
 
     // call BiCGSTAB to solve for ustar_tmp
-    cusp::convergence_monitor<real> monitor(*_vstar_rhs, pp_max_iter,
+    cusp::monitor<real> monitor(*_vstar_rhs, pp_max_iter,
       pp_residual);
     cusp::precond::diagonal<real, cusp::device_memory> M(*_A_vstar);
     //cusp::krylov::bicgstab(*_A_vstar, vstar_tmp, *_vstar_rhs, monitor, M);
     cusp::krylov::cg(*_A_vstar, vstar_tmp, *_vstar_rhs, monitor, M);
     // write convergence data to file
-    if(rank == 0)
-      recorder_bicgstab("solver_helmholtz_expd.rec", monitor.iteration_count(),
+    if(rank == 0) {
+      char nam[FILE_NAME_SIZE] = "solver_helmholtz_expd.rec";
+      recorder_bicgstab(nam, monitor.iteration_count(),
         monitor.residual_norm());
-    else
-      recorder_bicgstab("solver_helmholtz_prec.rec", monitor.iteration_count(),
+    } else {
+      char nam[FILE_NAME_SIZE] = "solver_helmholtz_prec.rec";
+      recorder_bicgstab(nam, monitor.iteration_count(),
         monitor.residual_norm());
+    }
     if(!monitor.converged()) {
       printf("The v_star Helmholtz equation did not converge.              \n");
       exit(EXIT_FAILURE);
@@ -666,18 +672,21 @@ void cuda_wstar_helmholtz(int rank)
     cusp::blas::scal(*_wstar_rhs, 1. / norm);
 
     // call BiCGSTAB to solve for ustar_tmp
-    cusp::convergence_monitor<real> monitor(*_wstar_rhs, pp_max_iter,
+    cusp::monitor<real> monitor(*_wstar_rhs, pp_max_iter,
       pp_residual);
     cusp::precond::diagonal<real, cusp::device_memory> M(*_A_wstar);
     //cusp::krylov::bicgstab(*_A_wstar, wstar_tmp, *_wstar_rhs, monitor, M);
     cusp::krylov::cg(*_A_wstar, wstar_tmp, *_wstar_rhs, monitor, M);
     // write convergence data to file
-    if(rank == 0)
-      recorder_bicgstab("solver_helmholtz_expd.rec", monitor.iteration_count(),
+    if(rank == 0) {
+      char nam[FILE_NAME_SIZE] = "solver_helmholtz_expd.rec";
+      recorder_bicgstab(nam, monitor.iteration_count(),
         monitor.residual_norm());
-    else
-      recorder_bicgstab("solver_helmholtz_prec.rec", monitor.iteration_count(),
+    } else {
+      char nam[FILE_NAME_SIZE] = "solver_helmholtz_prec.rec";
+      recorder_bicgstab(nam, monitor.iteration_count(),
         monitor.residual_norm());
+    }
     if(!monitor.converged()) {
       printf("The w_star Helmholtz equation did not converge.              \n");
       exit(EXIT_FAILURE);
@@ -916,16 +925,19 @@ cusp::print(*_pp);
     cusp::blas::scal(*_p_sol, 1. / norm);
 
     // call BiCGSTAB to solve for p_sol
-    cusp::convergence_monitor<real> monitor(*_pp, pp_max_iter, pp_residual);
+    cusp::monitor<real> monitor(*_pp, pp_max_iter, pp_residual);
     cusp::precond::diagonal<real, cusp::device_memory> M(*_A_p);
     cusp::krylov::bicgstab(*_A_p, *_p_sol, *_pp, monitor, M);
     // write convergence data to file
-    if(rank == 0)
-      recorder_bicgstab("solver_expd.rec", monitor.iteration_count(),
+    if(rank == 0) {
+      char nam[FILE_NAME_SIZE] = "solver_expd.rec";
+      recorder_bicgstab(nam, monitor.iteration_count(),
         monitor.residual_norm());
-    else
-      recorder_bicgstab("solver_prec.rec", monitor.iteration_count(),
+    } else {
+      char nam[FILE_NAME_SIZE] = "solver_prec.rec";
+      recorder_bicgstab(nam, monitor.iteration_count(),
         monitor.residual_norm());
+    }
     if(!monitor.converged()) {
       printf("The pressure-Poisson equation did not converge.              \n");
       exit(EXIT_FAILURE);

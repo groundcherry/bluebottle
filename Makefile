@@ -24,6 +24,7 @@
 MPI_DIR =
 HDF5_DIR =
 CGNS_DIR =
+CUSP_DIR =
 CUDA_DIR =
 CUDA_SDK_DIR =
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -39,10 +40,10 @@ SRC_DIR = src
 SIM_DIR = sim
 
 COPT = -std=c99 -pedantic -Wall -Wextra -fopenmp -D$(PREC)
-LDINCS = -I $(MPI_DIR)/include -I $(CGNS_DIR)/include
+LDINCS = -I $(MPI_DIR)/include -I $(CGNS_DIR)/include -I $(CUSP_DIR)
 LDLIBS = -lm -L $(HDF5_DIR)/lib -L $(CGNS_DIR)/lib -lcgns -lhdf5 
 
-CUDAOPT = -arch=sm_30 -Xcompiler -fopenmp -m64 -D$(PREC)
+CUDAOPT = -arch=sm_35 -Xcompiler -fopenmp -m64 -D$(PREC)
 
 CUDAINCS = -I $(CUDA_SDK_DIR)/common/inc
 CUDALIBS = -L $(CUDA_DIR)/lib64 -lcudart
@@ -111,10 +112,10 @@ $(OBJS):$(SRC_DIR)/%.o:$(SRC_DIR)/%.c
 	$(MPICC) $(COPT) -c $< $(LDINCS) -o $@
 
 $(SRC_DIR)/bblib.o:$(OBJSCUDA)
-	$(NVCC) $(CUDAOPT) -dlink $+ -o $(SRC_DIR)/bblib.o $(CUDALIBS)
+	$(NVCC) $(CUDAOPT) -dlink $+ $(CUDALIBS) -o $(SRC_DIR)/bblib.o
 
 bluebottle: $(OBJSCUDA) $(SRC_DIR)/bblib.o $(OBJS)
-	$(MPICC) $(COPT) -o $(SIM_DIR)/bluebottle $+ $(LDLIBS) $(CUDALIBS) -lstdc++
+	$(MPICC) $(COPT) $+ $(LDLIBS) -lcudadevrt -lstdc++ $(CUDALIBS) -o $(SIM_DIR)/bluebottle
 
 clean:
 	rm -f $(SRC_DIR)/*.o $(SIM_DIR)/bluebottle

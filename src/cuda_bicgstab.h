@@ -45,7 +45,7 @@ extern "C"
 #include "recorder.h"
 }
 
-#include <cusp/dia_matrix.h>
+//#include <cusp/dia_matrix.h>
 
 /****f* cuda_bicgstab/cuda_PP_rhs()
  * NAME

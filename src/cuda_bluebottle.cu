@@ -20,16 +20,17 @@
  *  commercial and/or for-profit applications.
  ******************************************************************************/
 
+#include <cuda.h>
+#include <helper_cuda.h>
+#include <thrust/device_ptr.h>
+#include <thrust/reduce.h>
+#include <thrust/functional.h>
+#include <thrust/sort.h>
+
 #include "cuda_bicgstab.h"
 #include "cuda_bluebottle.h"
 #include "cuda_particle.h"
 #include "entrySearch.h"
-
-#include <cuda.h>
-#include <helper_cuda.h>
-#include <thrust/reduce.h>
-#include <thrust/functional.h>
-#include <thrust/sort.h>
 
 extern "C"
 void cuda_dom_malloc(void)

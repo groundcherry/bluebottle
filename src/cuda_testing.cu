@@ -2125,7 +2125,8 @@ void cuda_lamb_test(void)
   cuda_Lamb();
   cuda_part_BC();
   cuda_part_pull();
-  recorder_lamb("lamb.rec",0);
+  char nam[FILE_NAME_SIZE] = "lamb.rec";
+  recorder_lamb(nam,0);
   printf("done.\n");
 
   // pull fields back to host
