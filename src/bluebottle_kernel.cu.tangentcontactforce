@@ -2797,12 +2797,9 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     real Fnx, Fny, Fnz, Ftx, Fty, Ftz;
     real Lox, Loy, Loz;
 
-    int isTrue = 0;
-
     // west wall
-    dx = fabs(parts[i].x - (dom->xs + bc.dsW));
+    dx = fabs(parts[i].x - dom->xs);
     h = dx - ai;
-    isTrue = (bc.pW == NEUMANN); // collision force applied ifTrue
     if(h < hN && h > 0) {
       Un = parts[i].u - bc.uWD;
       if(h < eps*parts[i].r) h = eps*parts[i].r;
@@ -2834,18 +2831,28 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Loy += -8.*PI*mu*ai*ai*ai*omy*2./5.*lnah;
       Loz += -8.*PI*mu*ai*ai*ai*omz*2./5.*lnah;
 
-      parts[i].iFx += isTrue * (Fnx + Ftx);
-      parts[i].iFy += isTrue * (Fny + Fty);
-      parts[i].iFz += isTrue * (Fnz + Ftz);
-      parts[i].iLx += isTrue * Lox;
-      parts[i].iLy += isTrue * Loy;
-      parts[i].iLz += isTrue * Loz;
+      parts[i].iFx += (bc.uW == DIRICHLET) * (Fnx + Ftx);
+      parts[i].iFy += (bc.uW == DIRICHLET) * (Fny + Fty);
+      parts[i].iFz += (bc.uW == DIRICHLET) * (Fnz + Ftz);
+      parts[i].iLx += (bc.uW == DIRICHLET) * Lox;
+      parts[i].iLy += (bc.uW == DIRICHLET) * Loy;
+      parts[i].iLz += (bc.uW == DIRICHLET) * Loz;
 
       // if no contact, mark with a -1
       parts[i].St = -1.;
     }
     if(h < 0) {
       Un = parts[i].u - bc.uWD;
+      Utx = 0.;
+      Uty = parts[i].v - bc.vWD;
+      Utz = parts[i].w - bc.wWD;
+      real umag = sqrt(Un*Un + Uty*Uty + Utz*Utz);
+      real n = Un / umag;
+      real ty = Uty / umag;
+      real tz = Utz / umag;
+      real hn = -h * n;
+      real hty = -h * ty;
+      real htz = -h * tz;
 
       // if this is the first time step with contact, set St
       // otherwise, use St that was set at the beginning of the contact
@@ -2862,16 +2869,25 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
+      //real alpha = 1.0;
 
-      real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
+      real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(hn));
 
-      parts[i].iFx += isTrue * (sqrt(-h*h*h)*k - eta*Un);
+      // shear modulus
+      real G = 0.5*parts[i].E/(1.+parts[i].sigma);
+      real kt = 8.*sqrt(parts[i].r)*G/(2.-parts[i].sigma)*sqrt(hn);
+
+      parts[i].iFx += (bc.uW == DIRICHLET) * (sqrt(hn*hn*hn)*k - eta*Un);
+      parts[i].iFy += (bc.vW == DIRICHLET) * (-kt*hty + eta*Uty);
+      parts[i].iFz += (bc.wW == DIRICHLET) * (-kt*htz + eta*Utz);
+
+      //parts[i].iLy += (bc.vW == DIRICHLET) * (-kt*htz + eta*Utz)*ai;
+      //parts[i].iLz -= (bc.wW == DIRICHLET) * (-kt*hty + eta*Uty)*ai;
     }
 
     // east wall
-    dx = fabs(parts[i].x - (dom->xe - bc.dsE));
+    dx = fabs(parts[i].x - dom->xe);
     h = dx - ai;
-    isTrue = (bc.pE == NEUMANN);
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
@@ -2903,18 +2919,29 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Loy += -8.*PI*mu*ai*ai*ai*omy*2./5.*lnah;
       Loz += -8.*PI*mu*ai*ai*ai*omz*2./5.*lnah;
 
-      parts[i].iFx += isTrue * (Fnx + Ftx);
-      parts[i].iFy += isTrue * (Fny + Fty);
-      parts[i].iFz += isTrue * (Fnz + Ftz);
-      parts[i].iLx += isTrue * Lox;
-      parts[i].iLy += isTrue * Loy;
-      parts[i].iLz += isTrue * Loz;
+      ah = 1./h - 1./eps;
+      parts[i].iFx += (bc.uE == DIRICHLET) * (Fnx + Ftx);
+      parts[i].iFy += (bc.uE == DIRICHLET) * (Fny + Fty);
+      parts[i].iFz += (bc.uE == DIRICHLET) * (Fnz + Ftz);
+      parts[i].iLx += (bc.uE == DIRICHLET) * Lox;
+      parts[i].iLy += (bc.uE == DIRICHLET) * Loy;
+      parts[i].iLz += (bc.uE == DIRICHLET) * Loz;
 
       // if no contact, mark with a -1
       parts[i].St = -1.;
     } 
     if(h < 0) {
-      Un = -(parts[i].u - bc.uED);
+      Un = parts[i].u - bc.uED;
+      Utx = 0.;
+      Uty = parts[i].v - bc.vED;
+      Utz = parts[i].w - bc.wED;
+      real umag = sqrt(Un*Un + Uty*Uty + Utz*Utz);
+      real n = Un / umag;
+      real ty = Uty / umag;
+      real tz = Utz / umag;
+      real hn = h * n;
+      real hty = h * ty;
+      real htz = h * tz;
 
       // if this is the first time step with contact, set St
       // otherwise, use St that was set at the beginning of the contact
@@ -2931,16 +2958,25 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
+      //real alpha = 1.0;
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
-      parts[i].iFx -= isTrue * (sqrt(-h*h*h)*k - eta*Un);
+      // shear modulus
+      real G = 0.5*parts[i].E/(1.+parts[i].sigma);
+      real kt = 8.*sqrt(parts[i].r)*G/(2.-parts[i].sigma)*sqrt(-h);
+
+      parts[i].iFx -= (bc.uE == DIRICHLET) * (sqrt(-hn*hn*hn)*k - eta*Un);
+      parts[i].iFy += (bc.vE == DIRICHLET) * (kt*hty + eta*Uty);
+      parts[i].iFz += (bc.wE == DIRICHLET) * (kt*htz + eta*Utz);
+
+      //parts[i].iLy += (bc.vE == DIRICHLET) * (kt*htz + eta*Utz)*ai;
+      //parts[i].iLz -= (bc.wE == DIRICHLET) * (kt*hty + eta*Uty)*ai;
     }
 
     // south wall
-    dy = fabs(parts[i].y - (dom->ys + bc.dsS));
+    dy = fabs(parts[i].y - dom->ys);
     h = dy - ai;
-    isTrue = (bc.pS == NEUMANN);
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
@@ -2952,7 +2988,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Utz = parts[i].w - bc.wSD;
       omx = parts[i].ox;
       omy = parts[i].oy;
-      omz = parts[i].oz;
+      omz = parts[i].oz;// + bc.uSD/(ai+h);
 
       Fnx = 0.;
       Fny = -6.*PI*mu*ai*Un*ah;
@@ -2972,18 +3008,29 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Loy += 0.;
       Loz += -8.*PI*mu*ai*ai*ai*omz*2./5.*lnah;
 
-      parts[i].iFx += isTrue * (Fnx + Ftx);
-      parts[i].iFy += isTrue * (Fny + Fty);
-      parts[i].iFz += isTrue * (Fnz + Ftz);
-      parts[i].iLx += isTrue * Lox;
-      parts[i].iLy += isTrue * Loy;
-      parts[i].iLz += isTrue * Loz;
+      ah = 1./h - 1./eps;
+      parts[i].iFx += (bc.vS == DIRICHLET) * (Fnx + Ftx);
+      parts[i].iFy += (bc.vS == DIRICHLET) * (Fny + Fty);
+      parts[i].iFz += (bc.vS == DIRICHLET) * (Fnz + Ftz);
+      parts[i].iLx += (bc.vS == DIRICHLET) * Lox;
+      parts[i].iLy += (bc.vS == DIRICHLET) * Loy;
+      parts[i].iLz += (bc.vS == DIRICHLET) * Loz;
 
       // if no contact, mark with a -1
       parts[i].St = -1.;
     }
     if(h < 0) {
       Un = parts[i].v - bc.vSD;
+      Utx = parts[i].u - bc.uSD;
+      Uty = 0.;
+      Utz = parts[i].w - bc.wSD;
+      real umag = sqrt(Un*Un + Utx*Utx + Utz*Utz);
+      real n = Un / umag;
+      real tx = Utx / umag;
+      real tz = Utz / umag;
+      real hn = h * n;
+      real htx = h * tx;
+      real htz = h * tz;
 
       // if this is the first time step with contact, set St
       // otherwise, use St that was set at the beginning of the contact
@@ -3000,16 +3047,25 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
+      //real alpha = 1.0;
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
-      parts[i].iFy += isTrue * (sqrt(-h*h*h)*k - eta*Un);
+      // shear modulus
+      real G = 0.5*parts[i].E/(1.+parts[i].sigma);
+      real kt = 8.*sqrt(parts[i].r)*G/(2.-parts[i].sigma)*sqrt(-h);
+
+      parts[i].iFx += (bc.uS == DIRICHLET) * (kt*htx + eta*Utx);
+      parts[i].iFy += (bc.vS == DIRICHLET) * (sqrt(-hn*hn*hn)*k - eta*Un);
+      parts[i].iFz += (bc.wS == DIRICHLET) * (kt*htz + eta*Utz);
+
+      //parts[i].iLx += (bc.uS == DIRICHLET) * (kt*htz + eta*Utz)*ai;
+      //parts[i].iLz += (bc.wS == DIRICHLET) * (kt*htx + eta*Utx)*ai;
     }
 
     // north wall
-    dy = fabs(parts[i].y - (dom->ye - bc.dsN));
+    dy = fabs(parts[i].y - dom->ye);
     h = dy - ai;
-    isTrue = (bc.pN == NEUMANN);
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
@@ -3021,7 +3077,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Utz = parts[i].w - bc.wND;
       omx = parts[i].ox;
       omy = parts[i].oy;
-      omz = parts[i].oz;
+      omz = parts[i].oz;// + bc.uND/(ai+h);
 
       Fnx = 0.;
       Fny = -6.*PI*mu*ai*Un*ah;
@@ -3041,18 +3097,29 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Loy += 0.;
       Loz += -8.*PI*mu*ai*ai*ai*omz*2./5.*lnah;
 
-      parts[i].iFx += isTrue * (Fnx + Ftx);
-      parts[i].iFy += isTrue * (Fny + Fty);
-      parts[i].iFz += isTrue * (Fnz + Ftz);
-      parts[i].iLx += isTrue * Lox;
-      parts[i].iLy += isTrue * Loy;
-      parts[i].iLz += isTrue * Loz;
+      ah = 1./h - 1./eps;
+      parts[i].iFx += (bc.vN == DIRICHLET) * (Fnx + Ftx);
+      parts[i].iFy += (bc.vN == DIRICHLET) * (Fny + Fty);
+      parts[i].iFz += (bc.vN == DIRICHLET) * (Fnz + Ftz);
+      parts[i].iLx += (bc.vN == DIRICHLET) * Lox;
+      parts[i].iLy += (bc.vN == DIRICHLET) * Loy;
+      parts[i].iLz += (bc.vN == DIRICHLET) * Loz;
 
       // if no contact, mark with a -1
       parts[i].St = -1.;
     }
     if(h < 0) {
-      Un = -(parts[i].v - bc.vND);
+      Un = parts[i].v - bc.vND;
+      Utx = parts[i].u - bc.uND;
+      Uty = 0.;
+      Utz = parts[i].w - bc.wND;
+      real umag = sqrt(Un*Un + Utx*Utx + Utz*Utz);
+      real n = Un / umag;
+      real tx = Utx / umag;
+      real tz = Utz / umag;
+      real hn = h * n;
+      real htx = h * tx;
+      real htz = h * tz;
 
       // if this is the first time step with contact, set St
       // otherwise, use St that was set at the beginning of the contact
@@ -3069,16 +3136,25 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
+      //real alpha = 1.0;
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
-      parts[i].iFy -= isTrue * (sqrt(-h*h*h)*k - eta*Un);
+      // shear modulus
+      real G = 0.5*parts[i].E/(1.+parts[i].sigma);
+      real kt = 8.*sqrt(parts[i].r)*G/(2.-parts[i].sigma)*sqrt(-h);
+
+      parts[i].iFx += (bc.uN == DIRICHLET) * (kt*htx + eta*Utx);
+      parts[i].iFy -= (bc.vN == DIRICHLET) * (sqrt(-hn*hn*hn)*k - eta*Un);
+      parts[i].iFz += (bc.wN == DIRICHLET) * (kt*htz + eta*Utz);
+
+      //parts[i].iLx -= (bc.uS == DIRICHLET) * (kt*htz + eta*Utz)*ai;
+      //parts[i].iLz -= (bc.wS == DIRICHLET) * (kt*htx + eta*Utx)*ai;
     }
 
     // bottom wall
-    dz = fabs(parts[i].z - (dom->zs + bc.dsB));
+    dz = fabs(parts[i].z - dom->zs);
     h = dz - ai;
-    isTrue = (bc.pB == NEUMANN);
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
@@ -3110,18 +3186,29 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Loy += -8.*PI*mu*ai*ai*ai*omy*2./5.*lnah;
       Loz += 0.;
 
-      parts[i].iFx += isTrue * (Fnx + Ftx);
-      parts[i].iFy += isTrue * (Fny + Fty);
-      parts[i].iFz += isTrue * (Fnz + Ftz);
-      parts[i].iLx += isTrue * Lox;
-      parts[i].iLy += isTrue * Loy;
-      parts[i].iLz += isTrue * Loz;
+      ah = 1./h - 1./eps;
+      parts[i].iFx += (bc.wB == DIRICHLET) * (Fnx + Ftx);
+      parts[i].iFy += (bc.wB == DIRICHLET) * (Fny + Fty);
+      parts[i].iFz += (bc.wB == DIRICHLET) * (Fnz + Ftz);
+      parts[i].iLx += (bc.wB == DIRICHLET) * Lox;
+      parts[i].iLy += (bc.wB == DIRICHLET) * Loy;
+      parts[i].iLz += (bc.wB == DIRICHLET) * Loz;
 
       // if no contact, mark with a -1
       parts[i].St = -1.;
     }
     if(h < 0) {
       Un = parts[i].w - bc.wBD;
+      Utx = parts[i].u - bc.uBD;
+      Uty = parts[i].v - bc.vBD;
+      Utz = 0.;
+      real umag = sqrt(Un*Un + Utx*Utx + Uty*Uty);
+      real n = Un / umag;
+      real tx = Utx / umag;
+      real ty = Uty / umag;
+      real hn = -h * n;
+      real htx = -h * tx;
+      real hty = -h * ty;
 
       // if this is the first time step with contact, set St
       // otherwise, use St that was set at the beginning of the contact
@@ -3138,16 +3225,25 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
+      //real alpha = 1.0;
 
-      real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
+      real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(hn));
 
-      parts[i].iFz += isTrue * (sqrt(-h*h*h)*k - eta*Un);
+      // shear modulus
+      real G = 0.5*parts[i].E/(1.+parts[i].sigma);
+      real kt = 8.*sqrt(parts[i].r)*G/(2.-parts[i].sigma)*sqrt(hn);
+
+      parts[i].iFx += (bc.uB == DIRICHLET) * (-kt*htx + eta*Utx);
+      parts[i].iFy += (bc.vB == DIRICHLET) * (-kt*hty + eta*Uty);
+      parts[i].iFz += (bc.wB == DIRICHLET) * (sqrt(hn*hn*hn)*k - eta*Un);
+
+      //parts[i].iLx += (bc.uB == DIRICHLET) * (-kt*hty + eta*Uty)*ai;
+      //parts[i].iLy -= (bc.vB == DIRICHLET) * (-kt*htx + eta*Utx)*ai;
     }
 
     // top wall
-    dz = fabs(parts[i].z - (dom->ze - bc.dsT));
+    dz = fabs(parts[i].z - dom->ze);
     h = dz - ai;
-    isTrue = (bc.pT == NEUMANN);
     if(h < hN && h > 0) {
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
@@ -3179,18 +3275,29 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       Loy += -8.*PI*mu*ai*ai*ai*omy*2./5.*lnah;
       Loz += 0.;
 
-      parts[i].iFx += isTrue * (Fnx + Ftx);
-      parts[i].iFy += isTrue * (Fny + Fty);
-      parts[i].iFz += isTrue * (Fnz + Ftz);
-      parts[i].iLx += isTrue * Lox;
-      parts[i].iLy += isTrue * Loy;
-      parts[i].iLz += isTrue * Loz;
+      ah = 1./h - 1./eps;
+      parts[i].iFx += (bc.wT == DIRICHLET) * (Fnx + Ftx);
+      parts[i].iFy += (bc.wT == DIRICHLET) * (Fny + Fty);
+      parts[i].iFz += (bc.wT == DIRICHLET) * (Fnz + Ftz);
+      parts[i].iLx += (bc.wT == DIRICHLET) * Lox;
+      parts[i].iLy += (bc.wT == DIRICHLET) * Loy;
+      parts[i].iLz += (bc.wT == DIRICHLET) * Loz;
 
       // if no contact, mark with a -1
       parts[i].St = -1.;
     }
     if(h < 0) {
-      Un = -(parts[i].w - bc.wTD);
+      Un = parts[i].w - bc.wTD;
+      Utx = parts[i].u - bc.uTD;
+      Uty = parts[i].v - bc.vTD;
+      Utz = 0.;
+      real umag = sqrt(Un*Un + Utx*Utx + Uty*Uty);
+      real n = Un / umag;
+      real tx = Utx / umag;
+      real ty = Uty / umag;
+      real hn = h * n;
+      real htx = h * tx;
+      real hty = h * ty;
 
       // if this is the first time step with contact, set St
       // otherwise, use St that was set at the beginning of the contact
@@ -3207,10 +3314,20 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
+      //real alpha = 1.0;
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
-      parts[i].iFz -= isTrue * (sqrt(-h*h*h)*k - eta*Un);
+      // shear modulus
+      real G = 0.5*parts[i].E/(1.+parts[i].sigma);
+      real kt = 8.*sqrt(parts[i].r)*G/(2.-parts[i].sigma)*sqrt(-h);
+
+      parts[i].iFx += (bc.uB == DIRICHLET) * (-kt*htx + eta*Utx);
+      parts[i].iFy += (bc.vB == DIRICHLET) * (-kt*hty + eta*Uty);
+      parts[i].iFz -= (bc.wB == DIRICHLET) * (sqrt(-hn*hn*hn)*k - eta*Un);
+
+      //parts[i].iLx -= (bc.uB == DIRICHLET) * (kt*hty + eta*Uty)*ai;
+      //parts[i].iLy += (bc.vB == DIRICHLET) * (kt*htx + eta*Utx)*ai;
     }
   }
 }

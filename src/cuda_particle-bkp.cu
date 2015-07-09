@@ -23,6 +23,7 @@
 #include "cuda_particle.h"
 
 #include <cuda.h>
+#include <helper_cuda.h>
 
 extern "C"
 void cuda_part_malloc(void)
@@ -82,87 +83,84 @@ void cuda_part_malloc(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    (cudaSetDevice(dev + dev_start));
+    checkCudaErrors(cudaSetDevice(dev + dev_start));
 
-    (cudaMalloc((void**) &(_parts[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_parts[dev]),
       sizeof(part_struct) * nparts));
     gpumem += sizeof(part_struct) * nparts;
 
-    (cudaMalloc((void**) &(_pnm_re[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_pnm_re[dev]),
       sizeof(real) * coeff_stride * nparts));
     gpumem += sizeof(real) * coeff_stride * nparts;
-    (cudaMalloc((void**) &(_pnm_im[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_pnm_im[dev]),
       sizeof(real) * coeff_stride * nparts));
     gpumem += sizeof(real) * coeff_stride * nparts;
-    (cudaMalloc((void**) &(_phinm_re[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_phinm_re[dev]),
       sizeof(real) * coeff_stride * nparts));
     gpumem += sizeof(real) * coeff_stride * nparts;
-    (cudaMalloc((void**) &(_phinm_im[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_phinm_im[dev]),
       sizeof(real) * coeff_stride * nparts));
     gpumem += sizeof(real) * coeff_stride * nparts;
-    (cudaMalloc((void**) &(_chinm_re[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_chinm_re[dev]),
       sizeof(real) * coeff_stride * nparts));
     gpumem += sizeof(real) * coeff_stride * nparts;
-    (cudaMalloc((void**) &(_chinm_im[dev]),
-      sizeof(real) * coeff_stride * nparts));
-    gpumem += sizeof(real) * coeff_stride * nparts;
-
-    (cudaMalloc((void**) &(_pnm_re0[dev]),
-      sizeof(real) * coeff_stride * nparts));
-    gpumem += sizeof(real) * coeff_stride * nparts;
-    (cudaMalloc((void**) &(_pnm_im0[dev]),
-      sizeof(real) * coeff_stride * nparts));
-    gpumem += sizeof(real) * coeff_stride * nparts;
-    (cudaMalloc((void**) &(_phinm_re0[dev]),
-      sizeof(real) * coeff_stride * nparts));
-    gpumem += sizeof(real) * coeff_stride * nparts;
-    (cudaMalloc((void**) &(_phinm_im0[dev]),
-      sizeof(real) * coeff_stride * nparts));
-    gpumem += sizeof(real) * coeff_stride * nparts;
-    (cudaMalloc((void**) &(_chinm_re0[dev]),
-      sizeof(real) * coeff_stride * nparts));
-    gpumem += sizeof(real) * coeff_stride * nparts;
-    (cudaMalloc((void**) &(_chinm_im0[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_chinm_im[dev]),
       sizeof(real) * coeff_stride * nparts));
     gpumem += sizeof(real) * coeff_stride * nparts;
 
-    (cudaMalloc((void**) &(_pnm_re00[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_pnm_re0[dev]),
       sizeof(real) * coeff_stride * nparts));
     gpumem += sizeof(real) * coeff_stride * nparts;
-    (cudaMalloc((void**) &(_pnm_im00[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_pnm_im0[dev]),
       sizeof(real) * coeff_stride * nparts));
     gpumem += sizeof(real) * coeff_stride * nparts;
-    (cudaMalloc((void**) &(_phinm_re00[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_phinm_re0[dev]),
       sizeof(real) * coeff_stride * nparts));
     gpumem += sizeof(real) * coeff_stride * nparts;
-    (cudaMalloc((void**) &(_phinm_im00[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_phinm_im0[dev]),
       sizeof(real) * coeff_stride * nparts));
     gpumem += sizeof(real) * coeff_stride * nparts;
-    (cudaMalloc((void**) &(_chinm_re00[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_chinm_re0[dev]),
       sizeof(real) * coeff_stride * nparts));
     gpumem += sizeof(real) * coeff_stride * nparts;
-    (cudaMalloc((void**) &(_chinm_im00[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_chinm_im0[dev]),
       sizeof(real) * coeff_stride * nparts));
     gpumem += sizeof(real) * coeff_stride * nparts;
 
-    (cudaMalloc((void**) &(_phase[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_pnm_re00[dev]),
+      sizeof(real) * coeff_stride * nparts));
+    gpumem += sizeof(real) * coeff_stride * nparts;
+    checkCudaErrors(cudaMalloc((void**) &(_pnm_im00[dev]),
+      sizeof(real) * coeff_stride * nparts));
+    gpumem += sizeof(real) * coeff_stride * nparts;
+    checkCudaErrors(cudaMalloc((void**) &(_phinm_re00[dev]),
+      sizeof(real) * coeff_stride * nparts));
+    gpumem += sizeof(real) * coeff_stride * nparts;
+    checkCudaErrors(cudaMalloc((void**) &(_phinm_im00[dev]),
+      sizeof(real) * coeff_stride * nparts));
+    gpumem += sizeof(real) * coeff_stride * nparts;
+    checkCudaErrors(cudaMalloc((void**) &(_chinm_re00[dev]),
+      sizeof(real) * coeff_stride * nparts));
+    gpumem += sizeof(real) * coeff_stride * nparts;
+    checkCudaErrors(cudaMalloc((void**) &(_chinm_im00[dev]),
+      sizeof(real) * coeff_stride * nparts));
+    gpumem += sizeof(real) * coeff_stride * nparts;
+
+    checkCudaErrors(cudaMalloc((void**) &(_phase[dev]),
       sizeof(int) * dom[dev].Gcc.s3b));
     gpumem += sizeof(int) * dom[dev].Gcc.s3b;
-    (cudaMalloc((void**) &(_phase_shell[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_phase_shell[dev]),
       sizeof(int) * dom[dev].Gcc.s3b));
     gpumem += sizeof(int) * dom[dev].Gcc.s3b;
-    (cudaMalloc((void**) &(_flag_u[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_flag_u[dev]),
       sizeof(int) * dom[dev].Gfx.s3b));
     gpumem += sizeof(int) * dom[dev].Gfx.s3b;
-    (cudaMalloc((void**) &(_flag_v[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_flag_v[dev]),
       sizeof(int) * dom[dev].Gfy.s3b));
     gpumem += sizeof(int) * dom[dev].Gfy.s3b;
-    (cudaMalloc((void**) &(_flag_w[dev]),
+    checkCudaErrors(cudaMalloc((void**) &(_flag_w[dev]),
       sizeof(int) * dom[dev].Gfz.s3b));
     gpumem += sizeof(int) * dom[dev].Gfz.s3b;
-
-    (cudaMalloc((void**) &(_binDom), sizeof(dom_struct)));
-    gpumem += sizeof(dom_struct);
   }
 }
 
@@ -173,59 +171,56 @@ void cuda_part_push(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    (cudaSetDevice(dev + dev_start));
+    checkCudaErrors(cudaSetDevice(dev + dev_start));
 
-    (cudaMemcpy(_parts[dev], parts, sizeof(part_struct) * nparts,
+    checkCudaErrors(cudaMemcpy(_parts[dev], parts, sizeof(part_struct) * nparts,
       cudaMemcpyHostToDevice));
-    (cudaMemcpy(_pnm_re[dev], pnm_re, sizeof(real) * coeff_stride
+    checkCudaErrors(cudaMemcpy(_pnm_re[dev], pnm_re, sizeof(real) * coeff_stride
       * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_pnm_im[dev], pnm_im, sizeof(real) * coeff_stride
+    checkCudaErrors(cudaMemcpy(_pnm_im[dev], pnm_im, sizeof(real) * coeff_stride
       * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_phinm_re[dev], phinm_re, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_phinm_re[dev], phinm_re, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_phinm_im[dev], phinm_im, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_phinm_im[dev], phinm_im, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_chinm_re[dev], chinm_re, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_chinm_re[dev], chinm_re, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_chinm_im[dev], chinm_im, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_chinm_im[dev], chinm_im, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_pnm_re0[dev], pnm_re0, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_pnm_re0[dev], pnm_re0, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_pnm_im0[dev], pnm_im0, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_pnm_im0[dev], pnm_im0, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_phinm_re0[dev], phinm_re0, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_phinm_re0[dev], phinm_re0, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_phinm_im0[dev], phinm_im0, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_phinm_im0[dev], phinm_im0, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_chinm_re0[dev], chinm_re0, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_chinm_re0[dev], chinm_re0, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_chinm_im0[dev], chinm_im0, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_chinm_im0[dev], chinm_im0, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_pnm_re00[dev], pnm_re00, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_pnm_re00[dev], pnm_re00, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_pnm_im00[dev], pnm_im00, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_pnm_im00[dev], pnm_im00, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_phinm_re00[dev], phinm_re00, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_phinm_re00[dev], phinm_re00, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_phinm_im00[dev], phinm_im00, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_phinm_im00[dev], phinm_im00, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_chinm_re00[dev], chinm_re00, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_chinm_re00[dev], chinm_re00, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_chinm_im00[dev], chinm_im00, sizeof(real)
+    checkCudaErrors(cudaMemcpy(_chinm_im00[dev], chinm_im00, sizeof(real)
       * coeff_stride * nparts, cudaMemcpyHostToDevice));
 
-    (cudaMemcpy(_phase[0], phase, sizeof(int) * dom[0].Gcc.s3b,
+    checkCudaErrors(cudaMemcpy(_phase[0], phase, sizeof(int) * dom[0].Gcc.s3b,
       cudaMemcpyHostToDevice));
-    (cudaMemcpy(_phase_shell[0], phase_shell,
+    checkCudaErrors(cudaMemcpy(_phase_shell[0], phase_shell,
       sizeof(int) * dom[0].Gcc.s3b, cudaMemcpyHostToDevice));
-    (cudaMemcpy(_flag_u[0], flag_u, sizeof(int) * dom[0].Gfx.s3b,
+    checkCudaErrors(cudaMemcpy(_flag_u[0], flag_u, sizeof(int) * dom[0].Gfx.s3b,
       cudaMemcpyHostToDevice));
-    (cudaMemcpy(_flag_v[0], flag_v, sizeof(int) * dom[0].Gfy.s3b,
+    checkCudaErrors(cudaMemcpy(_flag_v[0], flag_v, sizeof(int) * dom[0].Gfy.s3b,
       cudaMemcpyHostToDevice));
-    (cudaMemcpy(_flag_w[0], flag_w, sizeof(int) * dom[0].Gfz.s3b,
-      cudaMemcpyHostToDevice));
-
-    (cudaMemcpy(_binDom, &binDom, sizeof(dom_struct),
+    checkCudaErrors(cudaMemcpy(_flag_w[0], flag_w, sizeof(int) * dom[0].Gfz.s3b,
       cudaMemcpyHostToDevice));
   }
 }
@@ -234,59 +229,59 @@ extern "C"
 void cuda_part_pull(void)
 {
   // all devices have the same particle data for now, so just copy one of them
-  (cudaMemcpy(parts, _parts[0], sizeof(part_struct) * nparts,
+  checkCudaErrors(cudaMemcpy(parts, _parts[0], sizeof(part_struct) * nparts,
     cudaMemcpyDeviceToHost));
-  (cudaMemcpy(pnm_re, _pnm_re[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(pnm_re, _pnm_re[0], sizeof(real) * coeff_stride
     * nparts,cudaMemcpyDeviceToHost));
-  (cudaMemcpy(pnm_im, _pnm_im[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(pnm_im, _pnm_im[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
-  (cudaMemcpy(phinm_re, _phinm_re[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(phinm_re, _phinm_re[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
-  (cudaMemcpy(phinm_im, _phinm_im[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(phinm_im, _phinm_im[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
-  (cudaMemcpy(chinm_re, _chinm_re[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(chinm_re, _chinm_re[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
-  (cudaMemcpy(chinm_im, _chinm_im[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(chinm_im, _chinm_im[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
-  (cudaMemcpy(pnm_re0, _pnm_re0[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(pnm_re0, _pnm_re0[0], sizeof(real) * coeff_stride
     * nparts,cudaMemcpyDeviceToHost));
-  (cudaMemcpy(pnm_im0, _pnm_im0[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(pnm_im0, _pnm_im0[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
-  (cudaMemcpy(phinm_re0, _phinm_re0[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(phinm_re0, _phinm_re0[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
-  (cudaMemcpy(phinm_im0, _phinm_im0[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(phinm_im0, _phinm_im0[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
-  (cudaMemcpy(chinm_re0, _chinm_re0[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(chinm_re0, _chinm_re0[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
-  (cudaMemcpy(chinm_im0, _chinm_im0[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(chinm_im0, _chinm_im0[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
-  (cudaMemcpy(pnm_re00, _pnm_re00[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(pnm_re00, _pnm_re00[0], sizeof(real) * coeff_stride
     * nparts,cudaMemcpyDeviceToHost));
-  (cudaMemcpy(pnm_im00, _pnm_im00[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(pnm_im00, _pnm_im00[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
-  (cudaMemcpy(phinm_re00, _phinm_re00[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(phinm_re00, _phinm_re00[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
-  (cudaMemcpy(phinm_im00, _phinm_im00[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(phinm_im00, _phinm_im00[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
-  (cudaMemcpy(chinm_re00, _chinm_re00[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(chinm_re00, _chinm_re00[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
-  (cudaMemcpy(chinm_im00, _chinm_im00[0], sizeof(real) * coeff_stride
+  checkCudaErrors(cudaMemcpy(chinm_im00, _chinm_im00[0], sizeof(real) * coeff_stride
     * nparts, cudaMemcpyDeviceToHost));
 
   // copy for device cage setup testing
-  (cudaMemcpy(phase, _phase[0], sizeof(int) * dom[0].Gcc.s3b,
+  checkCudaErrors(cudaMemcpy(phase, _phase[0], sizeof(int) * dom[0].Gcc.s3b,
     cudaMemcpyDeviceToHost));
-  (cudaMemcpy(phase_shell, _phase_shell[0], sizeof(int) * dom[0].Gcc.s3b,
+  checkCudaErrors(cudaMemcpy(phase_shell, _phase_shell[0], sizeof(int) * dom[0].Gcc.s3b,
     cudaMemcpyDeviceToHost));
 
 #ifdef DEBUG
-  (cudaMemcpy(phase_shell, _phase_shell[0],
+  checkCudaErrors(cudaMemcpy(phase_shell, _phase_shell[0],
     sizeof(int) * dom[0].Gcc.s3b, cudaMemcpyDeviceToHost));
-  (cudaMemcpy(flag_u, _flag_u[0], sizeof(int) * dom[0].Gfx.s3b,
+  checkCudaErrors(cudaMemcpy(flag_u, _flag_u[0], sizeof(int) * dom[0].Gfx.s3b,
     cudaMemcpyDeviceToHost));
-  (cudaMemcpy(flag_v, _flag_v[0], sizeof(int) * dom[0].Gfy.s3b,
+  checkCudaErrors(cudaMemcpy(flag_v, _flag_v[0], sizeof(int) * dom[0].Gfy.s3b,
     cudaMemcpyDeviceToHost));
-  (cudaMemcpy(flag_w, _flag_w[0], sizeof(int) * dom[0].Gfz.s3b,
+  checkCudaErrors(cudaMemcpy(flag_w, _flag_w[0], sizeof(int) * dom[0].Gfz.s3b,
     cudaMemcpyDeviceToHost));
 #endif
 }
@@ -298,34 +293,33 @@ void cuda_part_free(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    (cudaSetDevice(dev + dev_start));
+    checkCudaErrors(cudaSetDevice(dev + dev_start));
 
-    (cudaFree(_parts[dev]));
-    (cudaFree(_pnm_re[dev]));
-    (cudaFree(_pnm_im[dev]));
-    (cudaFree(_phinm_re[dev]));
-    (cudaFree(_phinm_im[dev]));
-    (cudaFree(_chinm_re[dev]));
-    (cudaFree(_chinm_im[dev]));
-    (cudaFree(_pnm_re0[dev]));
-    (cudaFree(_pnm_im0[dev]));
-    (cudaFree(_phinm_re0[dev]));
-    (cudaFree(_phinm_im0[dev]));
-    (cudaFree(_chinm_re0[dev]));
-    (cudaFree(_chinm_im0[dev]));
-    (cudaFree(_pnm_re00[dev]));
-    (cudaFree(_pnm_im00[dev]));
-    (cudaFree(_phinm_re00[dev]));
-    (cudaFree(_phinm_im00[dev]));
-    (cudaFree(_chinm_re00[dev]));
-    (cudaFree(_chinm_im00[dev]));
-    (cudaFree(_phase[dev]));
-    (cudaFree(_phase_shell[dev]));
-    (cudaFree(_flag_u[dev]));
-    (cudaFree(_flag_v[dev]));
-    (cudaFree(_flag_w[dev]));
+    checkCudaErrors(cudaFree(_parts[dev]));
+    checkCudaErrors(cudaFree(_pnm_re[dev]));
+    checkCudaErrors(cudaFree(_pnm_im[dev]));
+    checkCudaErrors(cudaFree(_phinm_re[dev]));
+    checkCudaErrors(cudaFree(_phinm_im[dev]));
+    checkCudaErrors(cudaFree(_chinm_re[dev]));
+    checkCudaErrors(cudaFree(_chinm_im[dev]));
+    checkCudaErrors(cudaFree(_pnm_re0[dev]));
+    checkCudaErrors(cudaFree(_pnm_im0[dev]));
+    checkCudaErrors(cudaFree(_phinm_re0[dev]));
+    checkCudaErrors(cudaFree(_phinm_im0[dev]));
+    checkCudaErrors(cudaFree(_chinm_re0[dev]));
+    checkCudaErrors(cudaFree(_chinm_im0[dev]));
+    checkCudaErrors(cudaFree(_pnm_re00[dev]));
+    checkCudaErrors(cudaFree(_pnm_im00[dev]));
+    checkCudaErrors(cudaFree(_phinm_re00[dev]));
+    checkCudaErrors(cudaFree(_phinm_im00[dev]));
+    checkCudaErrors(cudaFree(_chinm_re00[dev]));
+    checkCudaErrors(cudaFree(_chinm_im00[dev]));
+    checkCudaErrors(cudaFree(_phase[dev]));
+    checkCudaErrors(cudaFree(_phase_shell[dev]));
+    checkCudaErrors(cudaFree(_flag_u[dev]));
+    checkCudaErrors(cudaFree(_flag_v[dev]));
+    checkCudaErrors(cudaFree(_flag_w[dev]));
   }
-    (cudaFree(_binDom));
 
   free(_parts);
   free(_pnm_re);
@@ -362,7 +356,7 @@ void cuda_build_cages(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    (cudaSetDevice(dev + dev_start));
+    checkCudaErrors(cudaSetDevice(dev + dev_start));
 
     int i;    // iterator
     real X, Y, Z;  // virtual particle center location
@@ -459,9 +453,9 @@ void cuda_build_cages(void)
     for(i = 0; i < nparts; i++) {
       // set up cage extents
       // add 4 cells to ensure cage is completely contained in the bounding box
-      parts[i].cage.in = (int)(2.0 * ceil(parts[i].r / dom[dev].dx)) + 2;
-      parts[i].cage.jn = (int)(2.0 * ceil(parts[i].r / dom[dev].dy)) + 2;
-      parts[i].cage.kn = (int)(2.0 * ceil(parts[i].r / dom[dev].dz)) + 2;
+      parts[i].cage.in = (int)(2.0 * ceil(parts[i].r / dom[dev].dx));// + 2;
+      parts[i].cage.jn = (int)(2.0 * ceil(parts[i].r / dom[dev].dy));// + 2;
+      parts[i].cage.kn = (int)(2.0 * ceil(parts[i].r / dom[dev].dz));// + 2;
 
       // remove a cell from cage for odd number of cells in domain
       if(dom[dev].xn % 2) {
@@ -531,16 +525,12 @@ void cuda_build_cages(void)
     }
 
     // push particle information to device
-    (cudaMemcpy(_parts[dev], parts, sizeof(part_struct) * nparts,
+    checkCudaErrors(cudaMemcpy(_parts[dev], parts, sizeof(part_struct) * nparts,
       cudaMemcpyHostToDevice));
 
     threads_x = MAX_THREADS_DIM/2;
     threads_y = MAX_THREADS_DIM/2;
     threads_z = MAX_THREADS_DIM/2;
-
-    int xPer = (bc.uE == PERIODIC);
-    int yPer = (bc.vN == PERIODIC);
-    int zPer = (bc.wT == PERIODIC);
     for(i = 0; i < nparts; i++) {
       blocks_x = (int)ceil((real)parts[i].cage.in/(real)threads_x);
       blocks_y = (int)ceil((real)parts[i].cage.jn/(real)threads_y);
@@ -551,9 +541,9 @@ void cuda_build_cages(void)
 
       if(blocks_x > 0 && blocks_y > 0 && blocks_z > 0) {
         // center - is < ibs, js < jbs, ks < kbs
-        X = parts[i].x + (parts[i].x < dom[dev].xs + parts[i].r)*dom[dev].xl*xPer;
-        Y = parts[i].y + (parts[i].y < dom[dev].ys + parts[i].r)*dom[dev].yl*yPer;
-        Z = parts[i].z + (parts[i].z < dom[dev].zs + parts[i].r)*dom[dev].zl*zPer;
+        X = parts[i].x + (parts[i].x < dom[dev].xs + parts[i].r)*dom[dev].xl;
+        Y = parts[i].y + (parts[i].y < dom[dev].ys + parts[i].r)*dom[dev].yl;
+        Z = parts[i].z + (parts[i].z < dom[dev].zs + parts[i].r)*dom[dev].zl;
         build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
           _phase[dev], _dom[dev], X, Y, Z,
           parts[i].cage.is, parts[i].cage.ibs,
@@ -562,11 +552,11 @@ void cuda_build_cages(void)
         // WE split - ibe < ie, js < jbs, ks < kbs
         if(parts[i].cage.ibe < parts[i].cage.ie) {
           X = parts[i].x
-            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r))*xPer;
+            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r));
           Y = parts[i].y
-            + dom[dev].yl*(parts[i].y < (dom[dev].ys + parts[i].r))*yPer;
+            + dom[dev].yl*(parts[i].y < (dom[dev].ys + parts[i].r));
           Z = parts[i].z
-            + dom[dev].zl*(parts[i].z < (dom[dev].zs + parts[i].r))*zPer;
+            + dom[dev].zl*(parts[i].z < (dom[dev].zs + parts[i].r));
 
           build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
             _phase[dev], _dom[dev], X, Y, Z,
@@ -577,11 +567,11 @@ void cuda_build_cages(void)
         // SN split - is < ibs, jbe < je, ks < kbs
         if(parts[i].cage.jbe < parts[i].cage.je) {
           X = parts[i].x
-            + dom[dev].xl*(parts[i].x < (dom[dev].xs + parts[i].r))*xPer;
+            + dom[dev].xl*(parts[i].x < (dom[dev].xs + parts[i].r));
           Y = parts[i].y
-            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r))*yPer;
+            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r));
           Z = parts[i].z
-            + dom[dev].zl*(parts[i].z < (dom[dev].zs + parts[i].r))*zPer;
+            + dom[dev].zl*(parts[i].z < (dom[dev].zs + parts[i].r));
           build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
             _phase[dev], _dom[dev], X, Y, Z,
             parts[i].cage.is, parts[i].cage.ibs,
@@ -591,11 +581,11 @@ void cuda_build_cages(void)
         // BT split - is < ibs, js < jbs, kbe < ke
         if(parts[i].cage.kbe < parts[i].cage.ke) {
           X = parts[i].x
-            + dom[dev].xl*(parts[i].x < (dom[dev].xs + parts[i].r))*xPer;
+            + dom[dev].xl*(parts[i].x < (dom[dev].xs + parts[i].r));
           Y = parts[i].y
-            + dom[dev].yl*(parts[i].y < (dom[dev].ys + parts[i].r))*yPer;
+            + dom[dev].yl*(parts[i].y < (dom[dev].ys + parts[i].r));
           Z = parts[i].z
-            - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r))*zPer;
+            - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r));
           build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
             _phase[dev], _dom[dev], X, Y, Z,
             parts[i].cage.is, parts[i].cage.ibs,
@@ -606,11 +596,11 @@ void cuda_build_cages(void)
         if(parts[i].cage.ibe < parts[i].cage.ie && 
             parts[i].cage.jbe < parts[i].cage.je) {
           X = parts[i].x
-            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r))*xPer;
+            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r));
           Y = parts[i].y
-            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r))*yPer;
+            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r));
           Z = parts[i].z
-            + dom[dev].zl*(parts[i].z < (dom[dev].zs + parts[i].r))*zPer;
+            + dom[dev].zl*(parts[i].z < (dom[dev].zs + parts[i].r));
           build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
             _phase[dev], _dom[dev], X, Y, Z,
             parts[i].cage.ibe, parts[i].cage.ie,
@@ -621,11 +611,11 @@ void cuda_build_cages(void)
         if(parts[i].cage.ibe < parts[i].cage.ie && 
             parts[i].cage.kbe < parts[i].cage.ke) {
           X = parts[i].x
-            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r))*xPer;
+            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r));
           Y = parts[i].y
-            + dom[dev].yl*(parts[i].y < (dom[dev].ys + parts[i].r))*yPer;
+            + dom[dev].yl*(parts[i].y < (dom[dev].ys + parts[i].r));
           Z = parts[i].z
-            - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r))*zPer;
+           - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r));
           build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
             _phase[dev], _dom[dev], X, Y, Z,
             parts[i].cage.ibe, parts[i].cage.ie,
@@ -636,11 +626,11 @@ void cuda_build_cages(void)
         if(parts[i].cage.jbe < parts[i].cage.je && 
             parts[i].cage.kbe < parts[i].cage.ke) {
           X = parts[i].x
-            + dom[dev].xl*(parts[i].x < (dom[dev].xs + parts[i].r))*xPer;
+            + dom[dev].xl*(parts[i].x < (dom[dev].xs + parts[i].r));
           Y = parts[i].y
-            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r))*yPer;
+            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r));
           Z = parts[i].z
-            - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r))*zPer;
+            - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r));
           build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
             _phase[dev], _dom[dev], X, Y, Z,
             parts[i].cage.is, parts[i].cage.ibs,
@@ -652,11 +642,11 @@ void cuda_build_cages(void)
             parts[i].cage.jbe < parts[i].cage.je && 
             parts[i].cage.kbe < parts[i].cage.ke) {
           X = parts[i].x
-            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r))*xPer;
+            - dom[dev].xl*(parts[i].x > (dom[dev].xe - parts[i].r));
           Y = parts[i].y
-            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r))*yPer;
+            - dom[dev].yl*(parts[i].y > (dom[dev].ye - parts[i].r));
           Z = parts[i].z
-            - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r))*zPer;
+            - dom[dev].zl*(parts[i].z > (dom[dev].ze - parts[i].r));
           build_phase<<<numBlocks_3c, dimBlocks_3c>>>(i, _parts[dev],
             _phase[dev], _dom[dev], X, Y, Z,
             parts[i].cage.ibe, parts[i].cage.ie,
@@ -902,7 +892,7 @@ void cuda_part_BC(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    (cudaSetDevice(dev + dev_start));
+    checkCudaErrors(cudaSetDevice(dev + dev_start));
 
     int threads_x = MAX_THREADS_DIM;
     int threads_y = MAX_THREADS_DIM;
@@ -950,7 +940,7 @@ void cuda_part_BC_star(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    (cudaSetDevice(dev + dev_start));
+    checkCudaErrors(cudaSetDevice(dev + dev_start));
 
     int threads_x = MAX_THREADS_DIM;
     int threads_y = MAX_THREADS_DIM;
@@ -1014,34 +1004,6 @@ void cuda_part_BC_p(int dev)
     _phinm_re[dev], _phinm_im[dev], _chinm_re[dev], _chinm_im[dev]);
 }
 
-
-extern "C"
-void cuda_part_p_fill(void)
-{
-  // parallize across domains
-  #pragma omp parallel num_threads(nsubdom)
-  {
-    int dev = omp_get_thread_num();
-    (cudaSetDevice(dev + dev_start));
-
-    int threads_c = MAX_THREADS_DIM;
-    int blocks_y = 0;
-    int blocks_z = 0;
-
-    blocks_y = (int)ceil((real) dom[dev].Gcc.jn / (real) threads_c);
-    blocks_z = (int)ceil((real) dom[dev].Gcc.kn / (real) threads_c);
-
-    dim3 dimblocks_c(threads_c, threads_c);
-    dim3 numblocks_c(blocks_y, blocks_z);
-
-    part_BC_p_fill<<<numblocks_c, dimblocks_c>>>(_p[dev], _phase[dev],
-      _parts[dev], _dom[dev],
-      mu, nu, rho_f, gradP, coeff_stride,
-      _pnm_re[dev], _pnm_im[dev]);
-  }
-}
-
-
 extern "C"
 void cuda_store_coeffs(void)
 {
@@ -1049,7 +1011,7 @@ void cuda_store_coeffs(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    (cudaSetDevice(dev + dev_start));
+    checkCudaErrors(cudaSetDevice(dev + dev_start));
 
     // coeff00 & coeff ==> coeff0 (Adams-Bashforth)
     dim3 dimBlocks(coeff_stride);
@@ -1065,17 +1027,17 @@ void cuda_store_coeffs(void)
         _chinm_re[dev], _chinm_im[dev], coeff_stride);
     }
 */
-    (cudaMemcpy(_pnm_re00[dev], _pnm_re[dev],
+    checkCudaErrors(cudaMemcpy(_pnm_re00[dev], _pnm_re[dev],
       sizeof(real) * coeff_stride*nparts, cudaMemcpyDeviceToDevice));
-    (cudaMemcpy(_pnm_im00[dev], _pnm_im[dev],
+    checkCudaErrors(cudaMemcpy(_pnm_im00[dev], _pnm_im[dev],
       sizeof(real) * coeff_stride*nparts, cudaMemcpyDeviceToDevice));
-    (cudaMemcpy(_phinm_re00[dev], _phinm_re[dev],
+    checkCudaErrors(cudaMemcpy(_phinm_re00[dev], _phinm_re[dev],
       sizeof(real) * coeff_stride*nparts, cudaMemcpyDeviceToDevice));
-    (cudaMemcpy(_phinm_im00[dev], _phinm_im[dev],
+    checkCudaErrors(cudaMemcpy(_phinm_im00[dev], _phinm_im[dev],
       sizeof(real) * coeff_stride*nparts, cudaMemcpyDeviceToDevice));
-    (cudaMemcpy(_chinm_re00[dev], _chinm_re[dev],
+    checkCudaErrors(cudaMemcpy(_chinm_re00[dev], _chinm_re[dev],
       sizeof(real) * coeff_stride*nparts, cudaMemcpyDeviceToDevice));
-    (cudaMemcpy(_chinm_im00[dev], _chinm_im[dev],
+    checkCudaErrors(cudaMemcpy(_chinm_im00[dev], _chinm_im[dev],
       sizeof(real) * coeff_stride*nparts, cudaMemcpyDeviceToDevice));
   }
 }

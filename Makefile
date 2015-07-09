@@ -1,8 +1,8 @@
 ################################################################################
-################################ BLUEBOTTLE-1.0 ################################
+################################## BLUEBOTTLE ##################################
 ################################################################################
 #
-#   Copyright 2012 - 2014 Adam Sierakowski, The Johns Hopkins University
+#   Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
 # 
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ LDLIBS = -lm -L $(HDF5_DIR)/lib -L $(CGNS_DIR)/lib -lcgns -lhdf5
 
 CUDAOPT = -arch=sm_35 -Xcompiler -fopenmp -m64 -D$(PREC)
 
-CUDAINCS = -I $(CUDA_SDK_DIR)/common/inc
 CUDALIBS = -L $(CUDA_DIR)/lib64 -lcudart
 
 SRCC =	bluebottle.c	\
@@ -106,7 +105,7 @@ OBJS = $(addprefix $(SRC_DIR)/, $(addsuffix .o, $(basename $(SRCC))))
 OBJSCUDA = $(addprefix $(SRC_DIR)/, $(addsuffix .o, $(basename $(SRCCUDA))))
 
 $(OBJSCUDA):$(SRC_DIR)/%.o:$(SRC_DIR)/%.cu
-	$(NVCC) $(CUDAOPT) -dc $< $(CUDAINCS) $(LDINCS) -o $@
+	$(NVCC) $(CUDAOPT) -dc $< $(LDINCS) -o $@
 
 $(OBJS):$(SRC_DIR)/%.o:$(SRC_DIR)/%.c
 	$(MPICC) $(COPT) -c $< $(LDINCS) -o $@

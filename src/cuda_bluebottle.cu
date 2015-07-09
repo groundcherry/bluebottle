@@ -1,8 +1,8 @@
 /*******************************************************************************
- ******************************* BLUEBOTTLE-1.0 ********************************
+ ********************************* BLUEBOTTLE **********************************
  *******************************************************************************
  *
- *  Copyright 2012 - 2014 Adam Sierakowski, The Johns Hopkins University
+ *  Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@
  ******************************************************************************/
 
 #include <cuda.h>
-#include <helper_cuda.h>
 #include <thrust/device_ptr.h>
 #include <thrust/reduce.h>
 #include <thrust/functional.h>
@@ -121,136 +120,136 @@ void cuda_dom_malloc(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
-    checkCudaErrors(cudaMalloc((void**) &(_dom[dev]),
+    (cudaMalloc((void**) &(_dom[dev]),
       sizeof(dom_struct)));
     gpumem += sizeof(dom_struct);
     // copy domain info to _dom
-    checkCudaErrors(cudaMemcpy(_dom[dev], &dom[dev], sizeof(dom_struct),
+    (cudaMemcpy(_dom[dev], &dom[dev], sizeof(dom_struct),
       cudaMemcpyHostToDevice));
 
-    checkCudaErrors(cudaMalloc((void**) &(_p0[dev]),
+    (cudaMalloc((void**) &(_p0[dev]),
       sizeof(real) * dom[dev].Gcc.s3b));
     gpumem += dom[dev].Gcc.s3b * sizeof(real);
 
-    checkCudaErrors(cudaMalloc((void**) &(_p[dev]),
+    (cudaMalloc((void**) &(_p[dev]),
       sizeof(real) * dom[dev].Gcc.s3b));
     gpumem += dom[dev].Gcc.s3b * sizeof(real);
 
-    checkCudaErrors(cudaMalloc((void**) &(_phi[dev]),
+    (cudaMalloc((void**) &(_phi[dev]),
       sizeof(real) * dom[dev].Gcc.s3b));
     gpumem += dom[dev].Gcc.s3b * sizeof(real);
 
-    //checkCudaErrors(cudaMalloc((void**) &(_divU[dev]),
+    //(cudaMalloc((void**) &(_divU[dev]),
       //sizeof(real) * dom[dev].Gcc.s3b));
     //gpumem += dom[dev].Gcc.s3b * sizeof(real);
 
-    checkCudaErrors(cudaMalloc((void**) &(_u[dev]),
+    (cudaMalloc((void**) &(_u[dev]),
       sizeof(real) * dom[dev].Gfx.s3b));
     gpumem += dom[dev].Gfx.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_v[dev]),
+    (cudaMalloc((void**) &(_v[dev]),
       sizeof(real) * dom[dev].Gfy.s3b));
     gpumem += dom[dev].Gfy.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_w[dev]),
+    (cudaMalloc((void**) &(_w[dev]),
       sizeof(real) * dom[dev].Gfz.s3b));
     gpumem += dom[dev].Gfz.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_u0[dev]),
+    (cudaMalloc((void**) &(_u0[dev]),
       sizeof(real) * dom[dev].Gfx.s3b));
     gpumem += dom[dev].Gfx.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_v0[dev]),
+    (cudaMalloc((void**) &(_v0[dev]),
       sizeof(real) * dom[dev].Gfy.s3b));
     gpumem += dom[dev].Gfy.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_w0[dev]),
+    (cudaMalloc((void**) &(_w0[dev]),
       sizeof(real) * dom[dev].Gfz.s3b));
     gpumem += dom[dev].Gfz.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_f_x[dev]),
+    (cudaMalloc((void**) &(_f_x[dev]),
       sizeof(real) * dom[dev].Gfx.s3b));
     gpumem += dom[dev].Gfx.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_f_y[dev]),
+    (cudaMalloc((void**) &(_f_y[dev]),
       sizeof(real) * dom[dev].Gfy.s3b));
     gpumem += dom[dev].Gfy.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_f_z[dev]),
+    (cudaMalloc((void**) &(_f_z[dev]),
       sizeof(real) * dom[dev].Gfz.s3b));
     gpumem += dom[dev].Gfz.s3b * sizeof(real);
     
 #ifndef IMPLICIT
-    checkCudaErrors(cudaMalloc((void**) &(_diff0_u[dev]),
+    (cudaMalloc((void**) &(_diff0_u[dev]),
       sizeof(real) * dom[dev].Gfx.s3b));
     gpumem += dom[dev].Gfx.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_diff0_v[dev]),
+    (cudaMalloc((void**) &(_diff0_v[dev]),
       sizeof(real) * dom[dev].Gfy.s3b));
     gpumem += dom[dev].Gfy.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_diff0_w[dev]),
+    (cudaMalloc((void**) &(_diff0_w[dev]),
       sizeof(real) * dom[dev].Gfz.s3b));
     gpumem += dom[dev].Gfz.s3b * sizeof(real);
 #endif
-    checkCudaErrors(cudaMalloc((void**) &(_conv0_u[dev]),
+    (cudaMalloc((void**) &(_conv0_u[dev]),
       sizeof(real) * dom[dev].Gfx.s3b));
     gpumem += dom[dev].Gfx.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_conv0_v[dev]),
+    (cudaMalloc((void**) &(_conv0_v[dev]),
       sizeof(real) * dom[dev].Gfy.s3b));
     gpumem += dom[dev].Gfy.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_conv0_w[dev]),
+    (cudaMalloc((void**) &(_conv0_w[dev]),
       sizeof(real) * dom[dev].Gfz.s3b));
     gpumem += dom[dev].Gfz.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_diff_u[dev]),
+    (cudaMalloc((void**) &(_diff_u[dev]),
       sizeof(real) * dom[dev].Gfx.s3b));
     gpumem += dom[dev].Gfx.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_diff_v[dev]),
+    (cudaMalloc((void**) &(_diff_v[dev]),
       sizeof(real) * dom[dev].Gfy.s3b));
     gpumem += dom[dev].Gfy.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_diff_w[dev]),
+    (cudaMalloc((void**) &(_diff_w[dev]),
       sizeof(real) * dom[dev].Gfz.s3b));
     gpumem += dom[dev].Gfz.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_conv_u[dev]),
+    (cudaMalloc((void**) &(_conv_u[dev]),
       sizeof(real) * dom[dev].Gfx.s3b));
     gpumem += dom[dev].Gfx.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_conv_v[dev]),
+    (cudaMalloc((void**) &(_conv_v[dev]),
       sizeof(real) * dom[dev].Gfy.s3b));
     gpumem += dom[dev].Gfy.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_conv_w[dev]),
+    (cudaMalloc((void**) &(_conv_w[dev]),
       sizeof(real) * dom[dev].Gfz.s3b));
     gpumem += dom[dev].Gfz.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_u_star[dev]),
+    (cudaMalloc((void**) &(_u_star[dev]),
       sizeof(real) * dom[dev].Gfx.s3b));
     gpumem += dom[dev].Gfx.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_v_star[dev]),
+    (cudaMalloc((void**) &(_v_star[dev]),
       sizeof(real) * dom[dev].Gfy.s3b));
     gpumem += dom[dev].Gfy.s3b * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_w_star[dev]),
+    (cudaMalloc((void**) &(_w_star[dev]),
       sizeof(real) * dom[dev].Gfz.s3b));
     gpumem += dom[dev].Gfz.s3b * sizeof(real);
 
-    checkCudaErrors(cudaMalloc((void**) &(_u_WE[dev]),
+    (cudaMalloc((void**) &(_u_WE[dev]),
       sizeof(real) * dom[dev].Gfx.jnb*dom[dev].Gfx.knb));
     gpumem += dom[dev].Gfx.jnb*dom[dev].Gfx.knb * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_u_SN[dev]),
+    (cudaMalloc((void**) &(_u_SN[dev]),
       sizeof(real) * dom[dev].Gfx.inb*dom[dev].Gfx.knb));
     gpumem += dom[dev].Gfx.inb*dom[dev].Gfx.knb * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_u_BT[dev]),
+    (cudaMalloc((void**) &(_u_BT[dev]),
       sizeof(real) * dom[dev].Gfx.inb*dom[dev].Gfx.jnb));
     gpumem += dom[dev].Gfx.inb*dom[dev].Gfx.jnb * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_v_WE[dev]),
+    (cudaMalloc((void**) &(_v_WE[dev]),
       sizeof(real) * dom[dev].Gfy.jnb*dom[dev].Gfy.knb));
     gpumem += dom[dev].Gfy.jnb*dom[dev].Gfy.knb * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_v_SN[dev]),
+    (cudaMalloc((void**) &(_v_SN[dev]),
       sizeof(real) * dom[dev].Gfy.inb*dom[dev].Gfy.knb));
     gpumem += dom[dev].Gfy.inb*dom[dev].Gfy.knb * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_v_BT[dev]),
+    (cudaMalloc((void**) &(_v_BT[dev]),
       sizeof(real) * dom[dev].Gfy.inb*dom[dev].Gfy.jnb));
     gpumem += dom[dev].Gfy.inb*dom[dev].Gfy.jnb * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_w_WE[dev]),
+    (cudaMalloc((void**) &(_w_WE[dev]),
       sizeof(real) * dom[dev].Gfz.jnb*dom[dev].Gfz.knb));
     gpumem += dom[dev].Gfz.jnb*dom[dev].Gfz.knb * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_w_SN[dev]),
+    (cudaMalloc((void**) &(_w_SN[dev]),
       sizeof(real) * dom[dev].Gfz.inb*dom[dev].Gfz.knb));
     gpumem += dom[dev].Gfz.inb*dom[dev].Gfz.knb * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &(_w_BT[dev]),
+    (cudaMalloc((void**) &(_w_BT[dev]),
       sizeof(real) * dom[dev].Gfz.inb*dom[dev].Gfz.jnb));
     gpumem += dom[dev].Gfz.inb*dom[dev].Gfz.jnb * sizeof(real);
 
-    checkCudaErrors(cudaMalloc((void**) &(_rhs_p[dev]),
+    (cudaMalloc((void**) &(_rhs_p[dev]),
       sizeof(real) * (dom[dev].Gcc.s3)));
     gpumem += dom[dev].Gcc.s3 * sizeof(real);
 
@@ -271,7 +270,7 @@ void cuda_dom_push(void)
     int C, CC;            // cell references
 
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     // set up host working arrays for subdomain copy from host to device
     real *pp0 = (real*) malloc(dom[dev].Gcc.s3b * sizeof(real));
@@ -408,57 +407,57 @@ void cuda_dom_push(void)
     }
 
     // copy from host to device
-    checkCudaErrors(cudaMemcpy(_p0[dev], pp0, sizeof(real) * dom[dev].Gcc.s3b,
+    (cudaMemcpy(_p0[dev], pp0, sizeof(real) * dom[dev].Gcc.s3b,
       cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_p[dev], pp, sizeof(real) * dom[dev].Gcc.s3b,
+    (cudaMemcpy(_p[dev], pp, sizeof(real) * dom[dev].Gcc.s3b,
       cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_phi[dev], pphi, sizeof(real) * dom[dev].Gcc.s3b,
+    (cudaMemcpy(_phi[dev], pphi, sizeof(real) * dom[dev].Gcc.s3b,
       cudaMemcpyHostToDevice));
-    //checkCudaErrors(cudaMemcpy(_divU[dev], pdivU, sizeof(real) * dom[dev].Gcc.s3b,
+    //(cudaMemcpy(_divU[dev], pdivU, sizeof(real) * dom[dev].Gcc.s3b,
       //cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_u[dev], uu, sizeof(real) * dom[dev].Gfx.s3b,
+    (cudaMemcpy(_u[dev], uu, sizeof(real) * dom[dev].Gfx.s3b,
       cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_v[dev], vv, sizeof(real) * dom[dev].Gfy.s3b,
+    (cudaMemcpy(_v[dev], vv, sizeof(real) * dom[dev].Gfy.s3b,
       cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_w[dev], ww, sizeof(real) * dom[dev].Gfz.s3b,
+    (cudaMemcpy(_w[dev], ww, sizeof(real) * dom[dev].Gfz.s3b,
       cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_u0[dev], uu0, sizeof(real) * dom[dev].Gfx.s3b,
+    (cudaMemcpy(_u0[dev], uu0, sizeof(real) * dom[dev].Gfx.s3b,
       cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_v0[dev], vv0, sizeof(real) * dom[dev].Gfy.s3b,
+    (cudaMemcpy(_v0[dev], vv0, sizeof(real) * dom[dev].Gfy.s3b,
       cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_w0[dev], ww0, sizeof(real) * dom[dev].Gfz.s3b,
+    (cudaMemcpy(_w0[dev], ww0, sizeof(real) * dom[dev].Gfz.s3b,
       cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_u_star[dev], uu_star,
+    (cudaMemcpy(_u_star[dev], uu_star,
       sizeof(real) * dom[dev].Gfx.s3b, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_v_star[dev], vv_star,
+    (cudaMemcpy(_v_star[dev], vv_star,
       sizeof(real) * dom[dev].Gfy.s3b, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_w_star[dev], ww_star,
+    (cudaMemcpy(_w_star[dev], ww_star,
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyHostToDevice));
 #ifndef IMPLICIT
-    checkCudaErrors(cudaMemcpy(_diff0_u[dev], diff0_uu,
+    (cudaMemcpy(_diff0_u[dev], diff0_uu,
       sizeof(real) * dom[dev].Gfx.s3b, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_diff0_v[dev], diff0_vv,
+    (cudaMemcpy(_diff0_v[dev], diff0_vv,
       sizeof(real) * dom[dev].Gfy.s3b, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_diff0_w[dev], diff0_ww,
+    (cudaMemcpy(_diff0_w[dev], diff0_ww,
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyHostToDevice));
 #endif
-    checkCudaErrors(cudaMemcpy(_conv0_u[dev], conv0_uu,
+    (cudaMemcpy(_conv0_u[dev], conv0_uu,
       sizeof(real) * dom[dev].Gfx.s3b, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_conv0_v[dev], conv0_vv,
+    (cudaMemcpy(_conv0_v[dev], conv0_vv,
       sizeof(real) * dom[dev].Gfy.s3b, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_conv0_w[dev], conv0_ww,
+    (cudaMemcpy(_conv0_w[dev], conv0_ww,
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_diff_u[dev], diff_uu,
+    (cudaMemcpy(_diff_u[dev], diff_uu,
       sizeof(real) * dom[dev].Gfx.s3b, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_diff_v[dev], diff_vv,
+    (cudaMemcpy(_diff_v[dev], diff_vv,
       sizeof(real) * dom[dev].Gfy.s3b, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_diff_w[dev], diff_ww,
+    (cudaMemcpy(_diff_w[dev], diff_ww,
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_conv_u[dev], conv_uu,
+    (cudaMemcpy(_conv_u[dev], conv_uu,
       sizeof(real) * dom[dev].Gfx.s3b, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_conv_v[dev], conv_vv,
+    (cudaMemcpy(_conv_v[dev], conv_vv,
       sizeof(real) * dom[dev].Gfy.s3b, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_conv_w[dev], conv_ww,
+    (cudaMemcpy(_conv_w[dev], conv_ww,
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyHostToDevice));
 
     // free host subdomain working arrays
@@ -503,7 +502,7 @@ void cuda_dom_turb_planes_push(int *bc_configs)
     int C, CC;      // cell references
 
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     if(bc_configs[ 0] == PRECURSOR || bc_configs[ 1] == PRECURSOR) {
       // working array
@@ -523,7 +522,7 @@ void cuda_dom_turb_planes_push(int *bc_configs)
       }
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(_u_WE[dev], uu_WE, sizeof(real)
+      (cudaMemcpy(_u_WE[dev], uu_WE, sizeof(real)
         * dom[dev].Gfx.jnb*dom[dev].Gfx.knb, cudaMemcpyHostToDevice));
 
       // clean up
@@ -547,7 +546,7 @@ void cuda_dom_turb_planes_push(int *bc_configs)
       }
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(_u_SN[dev], uu_SN, sizeof(real)
+      (cudaMemcpy(_u_SN[dev], uu_SN, sizeof(real)
         * dom[dev].Gfx.inb*dom[dev].Gfx.knb, cudaMemcpyHostToDevice));
 
       // clean up
@@ -571,7 +570,7 @@ void cuda_dom_turb_planes_push(int *bc_configs)
       }
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(_u_BT[dev], uu_BT, sizeof(real)
+      (cudaMemcpy(_u_BT[dev], uu_BT, sizeof(real)
         * dom[dev].Gfx.inb*dom[dev].Gfx.jnb, cudaMemcpyHostToDevice));
 
       // clean up
@@ -596,7 +595,7 @@ void cuda_dom_turb_planes_push(int *bc_configs)
       }
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(_v_WE[dev], vv_WE, sizeof(real)
+      (cudaMemcpy(_v_WE[dev], vv_WE, sizeof(real)
         * dom[dev].Gfy.jnb*dom[dev].Gfy.knb, cudaMemcpyHostToDevice));
 
       // clean up
@@ -620,7 +619,7 @@ void cuda_dom_turb_planes_push(int *bc_configs)
       }
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(_v_SN[dev], vv_SN, sizeof(real)
+      (cudaMemcpy(_v_SN[dev], vv_SN, sizeof(real)
         * dom[dev].Gfy.inb*dom[dev].Gfy.knb, cudaMemcpyHostToDevice));
 
       // clean up
@@ -644,7 +643,7 @@ void cuda_dom_turb_planes_push(int *bc_configs)
       }
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(_v_BT[dev], vv_BT, sizeof(real)
+      (cudaMemcpy(_v_BT[dev], vv_BT, sizeof(real)
         * dom[dev].Gfy.inb*dom[dev].Gfy.jnb, cudaMemcpyHostToDevice));
 
       // clean up
@@ -669,7 +668,7 @@ void cuda_dom_turb_planes_push(int *bc_configs)
       }
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(_w_WE[dev], ww_WE, sizeof(real)
+      (cudaMemcpy(_w_WE[dev], ww_WE, sizeof(real)
         * dom[dev].Gfz.jnb*dom[dev].Gfz.knb, cudaMemcpyHostToDevice));
 
       // clean up
@@ -693,7 +692,7 @@ void cuda_dom_turb_planes_push(int *bc_configs)
       }
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(_w_SN[dev], ww_SN, sizeof(real)
+      (cudaMemcpy(_w_SN[dev], ww_SN, sizeof(real)
         * dom[dev].Gfz.inb*dom[dev].Gfz.knb, cudaMemcpyHostToDevice));
 
       // clean up
@@ -717,7 +716,7 @@ void cuda_dom_turb_planes_push(int *bc_configs)
       }
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(_w_BT[dev], ww_BT, sizeof(real)
+      (cudaMemcpy(_w_BT[dev], ww_BT, sizeof(real)
         * dom[dev].Gfz.inb*dom[dev].Gfz.jnb, cudaMemcpyHostToDevice));
 
       // clean up
@@ -738,7 +737,7 @@ void cuda_dom_pull(void)
     int C, CC;            // cell references
 
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     // host working arrays for subdomain copy from device to host
     real *pp0 = (real*) malloc(dom[dev].Gcc.s3b * sizeof(real));
@@ -785,51 +784,51 @@ void cuda_dom_pull(void)
     real *convww = (real*) malloc(dom[dev].Gfz.s3b * sizeof(real));
 
     // copy from device to host
-    checkCudaErrors(cudaMemcpy(pp0, _p0[dev], sizeof(real) * dom[dev].Gcc.s3b,
+    (cudaMemcpy(pp0, _p0[dev], sizeof(real) * dom[dev].Gcc.s3b,
       cudaMemcpyDeviceToHost)); 
-    checkCudaErrors(cudaMemcpy(pp, _p[dev], sizeof(real) * dom[dev].Gcc.s3b,
+    (cudaMemcpy(pp, _p[dev], sizeof(real) * dom[dev].Gcc.s3b,
       cudaMemcpyDeviceToHost)); 
-    checkCudaErrors(cudaMemcpy(pphi, _phi[dev], sizeof(real) * dom[dev].Gcc.s3b,
+    (cudaMemcpy(pphi, _phi[dev], sizeof(real) * dom[dev].Gcc.s3b,
       cudaMemcpyDeviceToHost)); 
-    //checkCudaErrors(cudaMemcpy(pdivU , _divU [dev],
+    //(cudaMemcpy(pdivU , _divU [dev],
       //sizeof(real) * dom[dev].Gcc.s3b, cudaMemcpyDeviceToHost)); 
-    checkCudaErrors(cudaMemcpy(uu, _u[dev], sizeof(real) * dom[dev].Gfx.s3b,
+    (cudaMemcpy(uu, _u[dev], sizeof(real) * dom[dev].Gfx.s3b,
       cudaMemcpyDeviceToHost)); 
-    checkCudaErrors(cudaMemcpy(vv, _v[dev], sizeof(real) * dom[dev].Gfy.s3b,
+    (cudaMemcpy(vv, _v[dev], sizeof(real) * dom[dev].Gfy.s3b,
       cudaMemcpyDeviceToHost)); 
-    checkCudaErrors(cudaMemcpy(ww, _w[dev], sizeof(real) * dom[dev].Gfz.s3b,
+    (cudaMemcpy(ww, _w[dev], sizeof(real) * dom[dev].Gfz.s3b,
       cudaMemcpyDeviceToHost)); 
-    checkCudaErrors(cudaMemcpy(uu0, _u0[dev], sizeof(real) * dom[dev].Gfx.s3b,
+    (cudaMemcpy(uu0, _u0[dev], sizeof(real) * dom[dev].Gfx.s3b,
       cudaMemcpyDeviceToHost)); 
-    checkCudaErrors(cudaMemcpy(vv0, _v0[dev], sizeof(real) * dom[dev].Gfy.s3b,
+    (cudaMemcpy(vv0, _v0[dev], sizeof(real) * dom[dev].Gfy.s3b,
       cudaMemcpyDeviceToHost)); 
-    checkCudaErrors(cudaMemcpy(ww0, _w0[dev], sizeof(real) * dom[dev].Gfz.s3b,
+    (cudaMemcpy(ww0, _w0[dev], sizeof(real) * dom[dev].Gfz.s3b,
       cudaMemcpyDeviceToHost)); 
 #ifndef IMPLICIT
-    checkCudaErrors(cudaMemcpy(diffuu0, _diff0_u[dev],
+    (cudaMemcpy(diffuu0, _diff0_u[dev],
       sizeof(real) * dom[dev].Gfx.s3b, cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(diffvv0, _diff0_v[dev],
+    (cudaMemcpy(diffvv0, _diff0_v[dev],
       sizeof(real) * dom[dev].Gfy.s3b, cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(diffww0, _diff0_w[dev],
+    (cudaMemcpy(diffww0, _diff0_w[dev],
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyDeviceToHost));
 #endif
-    checkCudaErrors(cudaMemcpy(convuu0, _conv0_u[dev],
+    (cudaMemcpy(convuu0, _conv0_u[dev],
       sizeof(real) * dom[dev].Gfx.s3b, cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(convvv0, _conv0_v[dev],
+    (cudaMemcpy(convvv0, _conv0_v[dev],
       sizeof(real) * dom[dev].Gfy.s3b, cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(convww0, _conv0_w[dev],
+    (cudaMemcpy(convww0, _conv0_w[dev],
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(diffuu, _diff_u[dev],
+    (cudaMemcpy(diffuu, _diff_u[dev],
       sizeof(real) * dom[dev].Gfx.s3b, cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(diffvv, _diff_v[dev],
+    (cudaMemcpy(diffvv, _diff_v[dev],
       sizeof(real) * dom[dev].Gfy.s3b, cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(diffww, _diff_w[dev],
+    (cudaMemcpy(diffww, _diff_w[dev],
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(convuu, _conv_u[dev],
+    (cudaMemcpy(convuu, _conv_u[dev],
       sizeof(real) * dom[dev].Gfx.s3b, cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(convvv, _conv_v[dev],
+    (cudaMemcpy(convvv, _conv_v[dev],
       sizeof(real) * dom[dev].Gfy.s3b, cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(convww, _conv_w[dev],
+    (cudaMemcpy(convww, _conv_w[dev],
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyDeviceToHost));
 
     real *uu_star = (real*) malloc(dom[dev].Gfx.s3b * sizeof(real));
@@ -838,11 +837,11 @@ void cuda_dom_pull(void)
     // cpumem += dom[dev].Gfy.s3b * sizeof(real);
     real *ww_star = (real*) malloc(dom[dev].Gfz.s3b * sizeof(real));
     // cpumem += dom[dev].Gfz.s3b * sizeof(real);
-    checkCudaErrors(cudaMemcpy(uu_star, _u_star[dev],
+    (cudaMemcpy(uu_star, _u_star[dev],
       sizeof(real) * dom[dev].Gfx.s3b, cudaMemcpyDeviceToHost)); 
-    checkCudaErrors(cudaMemcpy(vv_star, _v_star[dev],
+    (cudaMemcpy(vv_star, _v_star[dev],
       sizeof(real) * dom[dev].Gfy.s3b, cudaMemcpyDeviceToHost)); 
-    checkCudaErrors(cudaMemcpy(ww_star, _w_star[dev],
+    (cudaMemcpy(ww_star, _w_star[dev],
       sizeof(real) * dom[dev].Gfz.s3b, cudaMemcpyDeviceToHost)); 
 
 #ifdef DEBUG // run test code
@@ -1142,7 +1141,7 @@ void cuda_dom_turb_planes_pull(int *bc_configs)
     int C, CC;      // cell references
 
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     if(bc_configs[ 0] == PRECURSOR || bc_configs[ 1] == PRECURSOR) {
       // working array
@@ -1150,7 +1149,7 @@ void cuda_dom_turb_planes_pull(int *bc_configs)
         * sizeof(real));
 
       // copy from device to host
-      checkCudaErrors(cudaMemcpy(uu_WE, _u_WE[dev], sizeof(real)
+      (cudaMemcpy(uu_WE, _u_WE[dev], sizeof(real)
         * dom[dev].Gfx.jnb*dom[dev].Gfx.knb, cudaMemcpyDeviceToHost));
 
       // select appropriate subdomain
@@ -1174,7 +1173,7 @@ void cuda_dom_turb_planes_pull(int *bc_configs)
         * sizeof(real));
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(uu_SN, _u_SN[dev], sizeof(real)
+      (cudaMemcpy(uu_SN, _u_SN[dev], sizeof(real)
         * dom[dev].Gfx.inb*dom[dev].Gfx.knb, cudaMemcpyDeviceToHost));
 
       // select appropriate subdomain
@@ -1198,7 +1197,7 @@ void cuda_dom_turb_planes_pull(int *bc_configs)
         * sizeof(real));
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(uu_BT, _u_BT[dev], sizeof(real)
+      (cudaMemcpy(uu_BT, _u_BT[dev], sizeof(real)
         * dom[dev].Gfx.inb*dom[dev].Gfx.jnb, cudaMemcpyDeviceToHost));
 
       // select appropriate subdomain
@@ -1223,7 +1222,7 @@ void cuda_dom_turb_planes_pull(int *bc_configs)
         * sizeof(real));
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(vv_WE, _v_WE[dev], sizeof(real)
+      (cudaMemcpy(vv_WE, _v_WE[dev], sizeof(real)
         * dom[dev].Gfy.jnb*dom[dev].Gfy.knb, cudaMemcpyDeviceToHost));
 
       // select appropriate subdomain
@@ -1247,7 +1246,7 @@ void cuda_dom_turb_planes_pull(int *bc_configs)
         * sizeof(real));
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(vv_SN, _v_SN[dev], sizeof(real)
+      (cudaMemcpy(vv_SN, _v_SN[dev], sizeof(real)
         * dom[dev].Gfy.inb*dom[dev].Gfy.knb, cudaMemcpyDeviceToHost));
 
       // select appropriate subdomain
@@ -1271,7 +1270,7 @@ void cuda_dom_turb_planes_pull(int *bc_configs)
         * sizeof(real));
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(vv_BT, _v_BT[dev], sizeof(real)
+      (cudaMemcpy(vv_BT, _v_BT[dev], sizeof(real)
         * dom[dev].Gfy.inb*dom[dev].Gfy.jnb, cudaMemcpyDeviceToHost));
 
       // select appropriate subdomain
@@ -1296,7 +1295,7 @@ void cuda_dom_turb_planes_pull(int *bc_configs)
         * sizeof(real));
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(ww_WE, _w_WE[dev], sizeof(real)
+      (cudaMemcpy(ww_WE, _w_WE[dev], sizeof(real)
         * dom[dev].Gfz.jnb*dom[dev].Gfz.knb, cudaMemcpyDeviceToHost));
 
       // select appropriate subdomain
@@ -1320,7 +1319,7 @@ void cuda_dom_turb_planes_pull(int *bc_configs)
         * sizeof(real));
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(ww_SN, _w_SN[dev], sizeof(real)
+      (cudaMemcpy(ww_SN, _w_SN[dev], sizeof(real)
         * dom[dev].Gfz.inb*dom[dev].Gfz.knb, cudaMemcpyDeviceToHost));
 
       // select appropriate subdomain
@@ -1344,7 +1343,7 @@ void cuda_dom_turb_planes_pull(int *bc_configs)
         * sizeof(real));
 
       // copy from host to device
-      checkCudaErrors(cudaMemcpy(ww_BT, _w_BT[dev], sizeof(real)
+      (cudaMemcpy(ww_BT, _w_BT[dev], sizeof(real)
         * dom[dev].Gfz.inb*dom[dev].Gfz.jnb, cudaMemcpyDeviceToHost));
 
       // select appropriate subdomain
@@ -1372,49 +1371,49 @@ void cuda_dom_free(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
-    checkCudaErrors(cudaFree(_dom[dev]));
-    checkCudaErrors(cudaFree(_p0[dev]));
-    checkCudaErrors(cudaFree(_p[dev]));
-    checkCudaErrors(cudaFree(_phi[dev]));
-    //checkCudaErrors(cudaFree(_divU[dev]));
-    checkCudaErrors(cudaFree(_u[dev]));
-    checkCudaErrors(cudaFree(_v[dev]));
-    checkCudaErrors(cudaFree(_w[dev]));
-    checkCudaErrors(cudaFree(_u0[dev]));
-    checkCudaErrors(cudaFree(_v0[dev]));
-    checkCudaErrors(cudaFree(_w0[dev]));
-    checkCudaErrors(cudaFree(_f_x[dev]));
-    checkCudaErrors(cudaFree(_f_y[dev]));
-    checkCudaErrors(cudaFree(_f_z[dev]));
+    (cudaFree(_dom[dev]));
+    (cudaFree(_p0[dev]));
+    (cudaFree(_p[dev]));
+    (cudaFree(_phi[dev]));
+    //(cudaFree(_divU[dev]));
+    (cudaFree(_u[dev]));
+    (cudaFree(_v[dev]));
+    (cudaFree(_w[dev]));
+    (cudaFree(_u0[dev]));
+    (cudaFree(_v0[dev]));
+    (cudaFree(_w0[dev]));
+    (cudaFree(_f_x[dev]));
+    (cudaFree(_f_y[dev]));
+    (cudaFree(_f_z[dev]));
 #ifndef IMPLICIT
-    checkCudaErrors(cudaFree(_diff0_u[dev]));
-    checkCudaErrors(cudaFree(_diff0_v[dev]));
-    checkCudaErrors(cudaFree(_diff0_w[dev]));
+    (cudaFree(_diff0_u[dev]));
+    (cudaFree(_diff0_v[dev]));
+    (cudaFree(_diff0_w[dev]));
 #endif
-    checkCudaErrors(cudaFree(_conv0_u[dev]));
-    checkCudaErrors(cudaFree(_conv0_v[dev]));
-    checkCudaErrors(cudaFree(_conv0_w[dev]));
-    checkCudaErrors(cudaFree(_diff_u[dev]));
-    checkCudaErrors(cudaFree(_diff_v[dev]));
-    checkCudaErrors(cudaFree(_diff_w[dev]));
-    checkCudaErrors(cudaFree(_conv_u[dev]));
-    checkCudaErrors(cudaFree(_conv_v[dev]));
-    checkCudaErrors(cudaFree(_conv_w[dev]));
-    checkCudaErrors(cudaFree(_u_star[dev]));
-    checkCudaErrors(cudaFree(_v_star[dev]));
-    checkCudaErrors(cudaFree(_w_star[dev]));
-    checkCudaErrors(cudaFree(_u_WE[dev]));
-    checkCudaErrors(cudaFree(_u_SN[dev]));
-    checkCudaErrors(cudaFree(_u_BT[dev]));
-    checkCudaErrors(cudaFree(_v_WE[dev]));
-    checkCudaErrors(cudaFree(_v_SN[dev]));
-    checkCudaErrors(cudaFree(_v_BT[dev]));
-    checkCudaErrors(cudaFree(_w_WE[dev]));
-    checkCudaErrors(cudaFree(_w_SN[dev]));
-    checkCudaErrors(cudaFree(_w_BT[dev]));
-    checkCudaErrors(cudaFree(_rhs_p[dev]));
+    (cudaFree(_conv0_u[dev]));
+    (cudaFree(_conv0_v[dev]));
+    (cudaFree(_conv0_w[dev]));
+    (cudaFree(_diff_u[dev]));
+    (cudaFree(_diff_v[dev]));
+    (cudaFree(_diff_w[dev]));
+    (cudaFree(_conv_u[dev]));
+    (cudaFree(_conv_v[dev]));
+    (cudaFree(_conv_w[dev]));
+    (cudaFree(_u_star[dev]));
+    (cudaFree(_v_star[dev]));
+    (cudaFree(_w_star[dev]));
+    (cudaFree(_u_WE[dev]));
+    (cudaFree(_u_SN[dev]));
+    (cudaFree(_u_BT[dev]));
+    (cudaFree(_v_WE[dev]));
+    (cudaFree(_v_SN[dev]));
+    (cudaFree(_v_BT[dev]));
+    (cudaFree(_w_WE[dev]));
+    (cudaFree(_w_SN[dev]));
+    (cudaFree(_w_BT[dev]));
+    (cudaFree(_rhs_p[dev]));
   }
 
   // free device memory on host
@@ -1468,7 +1467,7 @@ void cuda_dom_BC(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     int threads_x = 0;
     int threads_y = 0;
@@ -2221,7 +2220,7 @@ void cuda_dom_BC_star(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     int threads_x = 0;
     int threads_y = 0;
@@ -2949,7 +2948,7 @@ void cuda_dom_BC_phi(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     int threads_x = 0;
     int threads_y = 0;
@@ -3145,7 +3144,7 @@ void cuda_dom_BC_p(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     int threads_x = 0;
     int threads_y = 0;
@@ -3423,7 +3422,7 @@ real cuda_find_dt(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     // search
     real u_max = find_max_mag(dom[dev].Gfx.s3b, _u[dev]);
@@ -3490,31 +3489,31 @@ void cuda_store_u(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
-    checkCudaErrors(cudaMemcpy(_conv0_u[dev], _conv_u[dev],
+    (cudaMemcpy(_conv0_u[dev], _conv_u[dev],
       dom[dev].Gfx.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
-    checkCudaErrors(cudaMemcpy(_conv0_v[dev], _conv_v[dev],
+    (cudaMemcpy(_conv0_v[dev], _conv_v[dev],
       dom[dev].Gfy.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
-    checkCudaErrors(cudaMemcpy(_conv0_w[dev], _conv_w[dev],
+    (cudaMemcpy(_conv0_w[dev], _conv_w[dev],
       dom[dev].Gfz.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
 #ifndef IMPLICIT
-    checkCudaErrors(cudaMemcpy(_diff0_u[dev], _diff_u[dev],
+    (cudaMemcpy(_diff0_u[dev], _diff_u[dev],
       dom[dev].Gfx.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
-    checkCudaErrors(cudaMemcpy(_diff0_v[dev], _diff_v[dev],
+    (cudaMemcpy(_diff0_v[dev], _diff_v[dev],
       dom[dev].Gfy.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
-    checkCudaErrors(cudaMemcpy(_diff0_w[dev], _diff_w[dev],
+    (cudaMemcpy(_diff0_w[dev], _diff_w[dev],
       dom[dev].Gfz.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
 #endif
 
-    checkCudaErrors(cudaMemcpy(_p0[dev], _p[dev],
+    (cudaMemcpy(_p0[dev], _p[dev],
       dom[dev].Gcc.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
 
-    checkCudaErrors(cudaMemcpy(_u0[dev], _u[dev],
+    (cudaMemcpy(_u0[dev], _u[dev],
       dom[dev].Gfx.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
-    checkCudaErrors(cudaMemcpy(_v0[dev], _v[dev],
+    (cudaMemcpy(_v0[dev], _v[dev],
       dom[dev].Gfy.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
-    checkCudaErrors(cudaMemcpy(_w0[dev], _w[dev],
+    (cudaMemcpy(_w0[dev], _w[dev],
       dom[dev].Gfz.s3b*sizeof(real), cudaMemcpyDeviceToDevice));
   }
 }
@@ -3552,7 +3551,7 @@ void cuda_update_p()
 
     // create temporary working array
     real *_Lp;
-    checkCudaErrors(cudaMalloc((void**) &_Lp,
+    (cudaMalloc((void**) &_Lp,
       sizeof(real)*dom[dev].Gcc.s3b));
 
     update_p_laplacian<<<numBlocks_p, dimBlocks_p>>>(_Lp, _phi[dev], _dom[dev]);
@@ -3561,7 +3560,7 @@ void cuda_update_p()
       _dom[dev], nu, dt, _phase[dev]);
 
     // clean up temporary array
-    checkCudaErrors(cudaFree(_Lp));
+    (cudaFree(_Lp));
   }
 }
 
@@ -3573,7 +3572,7 @@ void cuda_compute_forcing(real *pid_int, real *pid_back, real Kp, real Ki,
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     int threads_x = 0;
     int threads_y = 0;
@@ -3715,7 +3714,7 @@ void cuda_compute_turb_forcing(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     int threads_x = 0;
     int threads_y = 0;
@@ -3787,9 +3786,9 @@ void cuda_compute_turb_forcing(void)
     real *_u_co;  // colocated u-velocity workspace
     real *_v_co;  // colocated v-velocity workspace
     real *_w_co;  // colocated w-velocity workspace
-    checkCudaErrors(cudaMalloc((void**) &_u_co, sizeof(real)*dom[dev].Gcc.s3));
-    checkCudaErrors(cudaMalloc((void**) &_v_co, sizeof(real)*dom[dev].Gcc.s3));
-    checkCudaErrors(cudaMalloc((void**) &_w_co, sizeof(real)*dom[dev].Gcc.s3));
+    (cudaMalloc((void**) &_u_co, sizeof(real)*dom[dev].Gcc.s3));
+    (cudaMalloc((void**) &_v_co, sizeof(real)*dom[dev].Gcc.s3));
+    (cudaMalloc((void**) &_w_co, sizeof(real)*dom[dev].Gcc.s3));
 
     // colocate the velocity variables for computation
     cuda_colocate_Gfx(_u[dev], _u_co, _dom[dev]);
@@ -3801,9 +3800,9 @@ void cuda_compute_turb_forcing(void)
     real wmean = avg_entries(dom[dev].Gcc.s3, _w_co);
 
     // clean up workspace
-    checkCudaErrors(cudaFree(_u_co));
-    checkCudaErrors(cudaFree(_v_co));
-    checkCudaErrors(cudaFree(_w_co));
+    (cudaFree(_u_co));
+    (cudaFree(_v_co));
+    (cudaFree(_w_co));
 
     // now add in the forcing
     // add in U then remove the mean to apply the perturbation forcing
@@ -3833,15 +3832,15 @@ real cuda_compute_energy(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     // create temporary workspace
     real *_u_co;  // colocated u-velocity workspace
     real *_v_co;  // colocated v-velocity workspace
     real *_w_co;  // colocated w-velocity workspace
-    checkCudaErrors(cudaMalloc((void**) &_u_co, sizeof(real)*dom[dev].Gcc.s3));
-    checkCudaErrors(cudaMalloc((void**) &_v_co, sizeof(real)*dom[dev].Gcc.s3));
-    checkCudaErrors(cudaMalloc((void**) &_w_co, sizeof(real)*dom[dev].Gcc.s3));
+    (cudaMalloc((void**) &_u_co, sizeof(real)*dom[dev].Gcc.s3));
+    (cudaMalloc((void**) &_v_co, sizeof(real)*dom[dev].Gcc.s3));
+    (cudaMalloc((void**) &_w_co, sizeof(real)*dom[dev].Gcc.s3));
 
     // colocate the velocity variables for computation
     cuda_colocate_Gfx(_u[dev], _u_co, _dom[dev]);
@@ -3879,9 +3878,9 @@ real cuda_compute_energy(void)
     k_dom[dev] = 0.5 * avg_entries(dom[dev].Gcc.s3, _u_co);
 
     // clean up workspace
-    checkCudaErrors(cudaFree(_u_co));
-    checkCudaErrors(cudaFree(_v_co));
-    checkCudaErrors(cudaFree(_w_co));
+    (cudaFree(_u_co));
+    (cudaFree(_v_co));
+    (cudaFree(_w_co));
   }
 
   // TODO: rework for multi-gpu. For now, just use the only value we have
@@ -3900,7 +3899,7 @@ void cuda_colocate_Gfx(real *_u, real *_u_co, dom_struct *_dom)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     int threads_y = 0;
     int threads_z = 0;
@@ -3934,7 +3933,7 @@ void cuda_colocate_Gfy(real *_v, real *_v_co, dom_struct *_dom)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     int threads_z = 0;
     int threads_x = 0;
@@ -3968,7 +3967,7 @@ void cuda_colocate_Gfz(real *_w, real *_w_co, dom_struct *_dom)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     int threads_x = 0;
     int threads_y = 0;
@@ -4003,7 +4002,7 @@ void cuda_solvability(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     int Nx = dom[dev].Gcc.jn * dom[dev].Gcc.kn;
     int Ny = dom[dev].Gcc.in * dom[dev].Gcc.kn;
@@ -4074,11 +4073,11 @@ void cuda_solvability(void)
     real *u_star_red;
     real *v_star_red;
     real *w_star_red;
-    checkCudaErrors(cudaMalloc((void**) &u_star_red, sizeof(real) * 2 * Nx));
+    (cudaMalloc((void**) &u_star_red, sizeof(real) * 2 * Nx));
     gpumem += sizeof(real) * 2 * Nx;
-    checkCudaErrors(cudaMalloc((void**) &v_star_red, sizeof(real) * 2 * Ny));
+    (cudaMalloc((void**) &v_star_red, sizeof(real) * 2 * Ny));
     gpumem += sizeof(real) * 2 * Ny;
-    checkCudaErrors(cudaMalloc((void**) &w_star_red, sizeof(real) * 2 * Nz));
+    (cudaMalloc((void**) &w_star_red, sizeof(real) * 2 * Nz));
     gpumem += sizeof(real) * 2 * Nz;
 
     // calculate x-face surface integrals
@@ -4176,9 +4175,9 @@ void cuda_solvability(void)
     }
 
     // clean up
-    checkCudaErrors(cudaFree(u_star_red));
-    checkCudaErrors(cudaFree(v_star_red));
-    checkCudaErrors(cudaFree(w_star_red));
+    (cudaFree(u_star_red));
+    (cudaFree(v_star_red));
+    (cudaFree(w_star_red));
   }
 }
 
@@ -4189,7 +4188,7 @@ void cuda_move_parts_sub()
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     int threads = MAX_THREADS_1D;
     int blocks = (int)ceil((real) nparts / (real) threads);
@@ -4233,8 +4232,8 @@ void cuda_move_parts_sub()
         /* go to each particle and find its bin */
         int *_partInd;
         int *_partBin;
-        checkCudaErrors(cudaMalloc((void**) &_partInd, nparts*sizeof(int)));
-        checkCudaErrors(cudaMalloc((void**) &_partBin, nparts*sizeof(int)));
+        (cudaMalloc((void**) &_partInd, nparts*sizeof(int)));
+        (cudaMalloc((void**) &_partBin, nparts*sizeof(int)));
         gpumem += nparts*sizeof(int);
         gpumem += nparts*sizeof(int);
         bin_fill<<<numBlocks, dimBlocks>>>(_partInd, _partBin, nparts,
@@ -4250,8 +4249,8 @@ void cuda_move_parts_sub()
         /* calculate start and end index of each bin */
         int *_binStart;
         int *_binEnd;
-        checkCudaErrors(cudaMalloc((void**) &_binStart, nBins*sizeof(int)));
-        checkCudaErrors(cudaMalloc((void**) &_binEnd, nBins*sizeof(int)));
+        (cudaMalloc((void**) &_binStart, nBins*sizeof(int)));
+        (cudaMalloc((void**) &_binEnd, nBins*sizeof(int)));
         init<<<numBlocks_nb, dimBlocks_nb>>>(_binStart, nBins, -1);
         init<<<numBlocks_nb, dimBlocks_nb>>>(_binEnd, nBins, -1);
         gpumem += nBins*sizeof(int);
@@ -4263,7 +4262,7 @@ void cuda_move_parts_sub()
 
         /* count the number of particles in each bin */
         //int *_binCount;
-        //checkCudaErrors(cudaMalloc((void**) &_binCount, nBins*sizeof(int)));
+        //(cudaMalloc((void**) &_binCount, nBins*sizeof(int)));
         //init<<<numBlocks_nb, dimBlocks_nb>>>(_binCount, nBins, 0);
         //gpumem += nBins*sizeof(int);
         //bin_partCount<<<dimBlocks_nb, numBlocks_nb>>>(_binCount,_binStart,
@@ -4291,11 +4290,11 @@ void cuda_move_parts_sub()
           nparts, bc, eps, mu, rho_f, nu, interactionLength, dt);
 
         // free variables
-        checkCudaErrors(cudaFree(_partInd));
-        checkCudaErrors(cudaFree(_partBin));
-        //checkCudaErrors(cudaFree(_binCount));
-        checkCudaErrors(cudaFree(_binStart));
-        checkCudaErrors(cudaFree(_binEnd));
+        (cudaFree(_partInd));
+        (cudaFree(_partBin));
+        //(cudaFree(_binCount));
+        (cudaFree(_binStart));
+        (cudaFree(_binEnd));
       }
     }
   }
@@ -4307,7 +4306,7 @@ void cuda_move_parts()
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     int threads = MAX_THREADS_1D;
     int blocks = (int)ceil((real) nparts / (real) threads);
@@ -4351,8 +4350,8 @@ void cuda_move_parts()
         /* go to each particle and find its bin */
         int *_partInd;
         int *_partBin;
-        checkCudaErrors(cudaMalloc((void**) &_partInd, nparts*sizeof(int)));
-        checkCudaErrors(cudaMalloc((void**) &_partBin, nparts*sizeof(int)));
+        (cudaMalloc((void**) &_partInd, nparts*sizeof(int)));
+        (cudaMalloc((void**) &_partBin, nparts*sizeof(int)));
         gpumem += nparts*sizeof(int);
         gpumem += nparts*sizeof(int);
         bin_fill<<<numBlocks, dimBlocks>>>(_partInd, _partBin, nparts,
@@ -4368,8 +4367,8 @@ void cuda_move_parts()
         /* calculate start and end index of each bin */
         int *_binStart;
         int *_binEnd;
-        checkCudaErrors(cudaMalloc((void**) &_binStart, nBins*sizeof(int)));
-        checkCudaErrors(cudaMalloc((void**) &_binEnd, nBins*sizeof(int)));
+        (cudaMalloc((void**) &_binStart, nBins*sizeof(int)));
+        (cudaMalloc((void**) &_binEnd, nBins*sizeof(int)));
         init<<<numBlocks_nb, dimBlocks_nb>>>(_binStart, nBins, -1);
         init<<<numBlocks_nb, dimBlocks_nb>>>(_binEnd, nBins, -1);
         gpumem += nBins*sizeof(int);
@@ -4381,7 +4380,7 @@ void cuda_move_parts()
 
         /* count the number of particles in each bin */
         //int *_binCount;
-        //checkCudaErrors(cudaMalloc((void**) &_binCount, nBins*sizeof(int)));
+        //(cudaMalloc((void**) &_binCount, nBins*sizeof(int)));
         //init<<<numBlocks_nb, dimBlocks_nb>>>(_binCount, nBins, 0);
         //gpumem += nBins*sizeof(int);
         //bin_partCount<<<dimBlocks_nb, numBlocks_nb>>>(_binCount,_binStart,
@@ -4409,11 +4408,11 @@ void cuda_move_parts()
           nparts, bc, eps, mu, rho_f, nu, interactionLength, dt);
 
         // free variables
-        checkCudaErrors(cudaFree(_partInd));
-        checkCudaErrors(cudaFree(_partBin));
-        //checkCudaErrors(cudaFree(_binCount));
-        checkCudaErrors(cudaFree(_binStart));
-        checkCudaErrors(cudaFree(_binEnd));
+        (cudaFree(_partInd));
+        (cudaFree(_partBin));
+        //(cudaFree(_binCount));
+        (cudaFree(_binStart));
+        (cudaFree(_binEnd));
       }
 
       move_parts_b<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev], nparts,
@@ -4428,7 +4427,7 @@ void cuda_yank_turb_planes(int *bc_flow_configs, real *pos, real *vel)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     int threads_x = 0;
     int threads_y = 0;

@@ -1,8 +1,8 @@
 /*******************************************************************************
- ******************************* BLUEBOTTLE-1.0 ********************************
+ ********************************* BLUEBOTTLE **********************************
  *******************************************************************************
  *
- *  Copyright 2012 - 2014 Adam Sierakowski, The Johns Hopkins University
+ *  Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@
 #include "cuda_quadrature.h"
 
 #include <cuda.h>
-#include <helper_cuda.h>
 
 extern "C"
 void cuda_quad_check_nodes(int dev,
@@ -67,7 +66,7 @@ void cuda_Lamb(void)
   #pragma omp parallel num_threads(nsubdom)
   {
     int dev = omp_get_thread_num();
-    checkCudaErrors(cudaSetDevice(dev + dev_start));
+    (cudaSetDevice(dev + dev_start));
 
     int i;  // iterator
 
@@ -162,35 +161,35 @@ void cuda_Lamb(void)
     // create a place to temporarily store field variables at quadrature nodes
     int *_nn;
     int *_mm;
-    checkCudaErrors(cudaMalloc((void**) &_nn, nnodes * sizeof(int)));
+    (cudaMalloc((void**) &_nn, nnodes * sizeof(int)));
     gpumem += nnodes * sizeof(int);
-    checkCudaErrors(cudaMalloc((void**) &_mm, nnodes * sizeof(int)));
+    (cudaMalloc((void**) &_mm, nnodes * sizeof(int)));
     gpumem += nnodes * sizeof(int);
-    checkCudaErrors(cudaMemcpy(_nn, nn, nnodes * sizeof(int),
+    (cudaMemcpy(_nn, nn, nnodes * sizeof(int),
       cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_mm, mm, nnodes * sizeof(int),
+    (cudaMemcpy(_mm, mm, nnodes * sizeof(int),
       cudaMemcpyHostToDevice));
     real *_node_t;
     real *_node_p;
-    checkCudaErrors(cudaMalloc((void**) &_node_t, nnodes * sizeof(real)));
+    (cudaMalloc((void**) &_node_t, nnodes * sizeof(real)));
     gpumem += nnodes * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &_node_p, nnodes * sizeof(real)));
+    (cudaMalloc((void**) &_node_p, nnodes * sizeof(real)));
     gpumem += nnodes * sizeof(real);
-    checkCudaErrors(cudaMemcpy(_node_t, node_t, nnodes * sizeof(real),
+    (cudaMemcpy(_node_t, node_t, nnodes * sizeof(real),
       cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(_node_p, node_p, nnodes * sizeof(real),
+    (cudaMemcpy(_node_p, node_p, nnodes * sizeof(real),
       cudaMemcpyHostToDevice));
     real *_pp;
     real *_ur;
     real *_ut;
     real *_up;
-    checkCudaErrors(cudaMalloc((void**) &_pp, nnodes * nparts * sizeof(real)));
+    (cudaMalloc((void**) &_pp, nnodes * nparts * sizeof(real)));
     gpumem += nnodes * nparts * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &_ur, nnodes * nparts * sizeof(real)));
+    (cudaMalloc((void**) &_ur, nnodes * nparts * sizeof(real)));
     gpumem += nnodes * nparts * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &_ut, nnodes * nparts * sizeof(real)));
+    (cudaMalloc((void**) &_ut, nnodes * nparts * sizeof(real)));
     gpumem += nnodes * nparts * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &_up, nnodes * nparts * sizeof(real)));
+    (cudaMalloc((void**) &_up, nnodes * nparts * sizeof(real)));
     gpumem += nnodes * nparts * sizeof(real);
 
     // interpolate field variables to quadrature nodes
@@ -206,13 +205,13 @@ void cuda_Lamb(void)
     cpumem += nnodes*nparts*sizeof(real);
     real *up = (real*) malloc(nnodes*nparts*sizeof(real));
     cpumem += nnodes*nparts*sizeof(real);
-    checkCudaErrors(cudaMemcpy(pp, _pp, nnodes*nparts*sizeof(real),
+    (cudaMemcpy(pp, _pp, nnodes*nparts*sizeof(real),
       cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(ur, _ur, nnodes*nparts*sizeof(real),
+    (cudaMemcpy(ur, _ur, nnodes*nparts*sizeof(real),
       cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(ut, _ut, nnodes*nparts*sizeof(real),
+    (cudaMemcpy(ut, _ut, nnodes*nparts*sizeof(real),
       cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(up, _up, nnodes*nparts*sizeof(real),
+    (cudaMemcpy(up, _up, nnodes*nparts*sizeof(real),
       cudaMemcpyDeviceToHost));
 
     printf("\n");
@@ -241,22 +240,22 @@ void cuda_Lamb(void)
     real *int_rDYu_im;
     real *int_xXDYu_re;
     real *int_xXDYu_im;
-    checkCudaErrors(cudaMalloc((void**) &int_Yp_re,
+    (cudaMalloc((void**) &int_Yp_re,
       nparts * nnodes * ncoeffs * sizeof(real)));
     gpumem += nparts * nnodes * ncoeffs * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &int_Yp_im,
+    (cudaMalloc((void**) &int_Yp_im,
       nparts * nnodes * ncoeffs * sizeof(real)));
     gpumem += nparts * nnodes * ncoeffs * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &int_rDYu_re,
+    (cudaMalloc((void**) &int_rDYu_re,
       nparts * nnodes * ncoeffs * sizeof(real)));
     gpumem += nparts * nnodes * ncoeffs * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &int_rDYu_im,
+    (cudaMalloc((void**) &int_rDYu_im,
       nparts * nnodes * ncoeffs * sizeof(real)));
     gpumem += nparts * nnodes * ncoeffs * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &int_xXDYu_re,
+    (cudaMalloc((void**) &int_xXDYu_re,
       nparts * nnodes * ncoeffs * sizeof(real)));
     gpumem += nparts * nnodes * ncoeffs * sizeof(real);
-    checkCudaErrors(cudaMalloc((void**) &int_xXDYu_im,
+    (cudaMalloc((void**) &int_xXDYu_im,
       nparts * nnodes * ncoeffs * sizeof(real)));
     gpumem += nparts * nnodes * ncoeffs * sizeof(real);
 
@@ -294,20 +293,20 @@ void cuda_Lamb(void)
     }
 
     // clean up temporary variables
-    checkCudaErrors(cudaFree(_nn));
-    checkCudaErrors(cudaFree(_mm));
-    checkCudaErrors(cudaFree(_pp));
-    checkCudaErrors(cudaFree(_ur));
-    checkCudaErrors(cudaFree(_ut));
-    checkCudaErrors(cudaFree(_up));
-    checkCudaErrors(cudaFree(_node_t));
-    checkCudaErrors(cudaFree(_node_p));
-    checkCudaErrors(cudaFree(int_Yp_re));
-    checkCudaErrors(cudaFree(int_Yp_im));
-    checkCudaErrors(cudaFree(int_rDYu_re));
-    checkCudaErrors(cudaFree(int_rDYu_im));
-    checkCudaErrors(cudaFree(int_xXDYu_re));
-    checkCudaErrors(cudaFree(int_xXDYu_im));
+    (cudaFree(_nn));
+    (cudaFree(_mm));
+    (cudaFree(_pp));
+    (cudaFree(_ur));
+    (cudaFree(_ut));
+    (cudaFree(_up));
+    (cudaFree(_node_t));
+    (cudaFree(_node_p));
+    (cudaFree(int_Yp_re));
+    (cudaFree(int_Yp_im));
+    (cudaFree(int_rDYu_re));
+    (cudaFree(int_rDYu_im));
+    (cudaFree(int_xXDYu_re));
+    (cudaFree(int_xXDYu_im));
   }
 }
 
@@ -322,7 +321,7 @@ real cuda_lamb_err(void)
     #pragma omp parallel num_threads(nsubdom)
     {
       int dev = omp_get_thread_num();
-      checkCudaErrors(cudaSetDevice(dev + dev_start));
+      (cudaSetDevice(dev + dev_start));
 
       // create a place to store sorted coefficients and errors
       real *part_errors = (real*) malloc(nparts * sizeof(real));
@@ -330,13 +329,13 @@ real cuda_lamb_err(void)
       real *_sorted_coeffs;
       real *_sorted_errors;
       real *_part_errors;
-      checkCudaErrors(cudaMalloc((void**) &_sorted_coeffs,
+      (cudaMalloc((void**) &_sorted_coeffs,
         nparts*6*coeff_stride*sizeof(real)));
       gpumem += 6 * nparts * coeff_stride * sizeof(real);
-      checkCudaErrors(cudaMalloc((void**) &_sorted_errors,
+      (cudaMalloc((void**) &_sorted_errors,
         nparts*6*coeff_stride*sizeof(real)));
       gpumem += 6 * nparts * coeff_stride * sizeof(real);
-      checkCudaErrors(cudaMalloc((void**) &_part_errors,
+      (cudaMalloc((void**) &_part_errors,
         nparts*sizeof(real)));
       gpumem += nparts * sizeof(real);
       
@@ -351,7 +350,7 @@ real cuda_lamb_err(void)
         _sorted_coeffs, _sorted_errors, _part_errors, _dom[dev], nu);
 
       // copy the errors back to device
-      checkCudaErrors(cudaMemcpy(part_errors, _part_errors,
+      (cudaMemcpy(part_errors, _part_errors,
         nparts*sizeof(real), cudaMemcpyDeviceToHost));
 
       // find maximum error of all particles
@@ -362,22 +361,22 @@ real cuda_lamb_err(void)
       errors[dev] = tmp;
 
       // clean up
-      checkCudaErrors(cudaFree(_sorted_coeffs));
-      checkCudaErrors(cudaFree(_sorted_errors));
-      checkCudaErrors(cudaFree(_part_errors));
+      (cudaFree(_sorted_coeffs));
+      (cudaFree(_sorted_errors));
+      (cudaFree(_part_errors));
 
       // store copy of coefficients for future calculation
-      checkCudaErrors(cudaMemcpy(_pnm_re0[dev], _pnm_re[dev],
+      (cudaMemcpy(_pnm_re0[dev], _pnm_re[dev],
         coeff_stride*nparts*sizeof(real), cudaMemcpyDeviceToDevice));
-      checkCudaErrors(cudaMemcpy(_pnm_im0[dev], _pnm_im[dev],
+      (cudaMemcpy(_pnm_im0[dev], _pnm_im[dev],
         coeff_stride*nparts*sizeof(real), cudaMemcpyDeviceToDevice));
-      checkCudaErrors(cudaMemcpy(_phinm_re0[dev], _phinm_re[dev],
+      (cudaMemcpy(_phinm_re0[dev], _phinm_re[dev],
         coeff_stride*nparts*sizeof(real), cudaMemcpyDeviceToDevice));
-      checkCudaErrors(cudaMemcpy(_phinm_im0[dev], _phinm_im[dev],
+      (cudaMemcpy(_phinm_im0[dev], _phinm_im[dev],
         coeff_stride*nparts*sizeof(real), cudaMemcpyDeviceToDevice));
-      checkCudaErrors(cudaMemcpy(_chinm_re0[dev], _chinm_re[dev],
+      (cudaMemcpy(_chinm_re0[dev], _chinm_re[dev],
         coeff_stride*nparts*sizeof(real), cudaMemcpyDeviceToDevice));
-      checkCudaErrors(cudaMemcpy(_chinm_im0[dev], _chinm_im[dev],
+      (cudaMemcpy(_chinm_im0[dev], _chinm_im[dev],
         coeff_stride*nparts*sizeof(real), cudaMemcpyDeviceToDevice));
 
       // clean up

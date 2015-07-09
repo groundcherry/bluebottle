@@ -1,8 +1,8 @@
 /*******************************************************************************
- ******************************* BLUEBOTTLE-1.0 ********************************
+ ********************************* BLUEBOTTLE **********************************
  *******************************************************************************
  *
- *  Copyright 2012 - 2014 Adam Sierakowski, The Johns Hopkins University
+ *  Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@
 #include "entrySearch.h"
 
 #include <cuda.h>
-#include <helper_cuda.h>
 
 #define MAXTHREADS 128
 #define MAXBLOCKS 64
@@ -100,7 +99,7 @@ real find_min(int size, real *d_iarr)
   // create minarr on device
   int h_bytes = blocks * sizeof(real);
   real *d_minarr = NULL;
-  checkCudaErrors(cudaMalloc((void**)&d_minarr, h_bytes));
+  (cudaMalloc((void**)&d_minarr, h_bytes));
   gpumem += h_bytes;
 
   cudaThreadSynchronize();
@@ -113,7 +112,6 @@ real find_min(int size, real *d_iarr)
   entrySearch_min_kernel<<<dimGrid, dimBlock, smemSize>>>(d_iarr,
     d_minarr, size);
 
-  getLastCudaError("Kernel execution failed.");
   cudaThreadSynchronize();
 
   // if there was more than one block, re-run the kernel on the minimum values 
@@ -127,15 +125,14 @@ real find_min(int size, real *d_iarr)
     entrySearch_min_kernel<<<dimGrid, dimBlock, smemSize>>>(d_minarr,
       d_minarr, size);
 
-    getLastCudaError("Kernel execution failed.");
     cudaThreadSynchronize();
   }
 
   // grab final answer
   real min;
-  checkCudaErrors(cudaMemcpy(&min, d_minarr, sizeof(real),
+  (cudaMemcpy(&min, d_minarr, sizeof(real),
     cudaMemcpyDeviceToHost));
-  checkCudaErrors(cudaFree(d_minarr));
+  (cudaFree(d_minarr));
   return min;
 }
 
@@ -150,7 +147,7 @@ real find_max(int size, real *d_iarr)
   // create minarr on device
   int h_bytes = blocks * sizeof(real);
   real *d_maxarr = NULL;
-  checkCudaErrors(cudaMalloc((void**)&d_maxarr, h_bytes));
+  (cudaMalloc((void**)&d_maxarr, h_bytes));
   gpumem += h_bytes;
 
   cudaThreadSynchronize();
@@ -163,7 +160,6 @@ real find_max(int size, real *d_iarr)
   entrySearch_max_kernel<<<dimGrid, dimBlock, smemSize>>>(d_iarr,
     d_maxarr, size);
 
-  getLastCudaError("Kernel execution failed.");
   cudaThreadSynchronize();
 
   // if there was more than one block, re-run the kernel on the maximum values 
@@ -177,15 +173,14 @@ real find_max(int size, real *d_iarr)
     entrySearch_max_kernel<<<dimGrid, dimBlock, smemSize>>>(d_maxarr,
       d_maxarr, size);
 
-    getLastCudaError("Kernel execution failed.");
     cudaThreadSynchronize();
   }
 
   // grab final answer
   real max;
-  checkCudaErrors(cudaMemcpy(&max, d_maxarr, sizeof(real),
+  (cudaMemcpy(&max, d_maxarr, sizeof(real),
     cudaMemcpyDeviceToHost));
-  checkCudaErrors(cudaFree(d_maxarr));
+  (cudaFree(d_maxarr));
   return max;
 }
 
@@ -200,7 +195,7 @@ int find_max_int(int size, int *d_iarr)
   // create minarr on device
   int h_bytes = blocks * sizeof(int);
   int *d_maxarr = NULL;
-  checkCudaErrors(cudaMalloc((void**)&d_maxarr, h_bytes));
+  (cudaMalloc((void**)&d_maxarr, h_bytes));
   gpumem += h_bytes;
 
   cudaThreadSynchronize();
@@ -213,7 +208,6 @@ int find_max_int(int size, int *d_iarr)
   entrySearch_max_int_kernel<<<dimGrid, dimBlock, smemSize>>>(d_iarr,
     d_maxarr, size);
 
-  getLastCudaError("Kernel execution failed.");
   cudaThreadSynchronize();
 
   // if there was more than one block, re-run the kernel on the maximum values 
@@ -227,15 +221,14 @@ int find_max_int(int size, int *d_iarr)
     entrySearch_max_int_kernel<<<dimGrid, dimBlock, smemSize>>>(d_maxarr,
       d_maxarr, size);
 
-    getLastCudaError("Kernel execution failed.");
     cudaThreadSynchronize();
   }
 
   // grab final answer
   int max;
-  checkCudaErrors(cudaMemcpy(&max, d_maxarr, sizeof(int),
+  (cudaMemcpy(&max, d_maxarr, sizeof(int),
     cudaMemcpyDeviceToHost));
-  checkCudaErrors(cudaFree(d_maxarr));
+  (cudaFree(d_maxarr));
   return max;
 }
 
@@ -250,7 +243,7 @@ real find_max_mag(int size, real *d_iarr)
   // create minarr on device
   int h_bytes = blocks * sizeof(real);
   real *d_maxarr = NULL;
-  checkCudaErrors(cudaMalloc((void**)&d_maxarr, h_bytes));
+  (cudaMalloc((void**)&d_maxarr, h_bytes));
   gpumem += h_bytes;
 
   cudaThreadSynchronize();
@@ -263,7 +256,6 @@ real find_max_mag(int size, real *d_iarr)
   entrySearch_max_mag_kernel<<<dimGrid, dimBlock, smemSize>>>(d_iarr,
     d_maxarr, size);
 
-  getLastCudaError("Kernel execution failed.");
   cudaThreadSynchronize();
 
   // if there was more than one block, re-run the kernel on the maximum values 
@@ -277,15 +269,14 @@ real find_max_mag(int size, real *d_iarr)
     entrySearch_max_mag_kernel<<<dimGrid, dimBlock, smemSize>>>(d_maxarr,
       d_maxarr, size);
 
-    getLastCudaError("Kernel execution failed.");
     cudaThreadSynchronize();
   }
 
   // grab final answer
   real max;
-  checkCudaErrors(cudaMemcpy(&max, d_maxarr, sizeof(real),
+  (cudaMemcpy(&max, d_maxarr, sizeof(real),
     cudaMemcpyDeviceToHost));
-  checkCudaErrors(cudaFree(d_maxarr));
+  (cudaFree(d_maxarr));
   return max;
 }
 
@@ -302,7 +293,7 @@ real avg_entries(int size, real *d_iarr)
   // create minarr on device
   int h_bytes = blocks * sizeof(real);
   real *d_maxarr = NULL;
-  checkCudaErrors(cudaMalloc((void**)&d_maxarr, h_bytes));
+  (cudaMalloc((void**)&d_maxarr, h_bytes));
   gpumem += h_bytes;
 
   cudaThreadSynchronize();
@@ -315,7 +306,6 @@ real avg_entries(int size, real *d_iarr)
   entrySearch_avg_entries_kernel<<<dimGrid, dimBlock, smemSize>>>(d_iarr,
     d_maxarr, size);
 
-  getLastCudaError("Kernel execution failed.");
   cudaThreadSynchronize();
 
   // if there was more than one block, re-run the kernel on the maximum values 
@@ -329,15 +319,14 @@ real avg_entries(int size, real *d_iarr)
     entrySearch_avg_entries_kernel<<<dimGrid, dimBlock, smemSize>>>(d_maxarr,
       d_maxarr, size);
 
-    getLastCudaError("Kernel execution failed.");
     cudaThreadSynchronize();
   }
 
   // grab final answer
   real max;
-  checkCudaErrors(cudaMemcpy(&max, d_maxarr, sizeof(real),
+  (cudaMemcpy(&max, d_maxarr, sizeof(real),
     cudaMemcpyDeviceToHost));
-  checkCudaErrors(cudaFree(d_maxarr));
+  (cudaFree(d_maxarr));
   return max / size_in;
 }
 
@@ -352,7 +341,7 @@ real sum_entries(int size, real *d_iarr)
   // create minarr on device
   int h_bytes = blocks * sizeof(real);
   real *d_maxarr = NULL;
-  checkCudaErrors(cudaMalloc((void**)&d_maxarr, h_bytes));
+  (cudaMalloc((void**)&d_maxarr, h_bytes));
   gpumem += h_bytes;
 
   cudaThreadSynchronize();
@@ -365,7 +354,6 @@ real sum_entries(int size, real *d_iarr)
   entrySearch_avg_entries_kernel<<<dimGrid, dimBlock, smemSize>>>(d_iarr,
     d_maxarr, size);
 
-  getLastCudaError("Kernel execution failed.");
   cudaThreadSynchronize();
 
   // if there was more than one block, re-run the kernel on the maximum values 
@@ -379,15 +367,14 @@ real sum_entries(int size, real *d_iarr)
     entrySearch_avg_entries_kernel<<<dimGrid, dimBlock, smemSize>>>(d_maxarr,
       d_maxarr, size);
 
-    getLastCudaError("Kernel execution failed.");
     cudaThreadSynchronize();
   }
 
   // grab final answer
   real max;
-  checkCudaErrors(cudaMemcpy(&max, d_maxarr, sizeof(real),
+  (cudaMemcpy(&max, d_maxarr, sizeof(real),
     cudaMemcpyDeviceToHost));
-  checkCudaErrors(cudaFree(d_maxarr));
+  (cudaFree(d_maxarr));
   return max;
 }
 
@@ -404,11 +391,11 @@ real sum_entries(int size, real *d_iarr)
   // force use of device number zero
   int dev = 0;
 
-  checkCudaErrors(cudaSetDevice(dev));
-  checkCudaErrors(cudaGetDeviceProperties(&deviceProp, dev));
+  (cudaSetDevice(dev));
+  (cudaGetDeviceProperties(&deviceProp, dev));
 
   printf("\nUsing device %d: \"%s\"\n", dev, deviceProp.name);
-  checkCudaErrors(cudaSetDevice(dev));
+  (cudaSetDevice(dev));
 
   // number of elements to reduce
   int size = pow(2, 23);
@@ -429,9 +416,9 @@ real sum_entries(int size, real *d_iarr)
   getNumBlocksAndThreads(size, numBlocks, numThreads);
   unsigned int inbytes = size * sizeof(real);
   real* d_iarr = NULL;
-  checkCudaErrors(cudaMalloc((void**)&d_iarr, inbytes));
+  (cudaMalloc((void**)&d_iarr, inbytes));
   gpumem += in_bytes;
-  checkCudaErrors(cudaMemcpy(d_iarr, h_arr, inbytes,
+  (cudaMemcpy(d_iarr, h_arr, inbytes,
     cudaMemcpyHostToDevice));
 
   // run test
@@ -512,7 +499,7 @@ real sum_entries(int size, real *d_iarr)
   printf("GPU result = %0.0f\n", gpu_result);
 
   // clean up
-  checkCudaErrors(cudaFree(d_iarr));
+  (cudaFree(d_iarr));
   free(h_arr);
   free(minmax);
 

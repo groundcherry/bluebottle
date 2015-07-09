@@ -4,7 +4,7 @@ DEPENDENCIES
 
 Bluebottle requires a few external dependencies to run. They are:
 
-- CUDA 5.0 or 5.5
+- CUDA 7.0 or earlier
 - OpenMPI
 - CUSP C++ Templated Sparse Matrix Library (http://cusplibrary.github.com)
 - CGNS & HDF5

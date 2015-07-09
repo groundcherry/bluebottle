@@ -1,8 +1,8 @@
 /*******************************************************************************
- ******************************* BLUEBOTTLE-1.0 ********************************
+ ********************************* BLUEBOTTLE **********************************
  *******************************************************************************
  *
- *  Copyright 2012 - 2014 Adam Sierakowski, The Johns Hopkins University
+ *  Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ extern "C"
 }
 
 #include <cuda.h>
-#include <helper_cuda.h>
 
 #include "cuda_quadrature.h"
 
@@ -1499,7 +1498,7 @@ void cuda_quad_interp_test(void)
   real *w_err_max = (real*) malloc(nparts * sizeof(real));
   // cpumem += nparts * sizeof(real);
 
-  checkCudaErrors(cudaSetDevice(dev_start));
+  (cudaSetDevice(dev_start));
 
   printf("\nLebedev quadrature interpolation validation:\n\n");
   printf("  p = u = v = w = exp(x) + exp(y) + exp(z)\n\n");
@@ -1689,13 +1688,13 @@ void cuda_quad_interp_test(void)
   // create a place to temporarily store field variables at quadrature nodes
   real *_node_t;
   real *_node_p;
-  checkCudaErrors(cudaMalloc((void**) &_node_t, nnodes * sizeof(real)));
+  (cudaMalloc((void**) &_node_t, nnodes * sizeof(real)));
   gpumem += nnodes * sizeof(real);
-  checkCudaErrors(cudaMalloc((void**) &_node_p, nnodes * sizeof(real)));
+  (cudaMalloc((void**) &_node_p, nnodes * sizeof(real)));
   gpumem += nnodes * sizeof(real);
-  checkCudaErrors(cudaMemcpy(_node_t, node_t, nnodes * sizeof(real),
+  (cudaMemcpy(_node_t, node_t, nnodes * sizeof(real),
     cudaMemcpyHostToDevice));
-  checkCudaErrors(cudaMemcpy(_node_p, node_p, nnodes * sizeof(real),
+  (cudaMemcpy(_node_p, node_p, nnodes * sizeof(real),
     cudaMemcpyHostToDevice));
   real *_pp;
   real *_ur;
@@ -1709,13 +1708,13 @@ void cuda_quad_interp_test(void)
   // cpumem += nnodes * nparts * sizeof(real);
   real *up = (real*) malloc(nnodes * nparts * sizeof(real));
   // cpumem += nnodes * nparts * sizeof(real);
-  checkCudaErrors(cudaMalloc((void**) &_pp, nnodes * nparts * sizeof(real)));
+  (cudaMalloc((void**) &_pp, nnodes * nparts * sizeof(real)));
   gpumem += nnodes * nparts * sizeof(real);
-  checkCudaErrors(cudaMalloc((void**) &_ur, nnodes * nparts * sizeof(real)));
+  (cudaMalloc((void**) &_ur, nnodes * nparts * sizeof(real)));
   gpumem += nnodes * nparts * sizeof(real);
-  checkCudaErrors(cudaMalloc((void**) &_ut, nnodes * nparts * sizeof(real)));
+  (cudaMalloc((void**) &_ut, nnodes * nparts * sizeof(real)));
   gpumem += nnodes * nparts * sizeof(real);
-  checkCudaErrors(cudaMalloc((void**) &_up, nnodes * nparts * sizeof(real)));
+  (cudaMalloc((void**) &_up, nnodes * nparts * sizeof(real)));
   gpumem += nnodes * nparts * sizeof(real);
 
   cuda_quad_interp(dev_start, _node_t, _node_p, nnodes, _pp, _ur, _ut, _up);
@@ -1723,13 +1722,13 @@ void cuda_quad_interp_test(void)
 
   // pull fields back to host
   printf("  Pulling fields back to host...");
-  checkCudaErrors(cudaMemcpy(pp, _pp, nnodes * nparts * sizeof(real),
+  (cudaMemcpy(pp, _pp, nnodes * nparts * sizeof(real),
     cudaMemcpyDeviceToHost));
-  checkCudaErrors(cudaMemcpy(ur, _ur, nnodes * nparts * sizeof(real),
+  (cudaMemcpy(ur, _ur, nnodes * nparts * sizeof(real),
     cudaMemcpyDeviceToHost));
-  checkCudaErrors(cudaMemcpy(ut, _ut, nnodes * nparts * sizeof(real),
+  (cudaMemcpy(ut, _ut, nnodes * nparts * sizeof(real),
     cudaMemcpyDeviceToHost));
-  checkCudaErrors(cudaMemcpy(up, _up, nnodes * nparts * sizeof(real),
+  (cudaMemcpy(up, _up, nnodes * nparts * sizeof(real),
     cudaMemcpyDeviceToHost));
   printf("done.\n");
 

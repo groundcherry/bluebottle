@@ -1,8 +1,8 @@
 /*******************************************************************************
- ******************************* BLUEBOTTLE-1.0 ********************************
+ ********************************* BLUEBOTTLE **********************************
  *******************************************************************************
  *
- *  Copyright 2012 - 2014 Adam Sierakowski, The Johns Hopkins University
+ *  Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@
  ******************************************************************************/
 
 #include <cuda.h>
-#include <helper_cuda.h>
 #include <cusp/array1d.h>
 #include <cusp/blas/blas.h>
 #include <cusp/dia_matrix.h>
@@ -116,7 +115,7 @@ void cuda_ustar_helmholtz(int rank)
 
     // create temporary ustar without ghost cells
     real *_ustar_noghost;
-    checkCudaErrors(cudaMalloc((void**) &_ustar_noghost,
+    (cudaMalloc((void**) &_ustar_noghost,
       sizeof(real) * dom[dev].Gfx.s3));
     // copy u_star into noghost structure for Helmholtz right-hand side
     copy_u_noghost<<<numBlocks_x, dimBlocks_x>>>(_ustar_noghost, _u_star[dev],
@@ -306,7 +305,7 @@ for(int i = 0; i < dom[dev].Gfx.s3; i++) {
     // clean up
     delete(_ustar_rhs);
     delete(_A_ustar);
-    checkCudaErrors(cudaFree(_ustar_noghost));
+    (cudaFree(_ustar_noghost));
 
 #ifdef TEST
   // copy _u_star to _u
@@ -391,7 +390,7 @@ void cuda_vstar_helmholtz(int rank)
 
     // create temporary ustar without ghost cells
     real *_vstar_noghost;
-    checkCudaErrors(cudaMalloc((void**) &_vstar_noghost,
+    (cudaMalloc((void**) &_vstar_noghost,
       sizeof(real) * dom[dev].Gfy.s3));
     // copy v_star into noghost structure for Helmholtz right-hand side
     copy_v_noghost<<<numBlocks_y, dimBlocks_y>>>(_vstar_noghost, _v_star[dev],
@@ -504,7 +503,7 @@ void cuda_vstar_helmholtz(int rank)
     // clean up
     delete(_vstar_rhs);
     delete(_A_vstar);
-    checkCudaErrors(cudaFree(_vstar_noghost));
+    (cudaFree(_vstar_noghost));
 
 #ifdef TEST
   // copy _v_star to _v
@@ -589,7 +588,7 @@ void cuda_wstar_helmholtz(int rank)
 
     // create temporary ustar without ghost cells
     real *_wstar_noghost;
-    checkCudaErrors(cudaMalloc((void**) &_wstar_noghost,
+    (cudaMalloc((void**) &_wstar_noghost,
       sizeof(real) * dom[dev].Gfz.s3));
     // copy w_star into noghost structure for Helmholtz right-hand side
     copy_w_noghost<<<numBlocks_z, dimBlocks_z>>>(_wstar_noghost, _w_star[dev],
@@ -702,7 +701,7 @@ void cuda_wstar_helmholtz(int rank)
     // clean up
     delete(_wstar_rhs);
     delete(_A_wstar);
-    checkCudaErrors(cudaFree(_wstar_noghost));
+    (cudaFree(_wstar_noghost));
 
 #ifdef TEST
   // copy _w_star to _w
@@ -894,7 +893,7 @@ void cuda_PP_bicgstab(int rank)
 
     // copy p0 to array without ghost cells and use it as an initial guess and solution space
     real *_phinoghost;
-    checkCudaErrors(cudaMalloc((void**) &_phinoghost,
+    (cudaMalloc((void**) &_phinoghost,
       sizeof(real)*dom[dev].Gcc.s3b));
     copy_p_noghost<<<numBlocks_x, dimBlocks_x>>>(_phinoghost, _phi[dev],
       _dom[dev]);
@@ -964,7 +963,7 @@ cusp::print(*_p_sol);
       thrust::raw_pointer_cast(_p_sol->data()), _dom[dev]);
 
     // clean up
-    checkCudaErrors(cudaFree(_phinoghost));
+    (cudaFree(_phinoghost));
     delete(_p_sol);
     delete(_pp);
     delete(_A_p);
