@@ -1598,11 +1598,13 @@ __global__ void u_star_2(real rho_f, real nu,
       s_c[tj + tk*blockDim.x] = duudx + duvdy + duwdz;
 
       // convection term sums into right-hand side
+#ifndef STOKESFLOW
       if(dt0 > 0) // Adams-Bashforth
         s_u_star[tj + tk*blockDim.x] += (-ab * s_c[tj + tk*blockDim.x]
           + ab0 * conv0[i + j*dom->Gfx._s1b + k*dom->Gfx._s2b]);
       else        // forward Euler
         s_u_star[tj + tk*blockDim.x] += -s_c[tj + tk*blockDim.x];
+#endif
 
       // compute diffusion term (Adams-Bashforth stepping)
       real dud1 = (u211 - u111) * ddx;
@@ -1763,11 +1765,13 @@ __global__ void v_star_2(real rho_f, real nu,
       s_c[tk + ti*blockDim.x] = dvudx + dvvdy + dvwdz;
 
       // convection term sums into right-hand side
+#ifndef STOKESFLOW
       if(dt0 > 0) // Adams-Bashforth
         s_v_star[tk + ti*blockDim.x] += (-ab * s_c[tk + ti*blockDim.x]
           + ab0 * conv0[i + j*dom->Gfy._s1b + k*dom->Gfy._s2b]);
       else
         s_v_star[tk + ti*blockDim.x] += -s_c[tk + ti*blockDim.x];
+#endif
 
       // compute diffusive term
       real dvd1 = (v211 - v111) * ddx;
@@ -1928,11 +1932,13 @@ __global__ void w_star_2(real rho_f, real nu,
       s_c[ti + tj*blockDim.x] = dwudx + dwvdy + dwwdz;
 
       // convection term sums into right-hand side
+#ifndef STOKESFLOW
       if(dt0 > 0) // Adams-Bashforth
         s_w_star[ti + tj*blockDim.x] += (-ab * s_c[ti + tj*blockDim.x]
           + ab0 * conv0[i + j*dom->Gfz._s1b + k*dom->Gfz._s2b]);
       else        // forward Euler
         s_w_star[ti + tj*blockDim.x] += -s_c[ti + tj*blockDim.x];
+#endif
 
       // compute diffusive term
       real dwd1 = (w211 - w111) * ddx;

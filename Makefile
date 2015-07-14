@@ -90,6 +90,11 @@ implicit: COPT += -O2 -DIMPLICIT
 implicit: CUDAOPT += -O2 -DIMPLICIT
 implicit: bluebottle
 
+# compile with Stokes flow only
+stokes: COPT += -O2 -DSTOKESFLOW
+stokes: CUDAOPT += -O2 -DSTOKESFLOW
+stokes: bluebottle
+
 # compile for batch job submission
 batch: COPT += -O2 -DBATCHRUN
 batch: CUDAOPT += -O2
