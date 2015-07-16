@@ -2856,10 +2856,18 @@ void cuda_collisions(void);
  *  seeder_read_input()
  * USAGE
  */
-void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias, int times);
+void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias, 
+  int nperturb);
 /*
   * FUNCTION
   *   Read parts.config for seeder initialization
+  * ARGUMENTS
+  *  * Nx -- number of particles in the x direction
+  *  * Ny -- number of particles in the y direction
+  *  * Nz -- number of particles in the z direction
+  *  * ddz -- distance b/t top of one layer and middle of next
+  *  * bias -- perturbation amount
+  *  * nperturb -- number of times to perturb
   ******
   */
 
@@ -2868,19 +2876,19 @@ void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias, int time
  *  seeder()
  * USAGE
  */
-void seeder(int N, real loa, real a, real aFx, real aFy, real aFz, 
+void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz, 
   real aLx, real aLy, real aLz, real rho, real E, real sigma, real e_dry,
   real l_rough, int o, real rs_r, real spring_k, real spring_x, real spring_y,
   real spring_z, real spring_l, int t, int r);
 /*
  * FUNCTION
- *  Randomly seed N particles in the domain. To use this function, run
+ *  Randomly seed nparts particles in the domain. To use this function, run
  *  'bluebottle -s', using the arguments as defined below. A new
  *  file called part_seeder.config will be created and the main bluebottle
  *  simulation code will not be run. To run a simulation using this input file,
  *  change its name to part.config and run bluebottle normally.
  * ARGUMENTS
- *  * N -- the number of particles
+ *  * nparts -- the number of particles
  *  * loa -- particle interaction compact support length
  *  * a -- the radius of the particles
  *  * aFx -- particle x forcing
@@ -2911,61 +2919,136 @@ void seeder(int N, real loa, real a, real aFx, real aFy, real aFz,
  *  seeder_array()
  * USAGE
  */
-void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy, real aFz, 
-  real aLx, real aLy, real aLz, real rho, real E, real sigma, real e_dry,
-  real l_rough, int o, real rs_r, real spring_k, real spring_x, real spring_y,
-  real spring_z, real spring_l, int t, int r);
+void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy, 
+  real aFz, real aLx, real aLy, real aLz, real rho, real E, real sigma, 
+  real e_dry, real l_rough, int o, real rs_r, real spring_k, real spring_x, 
+  real spring_y, real spring_z, real spring_l, int t, int r);
 /* FUNCTION
- *  Seed Nx*Ny*Nz particles in the domain as a regular array shape. To use this function, run
- *  'bluebottle -s. A new file called part_seeder_array.config will be created and the main bluebottle
- *  simulation code will not be run. To run a simulation using this input file,
- *  change its name to part.config and run bluebottle normally.
- * 	Nx is the particle number in x direction
- * 	Ny is the particle number in y direction
- *  Nz is the particle number is z direction
+ *  Seed Nx*Ny*Nz particles in the domain as a regular array shape. To use this 
+ *  function, run 'bluebottle -s. A new file called part_seeder_array.config 
+ *  will be created and the main bluebottle simulation code will not be run. To 
+ *  run a simulation using this input file, change its name to part.config and 
+ *  run bluebottle normally.
+ * ARGUMENTS
+ *  * Nx -- particle number in x direction
+ *  * Ny -- particle number in y direction
+ *  * Nz -- particle number is z direction
+ *  * loa -- particle interaction compact support length
+ *  * a -- the radius of the particles
+ *  * aFx -- particle x forcing
+ *  * aFy -- particle y forcing
+ *  * aFz -- particle z forcing
+ *  * aLx -- particle x angular forcing
+ *  * aLy -- particle y angular forcing
+ *  * aLz -- particle z angular forcing
+ *  * d -- the density of the particles (rho)
+ *  * E -- the particle Young's modulus
+ *  * s -- the particle Poisson ratio (-1 < s <= 0.5)
+ *  * e_dry -- dry coefficient of restitution
+ *  * l_rough -- particle surface roughness
+ *  * o -- the order of truncation of the Lamb's solution
+ *  * rs_r -- cage extent ratio
+ *  * spring_k -- particle spring constant
+ *  * spring_x -- particle spring x location
+ *  * spring_y -- particle spring y location
+ *  * spring_z -- particle spring z location
+ *  * spring_l -- particle spring length
+ *  * t -- one if translating, zero if not
+ *  * r -- one if rotating, zero if not
+******
 */
 
-  /****f* bluebottle/seeder_hex()
+/****f* bluebottle/seeder_hex()
  * NAME
  *  seeder_hex()
  * USAGE
  */
-void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx, real aFy, real aFz, 
-  real aLx, real aLy, real aLz, real rho, real E, real sigma, real e_dry,
-  real l_rough, int o, real rs_r, real spring_k, real spring_x, real spring_y,
-  real spring_z, real spring_l, int t, int r);
+void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx, 
+  real aFy, real aFz, real aLx, real aLy, real aLz, real rho, real E, 
+  real sigma, real e_dry, real l_rough, int o, real rs_r, real spring_k, 
+  real spring_x, real spring_y, real spring_z, real spring_l, int t, int r);
 /* FUNCTION
- *  Seed Nx*Ny*Nz particles in the domain in a hex shape. To use this function, run
- *  'bluebottle -s. A new file called part_seeder_hex.config will be created and the main bluebottle
- *  simulation code will not be run. To run a simulation using this input file,
- *  change its name to part.config and run bluebottle normally.
- * 	Nx is the particle number in x direction
- * 	Ny is the particle number in y direction
- *  Nz is the particle number is z direction
- *	ddz is the distance from top of the lower layer to center of the neibouring upper layer
+ *  Seed Nx*Ny*Nz particles in the domain in a hex shape. To use this function, 
+ *  run 'bluebottle -s. A new file called part_seeder_hex.config will be created
+ *  and the main bluebottle simulation code will not be run. To run a simulation
+ *  using this input file, change its name to part.config and run bluebottle 
+ *  normally.
+ * ARGUMENTS
+ * 	Nx -- particle number in x direction
+ * 	Ny -- particle number in y direction
+ *  Nz -- particle number is z direction
+ *	ddz -- distance from top of one layer to center of next layer
+ *  * loa -- particle interaction compact support length
+ *  * a -- the radius of the particles
+ *  * aFx -- particle x forcing
+ *  * aFy -- particle y forcing
+ *  * aFz -- particle z forcing
+ *  * aLx -- particle x angular forcing
+ *  * aLy -- particle y angular forcing
+ *  * aLz -- particle z angular forcing
+ *  * d -- the density of the particles (rho)
+ *  * E -- the particle Young's modulus
+ *  * s -- the particle Poisson ratio (-1 < s <= 0.5)
+ *  * e_dry -- dry coefficient of restitution
+ *  * l_rough -- particle surface roughness
+ *  * o -- the order of truncation of the Lamb's solution
+ *  * rs_r -- cage extent ratio
+ *  * spring_k -- particle spring constant
+ *  * spring_x -- particle spring x location
+ *  * spring_y -- particle spring y location
+ *  * spring_z -- particle spring z location
+ *  * spring_l -- particle spring length
+ *  * t -- one if translating, zero if not
+ *  * r -- one if rotating, zero if not
+ ******
 */
 
-  /****f* bluebottle/seeder_high_vol_random()
+/****f* bluebottle/seeder_high_vol_random()
  * NAME
  *  seeder_high_vol_random()
  * USAGE
  */
-void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int times, real loa, real a, real aFx, real aFy, real aFz, 
-  real aLx, real aLy, real aLz, real rho, real E, real sigma, real e_dry,
-  real l_rough, int o, real rs, real spring_k, real spring_x, real spring_y,
-  real spring_z, real spring_l, int t, int r);
+void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int nperturb, 
+  real loa, real a, real aFx, real aFy, real aFz, real aLx, real aLy, real aLz, 
+  real rho, real E, real sigma, real e_dry, real l_rough, int o, real rs, 
+  real spring_k, real spring_x, real spring_y, real spring_z, real spring_l, 
+  int t, int r);
 /* FUNCTION
- *  Seed Nx*Ny*Nz particles in the domain randomly by perturb the regular array millions of times. To use this function, run
- *  'bluebottle -s. A new file called part_seeder_hex.config will be created and the main bluebottle
+ *  Seed Nx*Ny*Nz particles in the domain randomly by perturbing the regular 
+ *  array nperturb times. To use this function, run 'bluebottle -s'. A new file 
+ *  called part_seeder_hex.config will be created and the main bluebottle
  *  simulation code will not be run. To run a simulation using this input file,
  *  change its name to part.config and run bluebottle normally.
- * 	Nx is the particle number in x direction
- * 	Ny is the particle number in y direction
- *  Nz is the particle number is z direction
- *	bias is the magnitude of pertubation
- *	times is the number of pertubation times
+ * ARGUMENTS
+ * 	Nx - particle number in x direction
+ * 	Ny - particle number in y direction
+ *  Nz - particle number is z direction
+ *	bias -- magnitude of pertubation
+ *	nperturb -- number of pertubation times
+ *  * loa -- particle interaction compact support length
+ *  * a -- the radius of the particles
+ *  * aFx -- particle x forcing
+ *  * aFy -- particle y forcing
+ *  * aFz -- particle z forcing
+ *  * aLx -- particle x angular forcing
+ *  * aLy -- particle y angular forcing
+ *  * aLz -- particle z angular forcing
+ *  * d -- the density of the particles (rho)
+ *  * E -- the particle Young's modulus
+ *  * s -- the particle Poisson ratio (-1 < s <= 0.5)
+ *  * e_dry -- dry coefficient of restitution
+ *  * l_rough -- particle surface roughness
+ *  * o -- the order of truncation of the Lamb's solution
+ *  * rs_r -- cage extent ratio
+ *  * spring_k -- particle spring constant
+ *  * spring_x -- particle spring x location
+ *  * spring_y -- particle spring y location
+ *  * spring_z -- particle spring z location
+ *  * spring_l -- particle spring length
+ *  * t -- one if translating, zero if not
+ *  * r -- one if rotating, zero if not
+ ******
 */
-
 
 /****f* bluebottle/out_restart()
  * NAME
