@@ -26,7 +26,8 @@
 #include "domain.h"
 #include "particle.h"
 
-void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias, int nperturb)
+void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias, 
+  int nperturb)
 {
 
   int N;               // number of parts
