@@ -1091,20 +1091,18 @@ void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int times, real
   printf("Running bluebottle seeder for %d particles...\n\n", Nx*Ny*Nz);
   fflush(stdout);
   int fail = 0;
-  
   // bias is the ratio of how  much it can move 
   // read domain input
   domain_read_input();
   domain_init();
   nparts = Nx*Ny*Nz;
-
+  
   parts = (part_struct*) malloc(nparts * sizeof(part_struct));
   cpumem += nparts * sizeof(part_struct);
 
   real dx = Dom.xl/Nx; //dx in the distance between centers of two nearby particles in x direction
   real dy = Dom.yl/Ny;
   real dz = Dom.zl/Nz;
-
   if(dx < 2*a){
     printf(" Too many particles in x direction\n");
     fail = !fail;
@@ -1121,6 +1119,7 @@ void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int times, real
     printf("...bluebottle seeder done.\n\n");
     exit(EXIT_FAILURE);
   }
+
   // Set the initial regular domain
   for(int k = 0; k < Nz; k++)
   {
@@ -1135,55 +1134,61 @@ void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int times, real
     }
   }
 
-  real x_new = 0.0;
-  real y_new = 0.0;
-  real z_new = 0.0;
-  real d_min = 100*a;
-  real d_pair= 0.0;
-  //the number of pertubation times; notice this one should be very large to guarantee it's random distributed
-  for (int t = 0; t < times; t++)
+  real *acceptance;  //acceptance rate 
+  acceptance = malloc(times * sizeof(real));
+  real *x_new;
+  x_new = malloc(nparts * sizeof(real));
+  real *y_new;
+  y_new = malloc(nparts * sizeof(real));
+  real *z_new;
+  z_new = malloc(nparts * sizeof(real));
+  
+  double d_x = 0.0;
+  double d_y = 0.0;
+  double d_z = 0.0;
+  double d_min = 100 * a;
+  double d_pair= 100 * a;;
+  srand(time(NULL));
+  for(int t = 0; t < times; t++)
   {
-  for(int k = 0; k < Nz; k++)
-   {
-    for (int j = 0; j < Ny; j++)
-     {
-      for (int i = 0; i < Nx; i++)
-       { 
-        d_min = 100*a;
-        x_new = parts[i + j*Nx + k*(Nx*Ny)].x + bias*a*(-1 + 2*((double) rand() /(double) (RAND_MAX))); //make the value to become -1 to 1
-        y_new = parts[i + j*Nx + k*(Nx*Ny)].y + bias*a*(-1 + 2*((double) rand() /(double) (RAND_MAX)));
-        z_new = parts[i + j*Nx + k*(Nx*Ny)].z + bias*a*(-1 + 2*((double) rand() /(double) (RAND_MAX)));
-        if (x_new > Dom.xs  && x_new < Dom.xe && y_new > Dom.ys && y_new < Dom.ye && z_new > Dom.zs && z_new < Dom.ze)
-        { 
-          for (int n = 0; n < Nz; n++)
-          {
-            for (int m = 0; m < Ny; m++)
-            {
-              for (int l = 0; l < Nx; l++)
-              {
-              if(i == l && j == m && k==n)d_pair = 100*a; //if it calculates the distance to itself
-              else{
-                d_pair = (x_new - parts[l + m*Nx + n*(Nx*Ny)].x)*(x_new - parts[l + m*Nx + n*(Nx*Ny)].x) 
-                + (y_new - parts[l + m*Nx + n*(Nx*Ny)].y)*(y_new - parts[l + m*Nx + n*(Nx*Ny)].y)
-                + (z_new - parts[l + m*Nx + n*(Nx*Ny)].z)*(z_new - parts[l + m*Nx + n*(Nx*Ny)].z);
-                d_pair = sqrt(d_pair);
-              } 
-              if (d_pair < d_min){ 
-                d_min = d_pair; //find the minimum distance between particle pairs
-              } 
-              }
-            }
-          }
-          if (d_min > 2*a){   //accept the perturbation if particles don't interact with each other
-            parts[i + j*Nx + k*(Nx*Ny)].x = x_new;
-            parts[i + j*Nx + k*(Nx*Ny)].y = y_new;
-            parts[i + j*Nx + k*(Nx*Ny)].z = z_new;
-          } 
-        }
+    for(int i = 0; i < nparts; i++)
+    {
+      x_new[i] = parts[i].x + bias*(-1 + 2*((double) rand() /(double) (RAND_MAX)))*a*2.0;
+      y_new[i] = parts[i].y + bias*(-1 + 2*((double) rand() /(double) (RAND_MAX)))*a*2.0;
+      z_new[i] = parts[i].z + bias*(-1 + 2*((double) rand() /(double) (RAND_MAX)))*a*2.0;
+      if(x_new[i] > Dom.xe) x_new[i] = x_new[i] - Dom.xl;
+      if(x_new[i] < Dom.xs) x_new[i] = x_new[i] + Dom.xl;
+      if(y_new[i] > Dom.ye) y_new[i] = y_new[i] - Dom.yl;
+      if(y_new[i] < Dom.ys) y_new[i] = y_new[i] + Dom.yl;
+      if(z_new[i] > Dom.ze) z_new[i] = z_new[i] - Dom.zl;
+      if(z_new[i] < Dom.zs) z_new[i] = z_new[i] + Dom.zl; 
+      d_min = 100 * a;
+      for(int j = 0; j < nparts; j++)
+      {
+        d_x = x_new[i] - parts[j].x;
+        d_y = y_new[i] - parts[j].y;
+        d_z = z_new[i] - parts[j].z;
+        if(fabs(d_x) > Dom.xl/2.0) d_x = Dom.xl - fabs(d_x);
+        if(fabs(d_y) > Dom.yl/2.0) d_y = Dom.yl - fabs(d_y);
+        if(fabs(d_z) > Dom.zl/2.0) d_z = Dom.zl - fabs(d_z);
+        if(j == i) d_pair = 100 * a;
+        else d_pair = sqrt(d_x * d_x + d_y * d_y + d_z * d_z);
+        if(d_pair <= d_min) d_min = d_pair;
       }
+      if(d_min > 2 * a)
+      {
+        parts[i].x = x_new[i];
+        parts[i].y = y_new[i];
+        parts[i].z = z_new[i];
+        acceptance[t] = acceptance[t] + 1.0/(double)nparts;
+      }     
     }
-   }
   }
+  for(int t = 1; t < times; t++){
+    acceptance[0] = acceptance[0] + acceptance[t];
+  }
+  acceptance[0] = acceptance[0]/times;
+  printf("acceptance = %f\n", acceptance[0]);
 
  for(int k = 0; k < Nz; k++)
   {
@@ -1268,6 +1273,11 @@ void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int times, real
   // clean up
   domain_clean();
   parts_clean(); 
+ 
+  free(acceptance);
+  free(x_new);
+  free(y_new);
+  free(z_new);
 }  
 
 
