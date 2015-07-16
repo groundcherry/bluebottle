@@ -26,7 +26,7 @@
 #include "domain.h"
 #include "particle.h"
 
-void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias, int times)
+void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias, int nperturb)
 {
 
   int N;               // number of parts
@@ -142,6 +142,9 @@ void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias, int time
 
   // SEEDER
 
+  if (Nx*Ny*Nz != 0 ) {
+    N = Nx*Ny*Nz;
+  }
   printf("Requested Parameters:\n");
   printf("       N = %d\n", N);
 #ifdef DOUBLE
@@ -185,36 +188,37 @@ void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias, int time
 
   fflush(stdout);
 
-  if(Nx == 0 && Ny ==0 && Nz == 0){
-    seeder(N, loa, a, aFx, aFy, aFz, aLx, aLy, aLz, rho, E, sigma, e_dry, l_rough,
-      order, rs_r, spring_k, spring_x, spring_y, spring_z, spring_l,
+  if(Nx == 0 && Ny == 0 && Nz == 0){ // random case
+    seeder(N, loa, a, aFx, aFy, aFz, aLx, aLy, aLz, rho, E, sigma, e_dry, 
+      l_rough, order, rs_r, spring_k, spring_x, spring_y, spring_z, spring_l,
       trans, rot);   
   }
-  else if(ddz == 0.0 && bias == 0.0 && times == 0){
-    seeder_array(Nx, Ny, Nz, loa, a, aFx, aFy, aFz, aLx, aLy, aLz, rho, E, sigma, e_dry, l_rough,
-      order, rs_r, spring_k, spring_x, spring_y, spring_z, spring_l,
-      trans, rot);      
+  else if(ddz == 0.0 && bias == 0.0 && nperturb == 0){ // array case
+    seeder_array(Nx, Ny, Nz, loa, a, aFx, aFy, aFz, aLx, aLy, aLz, rho, E, 
+    sigma, e_dry, l_rough, order, rs_r, spring_k, spring_x, spring_y, spring_z, 
+    spring_l,trans, rot);      
   }
-  else if(ddz != 0.0 && bias == 0.0 && times == 0){
-    seeder_hex(Nx, Ny, Nz, ddz, loa, a, aFx, aFy, aFz, aLx, aLy, aLz, rho, E, sigma, e_dry, l_rough,
-      order, rs_r, spring_k, spring_x, spring_y, spring_z, spring_l,
-      trans, rot);
+  else if(ddz != 0.0 && bias == 0.0 && nperturb == 0){ // hex case
+    seeder_hex(Nx, Ny, Nz, ddz, loa, a, aFx, aFy, aFz, aLx, aLy, aLz, rho, E, 
+    sigma, e_dry, l_rough, order, rs_r, spring_k, spring_x, spring_y, spring_z, 
+    spring_l, trans, rot);
   }
-  else if(ddz == 0.0 && bias != 0 && times != 0){
-    seeder_high_vol_random(Nx, Ny, Nz, bias, times, loa, a, aFx, aFy, aFz, aLx, aLy, aLz, rho, E, sigma, e_dry, l_rough,
-      order, rs_r, spring_k, spring_x, spring_y, spring_z, spring_l,
-      trans, rot);    
+  else if(ddz == 0.0 && bias != 0 && nperturb != 0){ // perturb case
+    seeder_high_vol_random(Nx, Ny, Nz, bias, nperturb, loa, a, aFx, aFy, aFz, 
+    aLx, aLy, aLz, rho, E, sigma, e_dry, l_rough, order, rs_r, spring_k, 
+    spring_x, spring_y, spring_z, spring_l, trans, rot);    
   }
   else{
-    printf("The input parameters are not correct!Please check!\n");
+    printf("The input parameters are not correct! Please check!\n");
     fflush(stdout);
   }
 }
 
-void seeder(int N, real loa, real a, real aFx, real aFy, real aFz, 
+void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz, 
   real aLx, real aLy, real aLz, real rho, real E, real sigma, real e_dry,
   real l_rough, int o, real rs, real spring_k, real spring_x, real spring_y,
   real spring_z, real spring_l, int t, int r) {
+
   printf("Running bluebottle seeder for %d particles...\n\n", nparts);
   fflush(stdout);
   real xx, yy, zz;
@@ -241,8 +245,6 @@ void seeder(int N, real loa, real a, real aFx, real aFy, real aFz,
   real ze = Dom.ze - bc.dsT;
   real zl = Dom.zl - bc.dsT - bc.dsB;
   
-  nparts = N;
-
   // allocate particle list
   parts = (part_struct*) malloc(nparts * sizeof(part_struct));
   cpumem += nparts * sizeof(part_struct);
@@ -818,9 +820,10 @@ void seeder(int N, real loa, real a, real aFx, real aFy, real aFz,
   parts_clean();
 }
 
-void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy, real aFz, real aLx, real aLy, real aLz, real rho, real E, real sigma, real e_dry,
-  real l_rough, int o, real rs, real spring_k, real spring_x, real spring_y,
-  real spring_z, real spring_l, int t, int r)
+void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy, 
+  real aFz, real aLx, real aLy, real aLz, real rho, real E, real sigma, 
+  real e_dry, real l_rough, int o, real rs, real spring_k, real spring_x, 
+  real spring_y, real spring_z, real spring_l, int t, int r)
 {
   printf("Running bluebottle seeder for %d particles...\n\n", Nx*Ny*Nz);
   fflush(stdout);
@@ -833,39 +836,39 @@ void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy, 
   nparts = Nx*Ny*Nz;
   parts = (part_struct*) malloc(nparts * sizeof(part_struct));
   cpumem += nparts * sizeof(part_struct);
-  real dx = Dom.xl/Nx; //dx in the distance between centers of two nearby particles in x direction
+
+  //dx is the distance between centers of two nearby particles in x direction
+  real dx = Dom.xl/Nx;
   real dy = Dom.yl/Ny;
   real dz = Dom.zl/Nz;
 
-  if(dx < 2*a){
-  printf(" Too many particles in x direction\n");
-  fail = !fail;
+  if(dx < 2.*a){
+    printf("Too many particles in x direction!\n");
+    fail = 1;
   }
-  if(dy < 2*a){
-  printf("Too many particles in y direction\n");
-  fail = !fail; 
+  if(dy < 2.*a){
+    printf("Too many particles in y direction!\n");
+    fail = 1; 
   }
-  if(dz < 2*a){
-  printf("Too many particles in z direction\n");
-  fail = !fail; 
+  if(dz < 2.*a){
+    printf("Too many particles in z direction!\n");
+    fail = 1; 
   } 
-  if(fail) {
-    printf("...bluebottle seeder done.\n\n");
+  if(fail == 1) {
+    printf("...bluebottle seeder failed.\n\n");
     exit(EXIT_FAILURE);
   }
-  for(int k = 0; k < Nz; k++)
-  {
-    for (int j = 0; j < Ny; j++)
-    {
-      for (int i = 0; i < Nx; i++)
-      {   
-        parts[i + j*Nx + k*(Nx*Ny)].x = Dom.xs + dx/2 + i*dx;
-        parts[i + j*Nx + k*(Nx*Ny)].y = Dom.ys + dy/2 + j*dy;
-        parts[i + j*Nx + k*(Nx*Ny)].z = Dom.zs + dz/2 + k*dz;
+
+  for(int k = 0; k < Nz; k++) {
+    for (int j = 0; j < Ny; j++) {
+      for (int i = 0; i < Nx; i++) {
+        parts[i + j*Nx + k*(Nx*Ny)].x = Dom.xs + 0.5*dx + i*dx;
+        parts[i + j*Nx + k*(Nx*Ny)].y = Dom.ys + 0.5*dy + j*dy;
+        parts[i + j*Nx + k*(Nx*Ny)].z = Dom.zs + 0.5*dz + k*dz;
         parts[i + j*Nx + k*(Nx*Ny)].r = a;
-        parts[i + j*Nx + k*(Nx*Ny)].u = 0;
-        parts[i + j*Nx + k*(Nx*Ny)].v = 0;
-        parts[i + j*Nx + k*(Nx*Ny)].w = 0;
+        parts[i + j*Nx + k*(Nx*Ny)].u = 0.;
+        parts[i + j*Nx + k*(Nx*Ny)].v = 0.;
+        parts[i + j*Nx + k*(Nx*Ny)].w = 0.;
         parts[i + j*Nx + k*(Nx*Ny)].aFx = aFx;
         parts[i + j*Nx + k*(Nx*Ny)].aFy = aFy;
         parts[i + j*Nx + k*(Nx*Ny)].aFz = aFz;
@@ -884,7 +887,7 @@ void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy, 
         parts[i + j*Nx + k*(Nx*Ny)].spring_y = spring_y;
         parts[i + j*Nx + k*(Nx*Ny)].spring_z = spring_z;
         parts[i + j*Nx + k*(Nx*Ny)].spring_l = spring_l;
-        parts[i + j*Nx + k*(Nx*Ny)].ncoeff = 0;
+        parts[i + j*Nx + k*(Nx*Ny)].ncoeff = 0.;
         parts[i + j*Nx + k*(Nx*Ny)].translating = t;
         parts[i + j*Nx + k*(Nx*Ny)].rotating = r;       
       }
@@ -940,12 +943,14 @@ void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy, 
   domain_clean();
   parts_clean(); 
 }
-void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx, real aFy, real aFz, 
-  real aLx, real aLy, real aLz, real rho, real E, real sigma, real e_dry,
-  real l_rough, int o, real rs, real spring_k, real spring_x, real spring_y,
-  real spring_z, real spring_l, int t, int r)
+void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx, 
+  real aFy, real aFz, real aLx, real aLy, real aLz, real rho, real E, 
+  real sigma, real e_dry, real l_rough, int o, real rs, real spring_k, 
+  real spring_x, real spring_y, real spring_z, real spring_l, int t, int r)
 {
-  //ddz is the distance that from the top of lower layer to the center of uper layer
+
+  // ddz is the vertical distance from the top of one layer to the middle of the
+  // next
   //real ddz = 0.87; //the miminum value of this one is "0.732"
 
 
@@ -953,31 +958,38 @@ void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx, 
   domain_read_input();
   domain_init();
 
-  nparts = (int)((Nz/2)*(Nx*Ny + (Nx-1)*(Ny-1))) + (Nz%2)*Nx*Ny; //calculate the total number of particles
-  printf("The total number of particle is %d \n\n",nparts);
+  // total number of particles
+  // half are large, half are small. if odd number of layers, top layer is large
+  int layers = floor(0.5*((real) Nz));
+  int large = Nx*Ny;
+  int small = (Nx - 1)*(Ny - 1);
+  nparts = layers*(large + small) + (Nz % 2)*Nx*Ny;
+
+  printf("The total number of particle is %d \n\n", nparts);
   printf("Running bluebottle seeder for %d particles...\n\n", nparts);
   fflush(stdout);
   // allocate particle list
   parts = (part_struct*) malloc(nparts * sizeof(part_struct));
   cpumem += nparts * sizeof(part_struct);
 
-  real dx = Dom.xl/Nx; //dx in the distance between centers of two nearby particles in x direction
+  // dx in the distance between centers of two nearby particles in x direction
+  real dx = Dom.xl/Nx;
   real dy = Dom.yl/Ny;
 
-  if(Nz*ddz + 2*a > Dom.zl){
+  if(Nz*ddz + 2.*a > Dom.zl){
     printf("Too many layers in z direction");
     exit(EXIT_FAILURE);
   }
-  if(Nx*2*a > Dom.xl){
-    printf("Too many layers in z direction");
+  if(Nx*2.*a > Dom.xl){
+    printf("Too many layers in x direction");
     exit(EXIT_FAILURE);
   }
-  if(Ny*2*a > Dom.yl){
-    printf("Too many layers in z direction");
+  if(Ny*2.*a > Dom.yl){
+    printf("Too many layers in y direction");
     exit(EXIT_FAILURE);
   }  
   if(ddz < 0.732){
-    printf("Too small distance in nerbouring layer");
+    printf("Too small distance in neighbouring layer");
     exit(EXIT_FAILURE);
   }
   
@@ -987,12 +999,11 @@ void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx, 
     
   for(int k = 0; k < Nz; k++)
   { 
-    point = k%2;
-    if (point == 1){
-      nx = Nx-1;
-      ny = Ny-1;
-    }
-    else{
+    point = k % 2;
+    if (point == 1) {
+      nx = Nx - 1;
+      ny = Ny - 1;
+    } else {
       nx = Nx;
       ny = Ny;
     }   
@@ -1000,13 +1011,13 @@ void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx, 
     {
       for (int i = 0; i < nx; i++)
       {   
-        parts[index].x = Dom.xs + dx/2 + i*dx + point*dx/2;
-        parts[index].y = Dom.ys + dy/2 + j*dy + point*dy/2;
+        parts[index].x = Dom.xs + 0.5*dx + i*dx + 0.5*point*dx;
+        parts[index].y = Dom.ys + 0.5*dy + j*dy + 0.5*point*dy;
         parts[index].z = Dom.zs + a + k*ddz*a;        
         parts[index].r = a;
-        parts[index].u = 0;
-        parts[index].v = 0;
-        parts[index].w = 0;
+        parts[index].u = 0.;
+        parts[index].v = 0.;
+        parts[index].w = 0.;
         parts[index].aFx = aFx;
         parts[index].aFy = aFy;
         parts[index].aFz = aFz;
@@ -1025,7 +1036,7 @@ void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx, 
         parts[index].spring_y = spring_y;
         parts[index].spring_z = spring_z;
         parts[index].spring_l = spring_l;        
-        parts[index].ncoeff = 0;
+        parts[index].ncoeff = 0.;
         parts[index].translating = t;
         parts[index].rotating = r;
         index = index + 1;       
@@ -1082,17 +1093,21 @@ void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx, 
   domain_clean();
   parts_clean();    
 }
-void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int times, real loa, real a, real aFx, real aFy, real aFz, 
-  real aLx, real aLy, real aLz, real rho, real E, real sigma, real e_dry,
-  real l_rough, int o, real rs, real spring_k, real spring_x, real spring_y,
-  real spring_z, real spring_l, int t, int r)
+void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int nperturb, 
+  real loa, real a, real aFx, real aFy, real aFz, real aLx, real aLy, real aLz,
+  real rho, real E, real sigma, real e_dry, real l_rough, int o, real rs, 
+  real spring_k, real spring_x, real spring_y, real spring_z, real spring_l, 
+  int t, int r)
 {
-  // This function is used to give a random field. Each particle can move freely and it will check the distance between another particle
+
+  // Generate a random field by perturbing a regular arrary npertrub times and
+  // checkinng for interactions
+
   printf("Running bluebottle seeder for %d particles...\n\n", Nx*Ny*Nz);
   fflush(stdout);
   int fail = 0;
   
-  // bias is the ratio of how  much it can move 
+  // bias is the ratio of how much it can move 
   // read domain input
   domain_read_input();
   domain_init();
@@ -1101,23 +1116,24 @@ void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int times, real
   parts = (part_struct*) malloc(nparts * sizeof(part_struct));
   cpumem += nparts * sizeof(part_struct);
 
-  real dx = Dom.xl/Nx; //dx in the distance between centers of two nearby particles in x direction
+  // dx in the distance between centers of two nearby particles in x direction
+  real dx = Dom.xl/Nx;
   real dy = Dom.yl/Ny;
   real dz = Dom.zl/Nz;
 
-  if(dx < 2*a){
+  if(dx < 2.*a){
     printf(" Too many particles in x direction\n");
-    fail = !fail;
+    fail = 1;
   }
-  if(dy < 2*a){
+  if(dy < 2.*a){
     printf("Too many particles in y direction\n");
-    fail = !fail; 
+    fail = 1; 
   }
-  if(dz < 2*a){
+  if(dz < 2.*a){
     printf("Too many particles in z direction\n");
-    fail = !fail; 
+    fail = 1; 
   } 
-  if(fail) {
+  if(fail == 1) {
     printf("...bluebottle seeder done.\n\n");
     exit(EXIT_FAILURE);
   }
@@ -1128,73 +1144,80 @@ void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int times, real
     {
       for (int i = 0; i < Nx; i++)
       {
-        parts[i + j*Nx + k*(Nx*Ny)].x = Dom.xs + (2*i+1)*dx/2; 
-        parts[i + j*Nx + k*(Nx*Ny)].y = Dom.ys + (2*j+1)*dy/2;
-        parts[i + j*Nx + k*(Nx*Ny)].z = Dom.zs + (2*k+1)*dz/2;  
+        parts[i + j*Nx + k*(Nx*Ny)].x = Dom.xs + (2.*i + 1)*dx*0.5; 
+        parts[i + j*Nx + k*(Nx*Ny)].y = Dom.ys + (2.*j + 1)*dy*0.5;
+        parts[i + j*Nx + k*(Nx*Ny)].z = Dom.zs + (2.*k + 1)*dz*0.5;  
       }
     }
   }
 
-  real x_new = 0.0;
-  real y_new = 0.0;
-  real z_new = 0.0;
-  real d_min = 100*a;
-  real d_pair= 0.0;
-  //the number of pertubation times; notice this one should be very large to guarantee it's random distributed
-  for (int t = 0; t < times; t++)
-  {
-  for(int k = 0; k < Nz; k++)
-   {
-    for (int j = 0; j < Ny; j++)
-     {
-      for (int i = 0; i < Nx; i++)
-       { 
-        d_min = 100*a;
-        x_new = parts[i + j*Nx + k*(Nx*Ny)].x + bias*a*(-1 + 2*((double) rand() /(double) (RAND_MAX))); //make the value to become -1 to 1
-        y_new = parts[i + j*Nx + k*(Nx*Ny)].y + bias*a*(-1 + 2*((double) rand() /(double) (RAND_MAX)));
-        z_new = parts[i + j*Nx + k*(Nx*Ny)].z + bias*a*(-1 + 2*((double) rand() /(double) (RAND_MAX)));
-        if (x_new > Dom.xs  && x_new < Dom.xe && y_new > Dom.ys && y_new < Dom.ye && z_new > Dom.zs && z_new < Dom.ze)
-        { 
-          for (int n = 0; n < Nz; n++)
-          {
-            for (int m = 0; m < Ny; m++)
-            {
-              for (int l = 0; l < Nx; l++)
-              {
-              if(i == l && j == m && k==n)d_pair = 100*a; //if it calculates the distance to itself
-              else{
-                d_pair = (x_new - parts[l + m*Nx + n*(Nx*Ny)].x)*(x_new - parts[l + m*Nx + n*(Nx*Ny)].x) 
-                + (y_new - parts[l + m*Nx + n*(Nx*Ny)].y)*(y_new - parts[l + m*Nx + n*(Nx*Ny)].y)
-                + (z_new - parts[l + m*Nx + n*(Nx*Ny)].z)*(z_new - parts[l + m*Nx + n*(Nx*Ny)].z);
-                d_pair = sqrt(d_pair);
-              } 
-              if (d_pair < d_min){ 
-                d_min = d_pair; //find the minimum distance between particle pairs
-              } 
+  real x_new = 0.;
+  real y_new = 0.;
+  real z_new = 0.;
+  real d_min = 100.*a;
+  real d_pair= 0.;
+
+  real x_pert = 0.;
+  real y_pert = 0.;
+  real z_pert = 0.;
+
+  for (int t = 0; t < nperturb; t++) {
+    for(int k = 0; k < Nz; k++) {
+      for (int j = 0; j < Ny; j++) {
+        for (int i = 0; i < Nx; i++) {
+          d_min = 100.*a;
+          
+          x_pert = -1. + 2.*rand() / (real)RAND_MAX;
+          y_pert = -1. + 2.*rand() / (real)RAND_MAX;
+          z_pert = -1. + 2.*rand() / (real)RAND_MAX;
+
+          x_new = parts[i + j*Nx + k*(Nx*Ny)].x + bias*a*x_pert;
+          y_new = parts[i + j*Nx + k*(Nx*Ny)].y + bias*a*y_pert;
+          z_new = parts[i + j*Nx + k*(Nx*Ny)].z + bias*a*z_pert;
+          if (x_new > Dom.xs && x_new < Dom.xe && 
+              y_new > Dom.ys && y_new < Dom.ye && 
+              z_new > Dom.zs && z_new < Dom.ze) {
+            for (int n = 0; n < Nz; n++) {
+              for (int m = 0; m < Ny; m++) {
+                for (int l = 0; l < Nx; l++) {
+                  // if it calculates the distance to itself
+                  if(i == l && j == m && k == n) { 
+                    d_pair = 100.*a;
+                  } else {
+                    d_pair = (x_new - parts[l + m*Nx + n*(Nx*Ny)].x)*
+                             (x_new - parts[l + m*Nx + n*(Nx*Ny)].x) +
+                             (y_new - parts[l + m*Nx + n*(Nx*Ny)].y)*
+                             (y_new - parts[l + m*Nx + n*(Nx*Ny)].y) +
+                             (z_new - parts[l + m*Nx + n*(Nx*Ny)].z)*
+                             (z_new - parts[l + m*Nx + n*(Nx*Ny)].z);
+                    d_pair = sqrt(d_pair);
+                  } 
+                  if (d_pair < d_min) { 
+                    //find the minimum distance between particle pairs
+                    d_min = d_pair;
+                  } 
+                }
               }
             }
+            if (d_min > 2.*a) {
+            // accept the perturbation if no particle interactions
+              parts[i + j*Nx + k*(Nx*Ny)].x = x_new;
+              parts[i + j*Nx + k*(Nx*Ny)].y = y_new;
+              parts[i + j*Nx + k*(Nx*Ny)].z = z_new;
+            } 
           }
-          if (d_min > 2*a){   //accept the perturbation if particles don't interact with each other
-            parts[i + j*Nx + k*(Nx*Ny)].x = x_new;
-            parts[i + j*Nx + k*(Nx*Ny)].y = y_new;
-            parts[i + j*Nx + k*(Nx*Ny)].z = z_new;
-          } 
         }
       }
     }
-   }
   }
 
- for(int k = 0; k < Nz; k++)
-  {
-    for (int j = 0; j < Ny; j++)
-    {
-      for (int i = 0; i < Nx; i++)
-      {   
+ for(int k = 0; k < Nz; k++) {
+    for (int j = 0; j < Ny; j++) {
+      for (int i = 0; i < Nx; i++) {
         parts[i + j*Nx + k*(Nx*Ny)].r = a;
-        parts[i + j*Nx + k*(Nx*Ny)].u = 0;
-        parts[i + j*Nx + k*(Nx*Ny)].v = 0;
-        parts[i + j*Nx + k*(Nx*Ny)].w = 0;
+        parts[i + j*Nx + k*(Nx*Ny)].u = 0.;
+        parts[i + j*Nx + k*(Nx*Ny)].v = 0.;
+        parts[i + j*Nx + k*(Nx*Ny)].w = 0.;
         parts[i + j*Nx + k*(Nx*Ny)].aFx = aFx;
         parts[i + j*Nx + k*(Nx*Ny)].aFy = aFy;
         parts[i + j*Nx + k*(Nx*Ny)].aFz = aFz;
@@ -1213,7 +1236,7 @@ void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int times, real
         parts[i + j*Nx + k*(Nx*Ny)].spring_y = spring_y;
         parts[i + j*Nx + k*(Nx*Ny)].spring_z = spring_z;
         parts[i + j*Nx + k*(Nx*Ny)].spring_l = spring_l;
-        parts[i + j*Nx + k*(Nx*Ny)].ncoeff = 0;
+        parts[i + j*Nx + k*(Nx*Ny)].ncoeff = 0.;
         parts[i + j*Nx + k*(Nx*Ny)].translating = t;
         parts[i + j*Nx + k*(Nx*Ny)].rotating = r;       
       }
@@ -1269,12 +1292,3 @@ void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int times, real
   domain_clean();
   parts_clean(); 
 }  
-
-
-
-
-
-
-
-
-
