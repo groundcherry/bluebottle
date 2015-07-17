@@ -222,74 +222,12 @@ int main(int argc, char *argv[]) {
     }
     
     if(runseeder == 1) {
-      int fret = 0;
-      fret = fret;  // prevent compiler warning
       printf("Seed particles according to parameters specified in");
       printf(" parts.config? (y/N)\n");
       fflush(stdout);
       int c = getchar();
-      int tmp = getchar();
-      tmp = tmp;  // prevent compiler warning
       if (c == 'Y' || c == 'y') {
-        printf("Seed particles for which kind of");
-        printf(" array? r(random)/a(array)/h(hex)/p(perturbed)?\n");
-        fflush(stdout);
-        int type = getchar();
-        tmp = getchar();
-        int Nx = 0; int Ny = 0; int Nz = 0; 
-        double ddz = 0.0; double bias = 0.0; int times = 0;
-        if(type == 'r'){
-          seeder_read_input(Nx, Ny, Nz, ddz, bias, times);
-        }
-        if(type == 'a'){
-          printf("Please input the particle number in x direction\n");
-          fflush(stdout);
-          fret = scanf("%d",&Nx);
-          printf("Please input the particle number in y direction\n");
-          fflush(stdout);
-          fret = scanf("%d",&Ny);
-          printf("Please input the particle number in z direction\n");
-          fflush(stdout);
-          fret = scanf("%d",&Nz);
-          printf("Nx Ny Nz is: %d %d %d\n",Nx, Ny, Nz);  
-          seeder_read_input(Nx, Ny, Nz, ddz, bias, times);               
-        }
-        if(type == 'h'){
-          printf("Please input the particle number in x direction\n");
-          fflush(stdout);
-          fret = scanf("%d",&Nx);
-          printf("Please input the particle number in y direction\n");
-          fflush(stdout);
-          fret = scanf("%d",&Ny);
-          printf("Please input the particle number in z direction\n");
-          fflush(stdout);
-          fret = scanf("%d",&Nz);
-          printf("Please input the distance for hex array\n");
-          fflush(stdout);
-          fret = scanf("%lf",&ddz);
-          printf("Nx Ny Nz ddz is: %d %d %d %lf\n",Nx, Ny, Nz, ddz);
-          seeder_read_input(Nx, Ny, Nz, ddz, bias, times);  
-        }
-        if(type == 'p'){
-          printf("Please input the particle number in x direction\n");
-          fflush(stdout);
-          fret = scanf("%d",&Nx);
-          printf("Please input the particle number in y direction\n");
-          fflush(stdout);
-          fret = scanf("%d",&Ny);
-          printf("Please input the particle number in z direction\n");
-          fflush(stdout);
-          fret = scanf("%d",&Nz);
-          printf("Please input the perturbation magnitude(should be between 0~1)\n");
-          fflush(stdout);
-          fret = scanf("%lf",&bias);
-          printf("Please input the perturbation times(should be larger than 100000)\n");
-          fflush(stdout);
-          fret = scanf("%d",&times);
-          printf("Nx Ny Nz bias times is: %d %d %d %lf %d\n",Nx, Ny, Nz, bias,
-            times);
-          seeder_read_input(Nx, Ny, Nz, ddz, bias, times);
-        }
+        seeder_read_input();
         return EXIT_SUCCESS;
       } else {
         printf("Please specify the desired parameters in parts.config\n\n");
