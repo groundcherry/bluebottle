@@ -96,9 +96,9 @@ nmsg = 0;
 count = 0;
 for i = ts:te
   count = count + 1;
-  [Xp(:,i), Yp(:,i), Zp(:,i)] = cgns_read_part_vel(dir, tstr{nInd(count)});
+  [Xp(:,i), Yp(:,i), Zp(:,i)] = cgns_read_part_position(dir, tstr{nInd(count)});
   [Up(:,i), Vp(:,i), Wp(:,i)] = cgns_read_part_vel(dir, tstr{nInd(count)});
-  [FX(:,i), FY(:,i), FZ(:,i)] = cgns_read_part_force_total(dir, 
+  [FX(:,i), FY(:,i), FZ(:,i)] = cgns_read_part_force_total(dir, ...
                                     tstr{nInd(count)});
   [FXi(:,i), FYi(:,i), FZi(:,i)] = cgns_read_part_force_interaction(dir, ...
                                     tstr{nInd(count)});

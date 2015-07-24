@@ -13,9 +13,13 @@ fprintf('Initializing... \n');
 [temp, ~, ~] = cgns_read_part_position(dir, 0);
 np = size(temp,1);
 
+% radius -- TODO: mean(r) is not correct if multiple particle sizes
+r = cgns_read_part_radius(dir, 0);
+dom.r = mean(r);
+
 fprintf('Reading data... ');
 % read grid variables
-[x, y, z] = cgns_read_grid(pwd);
+[x, y, z] = cgns_read_grid(dir);
 dom.xs = min(x(:,1,1));
 dom.xe = max(x(:,1,1));
 dom.xl = dom.xe - dom.xs;
