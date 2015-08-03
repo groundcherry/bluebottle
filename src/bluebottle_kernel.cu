@@ -2707,7 +2707,7 @@ __global__ void collision_parts(part_struct *parts, int nparts,
                   ah = ai/h - ai/hN;
                   lnah = log(hN/h);
                   Fnx = -1. * B*B / (opB*opB) * ah
-                    - (1.+7.*B+B*B)/(5.*opB*opB*opB)*lnah;
+                    - B*(1.+7.*B+B*B)/(5.*opB*opB*opB)*lnah;
                   Fny = Fnx;
                   Fnz = Fnx;
                   Fnx *= 6.*PI*mu*ai*unx;

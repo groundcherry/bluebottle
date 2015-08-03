@@ -431,10 +431,10 @@ int main(int argc, char *argv[]) {
         cuda_part_pull();
         //cuda_BC_test();
         //cuda_U_star_test_exp();
-        cuda_U_star_test_cos();
+        //cuda_U_star_test_cos();
         //cuda_project_test();
         //cuda_quad_interp_test();
-        //cuda_lamb_test();
+        cuda_lamb_test();
         printf("========================================");
         printf("========================================\n\n");
         fflush(stdout);
