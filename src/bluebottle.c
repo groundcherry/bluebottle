@@ -232,43 +232,43 @@ int main(int argc, char *argv[]) {
       tmp = tmp;  // prevent compiler warning
       if (c == 'Y' || c == 'y') {
         printf("Seed particles for which kind of");
-        printf(" array? r(random)/a(array)/h(hex)/p(perturbed)?\n");
+        printf(" array? (r)andom / (a)rray / (h)ex / (p)erturbed?\n");
         fflush(stdout);
         int type = getchar();
         tmp = getchar();
         int Nx = 0; int Ny = 0; int Nz = 0; 
-        double ddz = 0.0; double bias = 0.0; int times = 0;
+        double ddz = 0.0; double bias = 0.0; int nperturb = 0;
         if(type == 'r'){
-          seeder_read_input(Nx, Ny, Nz, ddz, bias, times);
+          seeder_read_input(Nx, Ny, Nz, ddz, bias, nperturb);
         }
         if(type == 'a'){
-          printf("Please input the particle number in x direction\n");
+          printf("Please input the number of particles in the x direction\n");
           fflush(stdout);
           fret = scanf("%d",&Nx);
-          printf("Please input the particle number in y direction\n");
+          printf("Please input the number of particles in the y direction\n");
           fflush(stdout);
           fret = scanf("%d",&Ny);
-          printf("Please input the particle number in z direction\n");
+          printf("Please input the number of particles in the z direction\n");
           fflush(stdout);
           fret = scanf("%d",&Nz);
           printf("Nx Ny Nz is: %d %d %d\n",Nx, Ny, Nz);  
-          seeder_read_input(Nx, Ny, Nz, ddz, bias, times);               
+          seeder_read_input(Nx, Ny, Nz, ddz, bias, nperturb);               
         }
         if(type == 'h'){
-          printf("Please input the particle number in x direction\n");
+          printf("Please input the number of particles in the x direction\n");
           fflush(stdout);
           fret = scanf("%d",&Nx);
-          printf("Please input the particle number in y direction\n");
+          printf("Please input the number of particles in the y direction\n");
           fflush(stdout);
           fret = scanf("%d",&Ny);
-          printf("Please input the particle number in z direction\n");
+          printf("Please input the number of particles in the z direction\n");
           fflush(stdout);
           fret = scanf("%d",&Nz);
-          printf("Please input the distance for hex array\n");
+          printf("Please input the layer distance for hex array\n");
           fflush(stdout);
           fret = scanf("%lf",&ddz);
           printf("Nx Ny Nz ddz is: %d %d %d %lf\n",Nx, Ny, Nz, ddz);
-          seeder_read_input(Nx, Ny, Nz, ddz, bias, times);  
+          seeder_read_input(Nx, Ny, Nz, ddz, bias, nperturb);  
         }
         if(type == 'p'){
           printf("Please input the particle number in x direction\n");
@@ -280,15 +280,17 @@ int main(int argc, char *argv[]) {
           printf("Please input the particle number in z direction\n");
           fflush(stdout);
           fret = scanf("%d",&Nz);
-          printf("Please input the perturbation magnitude(should be between 0~1)\n");
+          printf("Please input the perturbation magnitude");
+          printf(" (between 0 and 1)\n");
           fflush(stdout);
           fret = scanf("%lf",&bias);
-          printf("Please input the perturbation times(should be larger than 100000)\n");
+          printf("Please input the number of perturbations");
+          printf(" (should be larger than 100,000)\n");
           fflush(stdout);
-          fret = scanf("%d",&times);
-          printf("Nx Ny Nz bias times is: %d %d %d %lf %d\n",Nx, Ny, Nz, bias,
-            times);
-          seeder_read_input(Nx, Ny, Nz, ddz, bias, times);
+          fret = scanf("%d",&nperturb);
+          printf("Nx Ny Nz bias nperturb is: %d %d %d %lf %d\n",Nx, Ny, Nz, bias,
+            nperturb);
+          seeder_read_input(Nx, Ny, Nz, ddz, bias, nperturb);
         }
         return EXIT_SUCCESS;
       } else {
