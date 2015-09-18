@@ -1,4 +1,4 @@
-#!/home/asiera/sandbox/ParaView-4.2.0-Linux-64bit/bin/pvpython
+#!/home-1/asierak1@jhu.edu/ParaView-4.2.0-Linux-64bit/bin/pvpython
 
 # README
 #
@@ -24,6 +24,21 @@ import sys
 from paraview.simple import *
 import glob, os
 import subprocess
+import math
+
+import re
+def sorted_nicely( l ):
+    """ Sorts the given iterable in a natural way
+ 
+    Required arguments:
+    l -- The iterable to be sorted.
+ 
+    courtesy http://stackoverflow.com/questions/2669059/...
+      .../how-to-sort-alpha-numeric-set-in-python
+    """
+    convert = lambda text: int(text) if text.isdigit() else text
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    return sorted(l, key = alphanum_key)
 
 # TODO accept starting and ending time command line input
 
@@ -69,8 +84,11 @@ if  run == 'y' or run == 'Y':
   view.WriteImage(img + "tmp.png", "vtkPNGWriter", 1)
   os.remove(img + "tmp.png")
 
+  # determine zero padding length
+  mag = int(math.floor(math.log10(float(te))))
+
   # go through all files
-  for fname in sorted(glob.glob(root + "/output/flow*.cgns")):
+  for fname in sorted_nicely(glob.glob(root + "/output/flow*.cgns")):
     time = fname.split('/')[-1]
 
     if time.endswith('.cgns'):
@@ -79,6 +97,7 @@ if  run == 'y' or run == 'Y':
       time = time[5:]
 
     if float(time) >= float(ts) and float(time) <= float(te):
+
       # change to file given by time
       flow.FileName = root + "/output/flow-" + time + ".cgns"
       flow.FileNameChanged()
@@ -86,9 +105,12 @@ if  run == 'y' or run == 'Y':
       part.FileNameChanged()
 
       print "Saving image for t = " + time
+
+      # pad image output time stamp for ffmpeg
+      ztime = time.zfill(mag + 5)
       
       # save screen shot
-      view.WriteImage(img + "img-" + time + ".png", "vtkPNGWriter", 1)
+      view.WriteImage(img + "img-" + ztime + ".png", "vtkPNGWriter", 1)
 
   # stitch together using ffmpeg
   print ""
