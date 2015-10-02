@@ -1095,15 +1095,12 @@ __device__ void xyz2rtp(real x, real y, real z, real *r, real *theta, real *phi)
   real XY = x*x + y*y;
   real XYZ = XY + z*z;
   // We calculate the coefficients everywhere in space. If a particle is
-  // centered at the center of a cell, XYZ will be zero. We'll set it equal
-  // to one since these values aren't ever used.
-  if(XYZ >= 0 && XYZ < DIV_ST) XYZ = 1;//DIV_ST;
-  else if(XYZ < 0 && XYZ > -DIV_ST) XYZ = 1;//-DIV_ST;
+  // centered at the center of a cell, XYZ will be zero.
+  if(XYZ >= 0 && XYZ < DIV_ST) XYZ = DIV_ST;
   *r = sqrt(XYZ);
   *theta = acos(z / *r);
   // Note that XY cannot be set equal to one, because the values are used.
   if(XY >= 0 && XY < DIV_ST) XY = DIV_ST;
-  else if(XY < 0 && XY > -DIV_ST) XY = -DIV_ST;
   *phi = acos(x / sqrt(XY));
   if(y < 0.) *phi = 2.*PI - *phi;
 }

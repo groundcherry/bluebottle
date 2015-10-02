@@ -310,6 +310,7 @@ typedef struct part_struct {
   real St;
   real e_dry;
   real l_rough;
+  real coeff_fric;
 } part_struct;
 /*
  * PURPOSE
@@ -385,6 +386,7 @@ typedef struct part_struct {
  *  * bin -- which bin the particle resides in
  *  * e_dry -- dry coefficient of restitution
  *  * l_rough -- particle surface roughness length
+ *  * coeff_fric -- coefficient of friction
  *  * St -- particle-wall interaction Stokes number
  ******
  */

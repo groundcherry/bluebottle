@@ -2175,7 +2175,8 @@ __global__ void bin_start(int *binStart, int *binEnd, int *partBin, int nparts);
  */
 __global__ void collision_parts(part_struct *parts, int nparts,
   dom_struct *dom, real eps, real mu, BC bc, int *binStart, int *binEnd,
-  int *partBin, int *partInd, dom_struct *binDom, int interactionLength);
+  int *partBin, int *partInd, dom_struct *binDom, int interactionLength,
+  real dt);
 /*
  * FUNCTION
  *  Calculate collision forcing between particle i and all other particles.
@@ -2192,6 +2193,7 @@ __global__ void collision_parts(part_struct *parts, int nparts,
  *  * partInd -- corresponding particle index for partBin
  *  * binDom -- the domain structure contaiing info about bin domain
  *  * interactionLength -- the compact support length for interactions
+ *  * dt -- time step size
  ******
  */
 

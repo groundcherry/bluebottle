@@ -2478,7 +2478,8 @@ __global__ void bin_start(int *binStart, int *binEnd, int *partBin, int nparts)
 
 __global__ void collision_parts(part_struct *parts, int nparts,
   dom_struct *dom, real eps, real mu, BC bc, int *binStart, int *binEnd,
-  int *partBin, int *partInd, dom_struct *binDom, int interactionLength)
+  int *partBin, int *partInd, dom_struct *binDom, int interactionLength,
+  real dt)
 {
   int index = threadIdx.x + blockIdx.x*blockDim.x;
 
@@ -2617,15 +2618,21 @@ __global__ void collision_parts(part_struct *parts, int nparts,
                 if(rz2*rz2 < rz*rz) rz = rz2;
                 rz = (bc.wB == PERIODIC) * rz + (bc.wB != PERIODIC) * (zi - zj);
 
-                ux = parts[i].u - parts[j].u;
-                uy = parts[i].v - parts[j].v;
-                uz = parts[i].w - parts[j].w;
+                ux = 0.5*((parts[i].u - parts[j].u)
+                  + (parts[i].u0 - parts[j].u0));
+                uy = 0.5*((parts[i].v - parts[j].v)
+                  + (parts[i].v0 - parts[j].v0));
+                uz = 0.5*((parts[i].w - parts[j].w)
+                  + (parts[i].w0 - parts[j].w0));
 
                 r = sqrt(rx*rx + ry*ry + rz*rz);
 
-                omegax = parts[i].ox - parts[j].ox;
-                omegay = parts[i].oy - parts[j].oy;
-                omegaz = parts[i].oz - parts[j].oz;
+                omegax = 0.5*((parts[i].ox + parts[j].ox)
+                  + (parts[i].ox0 + parts[j].ox0));
+                omegay = 0.5*((parts[i].oy + parts[j].oy)
+                  + (parts[i].oy0 + parts[j].oy0));
+                omegaz = 0.5*((parts[i].oz + parts[j].oz)
+                  + (parts[i].oz0 + parts[j].oz0));
 
                 omega = sqrt(omegax*omegax + omegay*omegay + omegaz*omegaz);
 
@@ -2746,6 +2753,19 @@ __global__ void collision_parts(part_struct *parts, int nparts,
 
           /** TODO implement variable alpha damping as is done for the walls **/
                 if(h < 0) {
+                  real Vx = utx + 0.5*(ai + aj + h)*ocrossnx;
+                  real Vy = uty + 0.5*(ai + aj + h)*ocrossny;
+                  real Vz = utz + 0.5*(ai + aj + h)*ocrossnz;
+
+                  real Hi = 0.5*parts[i].E/(1.+parts[i].sigma);
+                  real kt = 8./((1.-parts[i].sigma*parts[i].sigma)/Hi
+                    +(1.-parts[i].sigma*parts[i].sigma)/Hi)/sqrt(1./ai)
+                    *sqrt(-h);
+
+                  real sx = (Vx - Vx * nx) * dt;
+                  real sy = (Vy - Vy * ny) * dt;
+                  real sz = (Vz - Vz * nz) * dt;
+
                   ah = 0;
                   lnah = 0;
                   real denom = 0.75*((1-parts[i].sigma*parts[i].sigma)
@@ -2763,6 +2783,24 @@ __global__ void collision_parts(part_struct *parts, int nparts,
                     - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*udotn)
                     *nz;
 
+                  real coeff_fric = 0.5 * (parts[i].coeff_fric
+                    + parts[j].coeff_fric);
+                  Ftx = -kt * sx;
+                  Fty = -kt * sy;
+                  Ftz = -kt * sz;
+                  Ftx = Ftx - Ftx * nx;
+                  Fty = Fty - Fty * ny;
+                  Ftz = Ftz - Ftz * nz;
+                  real Ft = sqrt(Ftx*Ftx + Fty*Fty + Ftz*Ftz);
+                  real Fn = sqrt(Fnx*Fnx + Fny*Fny + Fnz*Fnz);
+                  if(Ft > coeff_fric * Fn) {
+                    Ftx = coeff_fric * Fn * Ftx / Ft;
+                    Fty = coeff_fric * Fn * Fty / Ft;
+                    Ftz = coeff_fric * Fn * Ftz / Ft;
+                  }
+                  Lox = -ai*((Fny+Fty)*nz-(Fnz+Ftz)*ny);
+                  Loy =  ai*((Fnx+Ftx)*nz-(Fnz+Ftz)*nx);
+                  Loz = -ai*((Fnx+Ftx)*ny-(Fny+Fty)*nx);
                 }
 
                 // assign forces
@@ -2852,6 +2890,22 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     }
     if(h < 0) {
       Un = parts[i].u - bc.uWD;
+      real Uty = 0.5*(parts[i].v+parts[i].v0) - bc.vSD;
+      real Utz = 0.5*(parts[i].w+parts[i].w0) - bc.wSD;
+
+      omx = 0.5*(parts[i].ox+parts[i].ox0);
+      omy = 0.5*(parts[i].oy+parts[i].oy0);
+      omz = 0.5*(parts[i].oz+parts[i].oz0);
+
+      real Vy = Uty - (ai + 0.5*h)*omz;
+      real Vz = Utz + (ai + 0.5*h)*omx;
+
+      real Hi = 0.5*parts[i].E/(1.+parts[i].sigma);
+      real kt = 8./((1.-parts[i].sigma*parts[i].sigma)/Hi
+        +(1.-parts[i].sigma*parts[i].sigma)/Hi)/sqrt(1./ai)*sqrt(-h);
+
+      real sy = Vy * dt;
+      real sz = Vz * dt;
 
       // if this is the first time step with contact, set St
       // otherwise, use St that was set at the beginning of the contact
@@ -2871,7 +2925,22 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
+      // use the same coeff_fric for particle and wall
+      real coeff_fric = parts[i].coeff_fric;
+      real Fty = -kt * sy;
+      real Ftz = -kt * sz;
+      real Ft = sqrt(Fty*Fty + Ftz*Ftz);
+      if(Ft > coeff_fric * (sqrt(-h*h*h)*k - eta*Un)) {
+        Fty = coeff_fric * (sqrt(-h*h*h)*k - eta*Un) * Fty / Ft;
+        Ftz = coeff_fric * (sqrt(-h*h*h)*k - eta*Un) * Ftz / Ft;
+      }
+
       parts[i].iFx += isTrue * (sqrt(-h*h*h)*k - eta*Un);
+      parts[i].iFy += isTrue * Fty;
+      parts[i].iFz += isTrue * Ftz;
+
+      parts[i].iLy += isTrue * ai * Ftz;
+      parts[i].iLz -= isTrue * ai * Ftx;
     }
 
     // east wall
@@ -2921,6 +2990,22 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     } 
     if(h < 0) {
       Un = -(parts[i].u - bc.uED);
+      real Uty = 0.5*(parts[i].v+parts[i].v0) - bc.vSD;
+      real Utz = 0.5*(parts[i].w+parts[i].w0) - bc.wSD;
+
+      omx = 0.5*(parts[i].ox+parts[i].ox0);
+      omy = 0.5*(parts[i].oy+parts[i].oy0);
+      omz = 0.5*(parts[i].oz+parts[i].oz0);
+
+      real Vy = Uty + (ai + 0.5*h)*omz;
+      real Vz = Utz - (ai + 0.5*h)*omx;
+
+      real Hi = 0.5*parts[i].E/(1.+parts[i].sigma);
+      real kt = 8./((1.-parts[i].sigma*parts[i].sigma)/Hi
+        +(1.-parts[i].sigma*parts[i].sigma)/Hi)/sqrt(1./ai)*sqrt(-h);
+
+      real sy = Vy * dt;
+      real sz = Vz * dt;
 
       // if this is the first time step with contact, set St
       // otherwise, use St that was set at the beginning of the contact
@@ -2940,7 +3025,22 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
+      // use the same coeff_fric for particle and wall
+      real coeff_fric = parts[i].coeff_fric;
+      real Fty = -kt * sy;
+      real Ftz = -kt * sz;
+      real Ft = sqrt(Fty*Fty + Ftz*Ftz);
+      if(Ft > coeff_fric * (sqrt(-h*h*h)*k - eta*Un)) {
+        Fty = coeff_fric * (sqrt(-h*h*h)*k - eta*Un) * Fty / Ft;
+        Ftz = coeff_fric * (sqrt(-h*h*h)*k - eta*Un) * Ftz / Ft;
+      }
+
       parts[i].iFx -= isTrue * (sqrt(-h*h*h)*k - eta*Un);
+      parts[i].iFy += isTrue * Fty;
+      parts[i].iFz += isTrue * Ftz;
+
+      parts[i].iLy -= isTrue * ai * Ftz;
+      parts[i].iLz += isTrue * ai * Ftx;
     }
 
     // south wall
@@ -2990,6 +3090,22 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     }
     if(h < 0) {
       Un = parts[i].v - bc.vSD;
+      real Utx = 0.5*(parts[i].u+parts[i].u0) - bc.uSD;
+      real Utz = 0.5*(parts[i].w+parts[i].w0) - bc.wSD;
+
+      omx = 0.5*(parts[i].ox+parts[i].ox0);
+      omy = 0.5*(parts[i].oy+parts[i].oy0);
+      omz = 0.5*(parts[i].oz+parts[i].oz0);
+
+      real Vx = Utx + (ai + 0.5*h)*omz;
+      real Vz = Utz - (ai + 0.5*h)*omx;
+
+      real Hi = 0.5*parts[i].E/(1.+parts[i].sigma);
+      real kt = 8./((1.-parts[i].sigma*parts[i].sigma)/Hi
+        +(1.-parts[i].sigma*parts[i].sigma)/Hi)/sqrt(1./ai)*sqrt(-h);
+
+      real sx = Vx * dt;
+      real sz = Vz * dt;
 
       // if this is the first time step with contact, set St
       // otherwise, use St that was set at the beginning of the contact
@@ -3009,7 +3125,22 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
+      // use the same coeff_fric for particle and wall
+      real coeff_fric = parts[i].coeff_fric;
+      real Ftx = -kt * sx;
+      real Ftz = -kt * sz;
+      real Ft = sqrt(Ftx*Ftx + Ftz*Ftz);
+      if(Ft > coeff_fric * (sqrt(-h*h*h)*k - eta*Un)) {
+        Ftx = coeff_fric * (sqrt(-h*h*h)*k - eta*Un) * Ftx / Ft;
+        Ftz = coeff_fric * (sqrt(-h*h*h)*k - eta*Un) * Ftz / Ft;
+      }
+
+      parts[i].iFx += isTrue * Ftx;
       parts[i].iFy += isTrue * (sqrt(-h*h*h)*k - eta*Un);
+      parts[i].iFz += isTrue * Ftz;
+
+      parts[i].iLx -= isTrue * ai * Ftz;
+      parts[i].iLz += isTrue * ai * Ftx;
     }
 
     // north wall
@@ -3059,6 +3190,22 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     }
     if(h < 0) {
       Un = -(parts[i].v - bc.vND);
+      real Utx = 0.5*(parts[i].u+parts[i].u0) - bc.uSD;
+      real Utz = 0.5*(parts[i].w+parts[i].w0) - bc.wSD;
+
+      omx = 0.5*(parts[i].ox+parts[i].ox0);
+      omy = 0.5*(parts[i].oy+parts[i].oy0);
+      omz = 0.5*(parts[i].oz+parts[i].oz0);
+
+      real Vx = Utx - (ai + 0.5*h)*omz;
+      real Vz = Utz + (ai + 0.5*h)*omx;
+
+      real Hi = 0.5*parts[i].E/(1.+parts[i].sigma);
+      real kt = 8./((1.-parts[i].sigma*parts[i].sigma)/Hi
+        +(1.-parts[i].sigma*parts[i].sigma)/Hi)/sqrt(1./ai)*sqrt(-h);
+
+      real sx = Vx * dt;
+      real sz = Vz * dt;
 
       // if this is the first time step with contact, set St
       // otherwise, use St that was set at the beginning of the contact
@@ -3078,7 +3225,22 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
+      // use the same coeff_fric for particle and wall
+      real coeff_fric = parts[i].coeff_fric;
+      real Ftx = -kt * sx;
+      real Ftz = -kt * sz;
+      real Ft = sqrt(Ftx*Ftx + Ftz*Ftz);
+      if(Ft > coeff_fric * (sqrt(-h*h*h)*k - eta*Un)) {
+        Ftx = coeff_fric * (sqrt(-h*h*h)*k - eta*Un) * Ftx / Ft;
+        Ftz = coeff_fric * (sqrt(-h*h*h)*k - eta*Un) * Ftz / Ft;
+      }
+
+      parts[i].iFx += isTrue * Ftx;
       parts[i].iFy -= isTrue * (sqrt(-h*h*h)*k - eta*Un);
+      parts[i].iFz += isTrue * Ftz;
+
+      parts[i].iLx += isTrue * ai * Ftz;
+      parts[i].iLz -= isTrue * ai * Ftx;
     }
 
     // bottom wall
@@ -3128,6 +3290,22 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     }
     if(h < 0) {
       Un = parts[i].w - bc.wBD;
+      real Utx = 0.5*(parts[i].u+parts[i].u0) - bc.uSD;
+      real Uty = 0.5*(parts[i].v+parts[i].v0) - bc.vSD;
+
+      omx = 0.5*(parts[i].ox+parts[i].ox0);
+      omy = 0.5*(parts[i].oy+parts[i].oy0);
+      omz = 0.5*(parts[i].oz+parts[i].oz0);
+
+      real Vx = Utx - (ai + 0.5*h)*omy;
+      real Vy = Uty + (ai + 0.5*h)*omx;
+
+      real Hi = 0.5*parts[i].E/(1.+parts[i].sigma);
+      real kt = 8./((1.-parts[i].sigma*parts[i].sigma)/Hi
+        +(1.-parts[i].sigma*parts[i].sigma)/Hi)/sqrt(1./ai)*sqrt(-h);
+
+      real sx = Vx * dt;
+      real sy = Vy * dt;
 
       // if this is the first time step with contact, set St
       // otherwise, use St that was set at the beginning of the contact
@@ -3147,7 +3325,22 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
+      // use the same coeff_fric for particle and wall
+      real coeff_fric = parts[i].coeff_fric;
+      real Ftx = -kt * sx;
+      real Fty = -kt * sy;
+      real Ft = sqrt(Ftx*Ftx + Fty*Fty);
+      if(Ft > coeff_fric * (sqrt(-h*h*h)*k - eta*Un)) {
+        Ftx = coeff_fric * (sqrt(-h*h*h)*k - eta*Un) * Ftx / Ft;
+        Fty = coeff_fric * (sqrt(-h*h*h)*k - eta*Un) * Fty / Ft;
+      }
+
+      parts[i].iFx += isTrue * Ftx;
+      parts[i].iFy += isTrue * Fty;
       parts[i].iFz += isTrue * (sqrt(-h*h*h)*k - eta*Un);
+
+      parts[i].iLx += isTrue * ai * Fty;
+      parts[i].iLy -= isTrue * ai * Ftx;
     }
 
     // top wall
@@ -3197,6 +3390,22 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     }
     if(h < 0) {
       Un = -(parts[i].w - bc.wTD);
+      real Utx = 0.5*(parts[i].u+parts[i].u0) - bc.uSD;
+      real Uty = 0.5*(parts[i].v+parts[i].v0) - bc.vSD;
+
+      omx = 0.5*(parts[i].ox+parts[i].ox0);
+      omy = 0.5*(parts[i].oy+parts[i].oy0);
+      omz = 0.5*(parts[i].oz+parts[i].oz0);
+
+      real Vx = Utx + (ai + 0.5*h)*omy;
+      real Vy = Uty - (ai + 0.5*h)*omx;
+
+      real Hi = 0.5*parts[i].E/(1.+parts[i].sigma);
+      real kt = 8./((1.-parts[i].sigma*parts[i].sigma)/Hi
+        +(1.-parts[i].sigma*parts[i].sigma)/Hi)/sqrt(1./ai)*sqrt(-h);
+
+      real sx = Vx * dt;
+      real sy = Vy * dt;
 
       // if this is the first time step with contact, set St
       // otherwise, use St that was set at the beginning of the contact
@@ -3216,7 +3425,22 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
       real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho*k*sqrt(-h));
 
+      // use the same coeff_fric for particle and wall
+      real coeff_fric = parts[i].coeff_fric;
+      real Ftx = -kt * sx;
+      real Fty = -kt * sy;
+      real Ft = sqrt(Ftx*Ftx + Fty*Fty);
+      if(Ft > coeff_fric * (sqrt(-h*h*h)*k - eta*Un)) {
+        Ftx = coeff_fric * (sqrt(-h*h*h)*k - eta*Un) * Ftx / Ft;
+        Fty = coeff_fric * (sqrt(-h*h*h)*k - eta*Un) * Fty / Ft;
+      }
+
+      parts[i].iFx += isTrue * Ftx;
+      parts[i].iFy += isTrue * Fty;
       parts[i].iFz -= isTrue * (sqrt(-h*h*h)*k - eta*Un);
+
+      parts[i].iLx -= isTrue * ai * Fty;
+      parts[i].iLy += isTrue * ai * Ftx;
     }
   }
 }
