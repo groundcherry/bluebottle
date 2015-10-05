@@ -58,12 +58,16 @@ if not img.endswith('/'):
 anim = raw_input("Animation output name (include extension): ")
 fps = raw_input("Animation frame rate: ")
 
+state = root + state
+img = root + img
+anim = root + anim
+
 print "\nSummary:"
 print "  Simulation root: " + root
-print "  ParaView state file: " + root + state
+print "  ParaView state file: " + state
 print "  Animation time: " + ts + " to " + te
-print "  Image output directory: " + root + img
-print "  Animation output name: " + root + anim
+print "  Image output directory: " + img
+print "  Animation output name: " + anim
 print "  Animation frame rate: " + fps
 
 print ""
