@@ -628,6 +628,8 @@ void cgns_flow_field(real dtout)
   cgsize_t *N = malloc(sizeof(cgsize_t));
   N[0] = 1;
   cg_array_write("Time", RealDouble, 1, N, &ttime);
+  cg_array_write("Density", RealDouble, 1, N, &rho_f);
+  cg_array_write("KinematicViscosity", RealDouble, 1, N, &nu);
   free(N);
 
   cg_close(fn);
@@ -913,6 +915,12 @@ void cgns_particles(real dtout)
     cgsize_t *conn = malloc(nparts * sizeof(cgsize_t));
     // cpumem += nparts * sizeof(int);
     real *a = malloc(nparts * sizeof(real));
+    real *rho = malloc(nparts * sizeof(real));
+    real *E = malloc(nparts * sizeof(real));
+    real *sigma = malloc(nparts * sizeof(real));
+    real *e_dry = malloc(nparts * sizeof(real));
+    real *l_rough = malloc(nparts * sizeof(real));
+    real *coeff_fric = malloc(nparts * sizeof(real));
     // cpumem += nparts * sizeof(int);
     int *order = malloc(nparts * sizeof(int));
     // cpumem += nparts * sizeof(real);
@@ -976,6 +984,15 @@ void cgns_particles(real dtout)
     // cpumem += nparts * sizeof(real);
     real *hLz = malloc(nparts * sizeof(real));
     // cpumem += nparts * sizeof(real); 
+    real *axx = malloc(nparts * sizeof(real));
+    real *axy = malloc(nparts * sizeof(real));
+    real *axz = malloc(nparts * sizeof(real));
+    real *ayx = malloc(nparts * sizeof(real));
+    real *ayy = malloc(nparts * sizeof(real));
+    real *ayz = malloc(nparts * sizeof(real));
+    real *azx = malloc(nparts * sizeof(real));
+    real *azy = malloc(nparts * sizeof(real));
+    real *azz = malloc(nparts * sizeof(real));
 
     real   *p00_r = malloc(nparts * sizeof(real));
     real   *p00_i = malloc(nparts * sizeof(real));
@@ -1112,6 +1129,12 @@ void cgns_particles(real dtout)
       z[i] = parts[i].z;
       conn[i] = nparts-i;
       a[i] = parts[i].r;
+      rho[i] = parts[i].rho;
+      E[i] = parts[i].E;
+      sigma[i] = parts[i].sigma;
+      e_dry[i] = parts[i].e_dry;
+      l_rough[i] = parts[i].l_rough;
+      coeff_fric[i] = parts[i].coeff_fric;
       order[i] = parts[i].order;
       u[i] = parts[i].u;
       v[i] = parts[i].v;
@@ -1143,6 +1166,15 @@ void cgns_particles(real dtout)
       ox[i] = parts[i].ox;
       oy[i] = parts[i].oy;
       oz[i] = parts[i].oz;
+      axx[i] = parts[i].axx;
+      axy[i] = parts[i].axy;
+      axz[i] = parts[i].axz;
+      ayx[i] = parts[i].ayx;
+      ayy[i] = parts[i].ayy;
+      ayz[i] = parts[i].ayz;
+      azx[i] = parts[i].azx;
+      azy[i] = parts[i].azy;
+      azz[i] = parts[i].azz;
 
         p00_r[i] = 0;
         p00_i[i] = 0;
@@ -1415,6 +1447,13 @@ void cgns_particles(real dtout)
 
     cg_sol_write(fn, bn, zn, "Solution", Vertex, &sn);
     cg_field_write(fn, bn, zn, sn, RealDouble, "Radius", a, &fnr);
+    cg_field_write(fn, bn, zn, sn, RealDouble, "Density", rho, &fnr);
+    cg_field_write(fn, bn, zn, sn, RealDouble, "YoungsModulus", E, &fnr);
+    cg_field_write(fn, bn, zn, sn, RealDouble, "PoissonsRatio", sigma, &fnr);
+    cg_field_write(fn, bn, zn, sn, RealDouble, "DryCoeffRest", e_dry, &fnr);
+    cg_field_write(fn, bn, zn, sn, RealDouble, "RoughnessLength", l_rough,
+      &fnr);
+    cg_field_write(fn, bn, zn, sn, RealDouble, "FricCoeff", coeff_fric, &fnr);
     cg_field_write(fn, bn, zn, sn, Integer, "LambOrder", order, &fnr);
     cg_field_write(fn, bn, zn, sn, RealDouble, "VelocityX", u, &fnr);
     cg_field_write(fn, bn, zn, sn, RealDouble, "VelocityY", v, &fnr);
@@ -1440,6 +1479,16 @@ void cgns_particles(real dtout)
     cg_field_write(fn, bn, zn, sn, RealDouble, "MomentX", Lx, &fnr);
     cg_field_write(fn, bn, zn, sn, RealDouble, "MomentY", Ly, &fnr);
     cg_field_write(fn, bn, zn, sn, RealDouble, "MomentZ", Lz, &fnr);
+    cg_field_write(fn, bn, zn, sn, RealDouble, "AngularPosXx", axx, &fnr);
+    cg_field_write(fn, bn, zn, sn, RealDouble, "AngularPosXy", axy, &fnr);
+    cg_field_write(fn, bn, zn, sn, RealDouble, "AngularPosXz", axz, &fnr);
+    cg_field_write(fn, bn, zn, sn, RealDouble, "AngularPosYx", ayx, &fnr);
+    cg_field_write(fn, bn, zn, sn, RealDouble, "AngularPosYy", ayy, &fnr);
+    cg_field_write(fn, bn, zn, sn, RealDouble, "AngularPosYz", ayz, &fnr);
+    cg_field_write(fn, bn, zn, sn, RealDouble, "AngularPosZx", azx, &fnr);
+    cg_field_write(fn, bn, zn, sn, RealDouble, "AngularPosZy", azy, &fnr);
+    cg_field_write(fn, bn, zn, sn, RealDouble, "AngularPosZz", azz, &fnr);
+    
 
     switch(coeff_stride) {
       case(21):
@@ -1590,6 +1639,13 @@ void cgns_particles(real dtout)
     free(z);
     free(conn);
     free(a);
+    free(rho);
+    free(E);
+    free(sigma);
+    free(e_dry);
+    free(l_rough);
+    free(coeff_fric);
+
     free(order);
     free(u);
     free(v);
@@ -1621,6 +1677,15 @@ void cgns_particles(real dtout)
     free(Lx);
     free(Ly);
     free(Lz);
+    free(axx);
+    free(axy);
+    free(axz);
+    free(ayx);
+    free(ayy);
+    free(ayz);
+    free(azx);
+    free(azy);
+    free(azz);
 
     free(  p00_r);
     free(  p00_i);
