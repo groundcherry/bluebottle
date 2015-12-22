@@ -413,10 +413,10 @@ __global__ void BC_u_N_T(real *u, dom_struct *dom, real* bc_s, real* bc_n)
   int s2b = dom->Gfx._s2b;
 
   if((ti < dom->Gfx._inb) && (tk < dom->Gfx._knb)) {
-    // velocity with computational domain, near the boundary
-    u[ti + (dom->Gfx._jeb-1)*s1b + tk*s2b] = bc_s[tk + ti*dom->Gfx.knb];
+    // velocity within computational domain, near the boundary
+    u[ti + (dom->Gfx._je-1)*s1b + tk*s2b] = bc_s[tk + ti*dom->Gfx.knb];
     //velocity on ghost cells
-    u[ti + dom->Gfx._jeb*s1b + tk*s2b] = bc_n[tk + ti*dom->Gfx.knb];
+    u[ti + (dom->Gfx._jeb-1)*s1b + tk*s2b] = bc_n[tk + ti*dom->Gfx.knb];
     
   }
 }
@@ -531,9 +531,9 @@ __global__ void BC_u_T_T(real *u, dom_struct *dom, real* bc_b, real* bc_t)
   int s2b = dom->Gfx._s2b;
 
   if((ti < dom->Gfx._inb) && (tj < dom->Gfx._jnb)) {
-    u[ti + tj*s1b + (dom->Gfx._keb-1)*s2b] = bc_b[ti + tj*dom->Gfx.inb];
+    u[ti + tj*s1b + (dom->Gfx._ke-1)*s2b] = bc_b[ti + tj*dom->Gfx.inb];
     // velocity on ghost cell
-    u[ti + tj*s1b + dom->Gfx._keb*s2b] = bc_t[ti + tj*dom->Gfx.inb];
+    u[ti + tj*s1b + (dom->Gfx._keb-1)*s2b] = bc_t[ti + tj*dom->Gfx.inb];
   }
 }
 
@@ -648,8 +648,9 @@ __global__ void BC_v_E_T(real *v, dom_struct *dom, real* bc_w, real* bc_e)
   int s2b = dom->Gfy._s2b;
 
   if((tj < dom->Gfy._jnb) && (tk < dom->Gfy._knb)) {
-    v[(dom->Gfy._ieb-1) + tj*s1b + tk*s2b] = bc_w[tj + tk*dom->Gfy.jnb];
-    v[dom->Gfy._ieb + tj*s1b + tk*s2b] = bc_e[tj + tk*dom->Gfy.jnb];
+    v[(dom->Gfy._ie-1) + tj*s1b + tk*s2b] = bc_w[tj + tk*dom->Gfy.jnb];
+    //velocity on ghost cell
+    v[dom->Gfy._ieb-1 + tj*s1b + tk*s2b] = bc_e[tj + tk*dom->Gfy.jnb];
   }
 }
 
@@ -828,8 +829,6 @@ __global__ void BC_v_B_T(real *v, dom_struct *dom, real* bc_b, real* bc_t)
   int s2b = dom->Gfy._s2b;
 
   if((ti < dom->Gfy._inb) && (tj < dom->Gfy._jnb)) {
-    //v[ti + tj*s1b + dom->Gfy._ksb*s2b] = 2. * bc[ti + tj*dom->Gfy.inb]
-    //  - v[ti + tj*s1b + dom->Gfy._ks*s2b];
 	v[ti + tj*s1b + dom->Gfy._ksb*s2b] = bc_b[ti + tj*dom->Gfy.inb];
 	v[ti + tj*s1b + dom->Gfy._ks*s2b] = bc_t[ti + tj*dom->Gfy.inb];
  }
@@ -888,8 +887,9 @@ __global__ void BC_v_T_T(real *v, dom_struct *dom, real* bc_s, real* bc_n)
   int s2b = dom->Gfy._s2b;
 
   if((ti < dom->Gfy._inb) && (tj < dom->Gfy._jnb)) {
-    v[ti + tj*s1b + (dom->Gfy._keb-1)*s2b] = bc_s[ti + tj*dom->Gfy.inb];
-    v[ti + tj*s1b + dom->Gfy._keb*s2b] = bc_n[ti + tj*dom->Gfy.inb];
+    v[ti + tj*s1b + (dom->Gfy._ke-1)*s2b] = bc_s[ti + tj*dom->Gfy.inb];
+    // velocity on ghost cell
+    v[ti + tj*s1b + (dom->Gfy._keb-1)*s2b] = bc_n[ti + tj*dom->Gfy.inb];
   }
 }
 
@@ -1002,8 +1002,9 @@ __global__ void BC_w_E_T(real *w, dom_struct *dom, real* bc_w, real* bc_e)
   int s2b = dom->Gfz._s2b;
 
   if((tj < dom->Gfz._jnb) && (tk < dom->Gfz._knb)) {
-    w[(dom->Gfz._ieb-1) + tj*s1b + tk*s2b] = bc_w[tj + tk*dom->Gfz.jnb];
-    w[dom->Gfz._ieb + tj*s1b + tk*s2b] = bc_e[tj + tk*dom->Gfz.jnb];
+    w[(dom->Gfz._ie-1) + tj*s1b + tk*s2b] = bc_w[tj + tk*dom->Gfz.jnb];
+    //velocity on ghost cell
+    w[(dom->Gfz._ieb-1) + tj*s1b + tk*s2b] = bc_e[tj + tk*dom->Gfz.jnb];
   }
 }
 
@@ -1117,8 +1118,9 @@ __global__ void BC_w_N_T(real *w, dom_struct *dom, real* bc_s, real* bc_n)
   int s2b = dom->Gfz._s2b;
 
   if((ti < dom->Gfz._inb) && (tk < dom->Gfz._knb)) {
-    w[ti + (dom->Gfz._jeb-1)*s1b + tk*s2b] = bc_s[tk + ti*dom->Gfz.knb];
-    w[ti + dom->Gfz._jeb*s1b + tk*s2b] = bc_n[tk + ti*dom->Gfz.knb];
+    w[ti + (dom->Gfz._je-1)*s1b + tk*s2b] = bc_s[tk + ti*dom->Gfz.knb];
+    //velocity on ghost cell
+    w[ti + (dom->Gfz._jeb-1)*s1b + tk*s2b] = bc_n[tk + ti*dom->Gfz.knb];
   }
 }
 
