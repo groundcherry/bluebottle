@@ -90,22 +90,34 @@ real *u_star;
 real *v_star;
 real *w_star;
 real *u_WE;
-real *u_SN;
-real *u_BT;
-real *v_WE;
+real *u_SN_S;
+real *u_SN_N;
+real *u_BT_B;
+real *u_BT_T;
+real *v_WE_W;
+real *v_WE_E;
 real *v_SN;
-real *v_BT;
-real *w_WE;
-real *w_SN;
+real *v_BT_B;
+real *v_BT_T;
+real *w_WE_W;
+real *w_WE_E;
+real *w_SN_S;
+real *w_SN_N;
 real *w_BT;
 real **_u_WE;
-real **_u_SN;
-real **_u_BT;
-real **_v_WE;
+real **_u_SN_S;
+real **_u_SN_N;
+real **_u_BT_B;
+real **_u_BT_T;
+real **_v_WE_W;
+real **_v_WE_E;
 real **_v_SN;
-real **_v_BT;
-real **_w_WE;
-real **_w_SN;
+real **_v_BT_B;
+real **_v_BT_T;
+real **_w_WE_W;
+real **_w_WE_E;
+real **_w_SN_S;
+real **_w_SN_N;
 real **_w_BT;
 real **_rhs_p;
 real duration;
@@ -512,13 +524,12 @@ int main(int argc, char *argv[]) {
 
         // get initial dt; this is an extra check for the SHEAR initialization
         dt = cuda_find_dt();
-
+	printf("cuda_find_dt\n");
         // share this with the precursor domain
         expd_compare_dt(np, status);
-
+	printf("expd_compare_dt\n");
         // update the boundary condition config info to share with precursor
         expd_update_BC(np, status);
-
         // apply boundary conditions to field variables
         if(nparts > 0) {
           cuda_part_BC();
@@ -591,7 +602,6 @@ int main(int argc, char *argv[]) {
           compute_vel_BC();
           // update the boundary condition config info and share with precursor
           expd_update_BC(np, status);
-
           // TODO: save work by rebuilding only the cages that need to be rebuilt
           cuda_build_cages();
 
