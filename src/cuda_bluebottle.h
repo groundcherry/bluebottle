@@ -394,7 +394,7 @@ __global__ void BC_u_S_N(real *u, dom_struct *dom);
  *  BC_u_S_T<<<>>>()
  * USAGE
  */
-__global__ void BC_u_S_T(real *u, dom_struct *dom, real *bc);
+__global__ void BC_u_S_T(real *u, dom_struct *dom, real *bc_s, real *bc_n);
 /*
  * FUNCTION
  *  Apply the precursor domain boundary conditions to the south face u-velocity
@@ -457,7 +457,7 @@ __global__ void BC_u_N_N(real *u, dom_struct *dom);
  *  BC_u_N_T<<<>>>()
  * USAGE
  */
-__global__ void BC_u_N_T(real *u, dom_struct *dom, real *bc);
+__global__ void BC_u_N_T(real *u, dom_struct *dom, real *bc_s, real *bc_n);
 /*
  * FUNCTION
  *  Apply the precursor domain boundary conditions to the north face u-velocity
@@ -520,7 +520,7 @@ __global__ void BC_u_B_N(real *u, dom_struct *dom);
  *  BC_u_B_T<<<>>>()
  * USAGE
  */
-__global__ void BC_u_B_T(real *u, dom_struct *dom, real *bc);
+__global__ void BC_u_B_T(real *u, dom_struct *dom, real *bc_b, real *bc_t);
 /*
  * FUNCTION
  *  Apply the precursor domain boundary conditions to the bottom face u-velocity
@@ -528,7 +528,8 @@ __global__ void BC_u_B_T(real *u, dom_struct *dom, real *bc);
  * ARGUMENTS
  *  * u -- the device u-velocity field subdomain
  *  * dom -- the device subdomain
- *  * bc -- the device u-velocity precursor plane subdomain
+ *  * bc -- the device u-velocity precursor plane subdomain in ghost cell
+ *  * bc -- the device u-velocity precursor plane subdomain in the first layer 
  ******
  */
 
@@ -583,7 +584,7 @@ __global__ void BC_u_T_N(real *u, dom_struct *dom);
  *  BC_u_T_T<<<>>>()
  * USAGE
  */
-__global__ void BC_u_T_T(real *u, dom_struct *dom, real *bc);
+__global__ void BC_u_T_T(real *u, dom_struct *dom, real *bc_b, real *bc_t);
 /*
  * FUNCTION
  *  Apply the precursor domain boundary conditions to the top face u-velocity
@@ -646,7 +647,7 @@ __global__ void BC_v_W_N(real *v, dom_struct *dom);
  *  BC_v_W_T<<<>>>()
  * USAGE
  */
-__global__ void BC_v_W_T(real *v, dom_struct *dom, real *bc);
+__global__ void BC_v_W_T(real *v, dom_struct *dom, real *bc_w, real *bc_e);
 /*
  * FUNCTION
  *  Apply the precursor domain boundary conditions to the west face v-velocity
@@ -709,7 +710,7 @@ __global__ void BC_v_E_N(real *v, dom_struct *dom);
  *  BC_v_E_T<<<>>>()
  * USAGE
  */
-__global__ void BC_v_E_T(real *v, dom_struct *dom, real *bc);
+__global__ void BC_v_E_T(real *v, dom_struct *dom, real *bc_w, real *bc_e);
 /*
  * FUNCTION
  *  Apply the precursor domain boundary conditions to the east face v-velocity
@@ -898,7 +899,7 @@ __global__ void BC_v_B_N(real *v, dom_struct *dom);
  *  BC_v_B_T<<<>>>()
  * USAGE
  */
-__global__ void BC_v_B_T(real *v, dom_struct *dom, real *bc);
+__global__ void BC_v_B_T(real *v, dom_struct *dom, real *bc_b, real *bc_t);
 /*
  * FUNCTION
  *  Apply the precursor domain boundary conditions to the bottom face v-velocity
@@ -906,7 +907,8 @@ __global__ void BC_v_B_T(real *v, dom_struct *dom, real *bc);
  * ARGUMENTS
  *  * v -- the device v-velocity field subdomain
  *  * dom -- the device subdomain
- *  * bc -- the device v-velocity precursor plane subdomain
+ *  * bc -- the device v-velocity precursor plane subdomain in ghost cell
+ *  * bc -- the device v-velocity precursor plane subdomain in first layer
  ******
  */
 
@@ -960,7 +962,7 @@ __global__ void BC_v_T_N(real *v, dom_struct *dom);
  *  BC_v_T_T<<<>>>()
  * USAGE
  */
-__global__ void BC_v_T_T(real *v, dom_struct *dom, real *bc);
+__global__ void BC_v_T_T(real *v, dom_struct *dom, real *bc_s, real *bc_n);
 /*
  * FUNCTION
  *  Apply the precursor domain boundary conditions to the top face v-velocity
@@ -1023,7 +1025,7 @@ __global__ void BC_w_W_N(real *w, dom_struct *dom);
  *  BC_w_W_T<<<>>>()
  * USAGE
  */
-__global__ void BC_w_W_T(real *w, dom_struct *dom, real *bc);
+__global__ void BC_w_W_T(real *w, dom_struct *dom, real *bc_w, real *bc_e);
 /*
  * FUNCTION
  *  Apply the precursor domain boundary conditions to the west face w-velocity
@@ -1086,7 +1088,7 @@ __global__ void BC_w_E_N(real *w, dom_struct *dom);
  *  BC_w_E_T<<<>>>()
  * USAGE
  */
-__global__ void BC_w_E_T(real *w, dom_struct *dom, real *bc);
+__global__ void BC_w_E_T(real *w, dom_struct *dom, real *bc_w, real *bc_e);
 /*
  * FUNCTION
  *  Apply the precursor domain boundary conditions to the east face w-velocity
@@ -1149,7 +1151,7 @@ __global__ void BC_w_S_N(real *w, dom_struct *dom);
  *  BC_w_S_T<<<>>>()
  * USAGE
  */
-__global__ void BC_w_S_T(real *w, dom_struct *dom, real *bc);
+__global__ void BC_w_S_T(real *w, dom_struct *dom, real *bc_s, real *bc_n);
 /*
  * FUNCTION
  *  Apply the precursor domain boundary conditions to the south face w-velocity
@@ -1212,7 +1214,7 @@ __global__ void BC_w_N_N(real *w, dom_struct *dom);
  *  BC_w_N_T<<<>>>()
  * USAGE
  */
-__global__ void BC_w_N_T(real *w, dom_struct *dom, real *bc);
+__global__ void BC_w_N_T(real *w, dom_struct *dom, real *bc_s, real *bc_n);
 /*
  * FUNCTION
  *  Apply the precursor domain boundary conditions to the north face w-velocity
@@ -2280,7 +2282,7 @@ __global__ void yank_u_WE(real *u, dom_struct *dom, real *plane, real xpos,
  *  yank_v_WE<<<>>>()
  * USAGE
  */
-__global__ void yank_v_WE(real *v, dom_struct *dom, real *plane, real xpos,
+__global__ void yank_v_WE(real *v, dom_struct *dom, real *plane_w, real *plane_e, real xpos,
   real vel);
 /*
  * FUNCTION
@@ -2302,7 +2304,7 @@ __global__ void yank_v_WE(real *v, dom_struct *dom, real *plane, real xpos,
  *  yank_w_WE<<<>>>()
  * USAGE
  */
-__global__ void yank_w_WE(real *w, dom_struct *dom, real *plane, real xpos,
+__global__ void yank_w_WE(real *w, dom_struct *dom, real *plane_w, real *plane_e, real xpos,
   real vel);
 /*
  * FUNCTION
@@ -2324,7 +2326,7 @@ __global__ void yank_w_WE(real *w, dom_struct *dom, real *plane, real xpos,
  *  yank_u_SN<<<>>>()
  * USAGE
  */
-__global__ void yank_u_SN(real *u, dom_struct *dom, real *plane, real ypos,
+__global__ void yank_u_SN(real *u, dom_struct *dom, real *plane_s, real *plane_n, real ypos,
   real vel);
 /*
  * FUNCTION
@@ -2368,7 +2370,7 @@ __global__ void yank_v_SN(real *v, dom_struct *dom, real *plane, real ypos,
  *  yank_w_SN<<<>>>()
  * USAGE
  */
-__global__ void yank_w_SN(real *w, dom_struct *dom, real *plane, real ypos,
+__global__ void yank_w_SN(real *w, dom_struct *dom, real *plane_s, real *plane_n, real ypos,
   real vel);
 /*
  * FUNCTION
@@ -2390,7 +2392,7 @@ __global__ void yank_w_SN(real *w, dom_struct *dom, real *plane, real ypos,
  *  yank_u_BT<<<>>>()
  * USAGE
  */
-__global__ void yank_u_BT(real *u, dom_struct *dom, real *plane, real zpos,
+__global__ void yank_u_BT(real *u, dom_struct *dom, real *plane_b, real *plane_t,  real zpos,
   real vel);
 /*
  * FUNCTION
@@ -2412,7 +2414,7 @@ __global__ void yank_u_BT(real *u, dom_struct *dom, real *plane, real zpos,
  *  yank_v_BT<<<>>>()
  * USAGE
  */
-__global__ void yank_v_BT(real *v, dom_struct *dom, real *plane, real zpos,
+__global__ void yank_v_BT(real *v, dom_struct *dom, real *plane_b, real *plane_t,  real zpos,
   real vel);
 /*
  * FUNCTION
