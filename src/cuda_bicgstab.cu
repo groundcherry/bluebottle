@@ -893,8 +893,7 @@ void cuda_PP_bicgstab(int rank)
 
     // copy p0 to array without ghost cells and use it as an initial guess and solution space
     real *_phinoghost;
-    (cudaMalloc((void**) &_phinoghost,
-      sizeof(real)*dom[dev].Gcc.s3b));
+    (cudaMalloc((void**) &_phinoghost, sizeof(real)*dom[dev].Gcc.s3));
     copy_p_noghost<<<numBlocks_x, dimBlocks_x>>>(_phinoghost, _phi[dev],
       _dom[dev]);
     thrust::device_ptr<real> _ptr_p_sol(_phinoghost);
@@ -922,6 +921,17 @@ cusp::print(*_pp);
       norm = 1.;
     cusp::blas::scal(*_pp, 1. / norm);
     cusp::blas::scal(*_p_sol, 1. / norm);
+
+/*
+cusp::array1d<real, cusp::host_memory> PP = *_pp;
+cusp::blas::scal(PP, norm);
+//cusp::print(PP);
+real ppsum = 0.;
+for(int s = 0; s < dom[dev].Gcc.s3; s++) {
+  ppsum += PP[s]*dom[dev].dx*dom[dev].dy*dom[dev].dz;
+}
+printf("PPSUM_1 = %e\n", ppsum*norm*dt/rho_f);
+*/
 
     // call BiCGSTAB to solve for p_sol
     cusp::monitor<real> monitor(*_pp, pp_max_iter, pp_residual);

@@ -111,6 +111,7 @@ void cuda_Lamb(void)
     // nodes TODO: find a more elegant way of fixing the divide by sin(0)
     // TODO: put this in GPU constant memory
     real a1_t[6] = {PI12, PI12, PI12, PI12, 0.+DIV_ST, PI-DIV_ST};
+    //real a1_t[6] = {PI12, PI12, PI12, PI12, 0., PI};
     real a1_p[6] = {0., PI12, PI, PI32, 0., 0.};
     real a2_t[12] = {PI12, PI12, PI12, PI12,
                      PI14, PI14, PI14, PI14,
@@ -122,6 +123,7 @@ void cuda_Lamb(void)
                     alph2, alph2, alph2, alph2};
     real a3_p[8] = {PI14, PI34, PI54, PI74,
                     PI14, PI34, PI54, PI74};
+
     /*real b_t[24] = {alph3, alph4, alph3, alph4,
                     alph3, alph4, alph3, alph4,
                     alph5, alph5, alph6, alph6,

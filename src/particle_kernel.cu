@@ -933,7 +933,7 @@ __global__ void part_BC_p(real *p, real *p_rhs, int *phase, int *phase_shell,
       // write BC if flagged, otherwise leave alone
       p_rhs[C] = (real) phase_shell[CC] * p_rhs[C]
         + (real) (1 - phase_shell[CC])
-        * ((pp_tmp - p[CC]) + 0.5*mu*p_rhs[C]);
+        * (pp_tmp - p[CC]);// + 0.5*mu*p_rhs[C]);
       p_rhs[C] = (real) (phase[CC] < 0 && phase_shell[CC]) * p_rhs[C];
 #endif
     }

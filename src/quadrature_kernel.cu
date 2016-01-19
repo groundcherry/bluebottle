@@ -184,7 +184,7 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   // find closest cell face in x-direction
 
   // interpolate u-velocity
-  i = round((x - dom->xs) * ddx - 0.5) + DOM_BUF;
+  i = round((x - dom->xs) * ddx) + DOM_BUF;
   j = floor((y - dom->ys) * ddy) + DOM_BUF;
   k = floor((z - dom->zs) * ddz) + DOM_BUF;
   if(i < dom->Gfx.is) i = dom->Gfx.is;
@@ -225,7 +225,7 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
 
   // interpolate v-velocity
   i = floor((x - dom->xs) * ddx) + DOM_BUF;
-  j = round((y - dom->ys) * ddy - 0.5) + DOM_BUF;
+  j = round((y - dom->ys) * ddy) + DOM_BUF;
   k = floor((z - dom->zs) * ddz) + DOM_BUF;
   if(i < dom->Gfy.is) i = dom->Gfy.is;
   if(j < dom->Gfy.js) j = dom->Gfy.js;
@@ -262,7 +262,7 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   // interpolate w-velocity
   i = floor((x - dom->xs) * ddx) + DOM_BUF;
   j = floor((y - dom->ys) * ddy) + DOM_BUF;
-  k = round((z - dom->zs) * ddz - 0.5) + DOM_BUF;
+  k = round((z - dom->zs) * ddz) + DOM_BUF;
   if(i < dom->Gfz.is) i = dom->Gfz.is;
   if(j < dom->Gfz.js) j = dom->Gfz.js;
   if(k < dom->Gfz.ks) k = dom->Gfz.ks;
@@ -298,6 +298,8 @@ __global__ void interpolate_nodes(real *p0, real *p, real *u, real *v, real *w,
   // convert (uu, vv, ww) to (u_r, u_theta, u_phi) and write to node arrays
   cart2sphere(uu, vv, ww, theta[node], phi[node],
     &ur[node+part*nnodes], &ut[node+part*nnodes], &up[node+part*nnodes]);
+
+//printf("%e %e u = %e v = %e w = %e\n", theta[node], phi[node], uu,vv,ww);
 }
 
 __device__ real nnm(int n, int m)
@@ -422,6 +424,12 @@ __global__ void cuda_get_coeffs(part_struct *parts,
     int_xXDYu_im[j] = N_nm/sin(theta)*(dPdp*ut[node+part*nnodes]*cos(m*phi)
       - dPdt*up[node+part*nnodes]*sin(m*phi));
 
+//if(n == 1 && m == 1) {
+//  printf("int_Yp_re(%f, %f) = %e\n", theta, phi, int_Yp_re[j]);
+//  printf("int_rDYu_re(%f, %f) = %e\n", theta, phi, int_rDYu_re[j]);
+//  printf("int_xXDYu_re(%f, %f) = %e ut = %e up = %e\n", theta, phi, int_xXDYu_re[j], ut[node+part*nnodes], up[node+part*nnodes]);
+//}
+
     __syncthreads();
 
     // compute scalar products
@@ -467,6 +475,12 @@ __global__ void cuda_get_coeffs(part_struct *parts,
         int_xXDYu_im[j] += B * int_xXDYu_im[j+i];
       }
 */
+
+//if(n == 1 && m == 1) {
+//  printf("int_Yp_re = %e\n", int_Yp_re[j]);
+//  printf("int_rDYu_re = %e\n", int_rDYu_re[j]);
+//  printf("int_xXDYu_re = %e\n", int_xXDYu_re[j]);
+//}
       
 #ifdef TEST
       real relax = 1.0;
@@ -489,7 +503,7 @@ __global__ void cuda_get_coeffs(part_struct *parts,
         real A = (1.-0.5*n*(2.*n-1.)/(n+1.)*pow(ars,2.*n+1.))*pow(rsa,n);
         real B = n*(2.*n-1.)*(2.*n+1.)/(n+1.)*pow(ars,n+1.);
         real C = 0.25*n*(2.*(n+3.)/(2.*n+3.)
-          + (n-2.-n*(2.*n+1.)/(2.*n+3.)*ars*ars)*pow(ars,2.*n+1.))*pow(rsa,n+1);
+          + (n-2.-n*(2.*n+1.)/(2.*n+3.)*ars*ars)*pow(ars,2.*n+1.))*pow(rsa,n+1.);
         real D = n*(n+1.+0.5*((n-2.)*(2.*n+1.)*rsa*rsa
           - n*(2.*n-1.))*pow(ars,2.*n+1.))*pow(rsa,n-1.);
 
@@ -521,6 +535,8 @@ __global__ void cuda_get_coeffs(part_struct *parts,
           + relax*chinm_re[stride*part+coeff];
         chinm_im[stride*part+coeff] = chinm_im0[stride*part+coeff]*(1.-relax)
           + relax*chinm_im[stride*part+coeff];
+
+//printf("pnm_re(%d,%d) = %e\n", n,m, pnm_re[stride*part+coeff]);
       }
     }
   }

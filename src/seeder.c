@@ -41,7 +41,6 @@ void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias,
   real E;              // youngs modulus
   real sigma;          // poisson ratio
   real e_dry;          // dry coefficient of restitution
-  real l_rough;        // particle surface roughness
   int order;           // lamb truncation order
   real rs_r;           // cage ratio extents
   real spring_k;       // particle spring constant
@@ -81,7 +80,6 @@ void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias,
   fret = fscanf(infile, "E %lf\n", &E);
   fret = fscanf(infile, "sigma %lf\n", &sigma);
   fret = fscanf(infile, "e_dry %lf\n", &e_dry);
-  fret = fscanf(infile, "l_rough %lf\n", &l_rough);
 #else
   fret = fscanf(infile, "loa %f\n", &loa);
   fret = fscanf(infile, "\n");
@@ -95,7 +93,6 @@ void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias,
   fret = fscanf(infile, "E %f\n", &E);
   fret = fscanf(infile, "sigma %f\n", &sigma);
   fret = fscanf(infile, "e_dry %f\n", &e_dry);
-  fret = fscanf(infile, "l_rough %f\n", &l_rough);
 #endif
   fret = fscanf(infile, "order %d\n", &order);
 #ifdef DOUBLE
@@ -157,7 +154,6 @@ void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias,
   printf("       E = %lf\n", E);
   printf("       sigma = %lf\n", sigma);
   printf("       e_dry = %lf\n", e_dry);
-  printf("       l_rough = %lf\n", l_rough);
   printf("       order = %d\n", order);
 #else
   printf("       (l/a) = %f\n", loa);
@@ -168,7 +164,6 @@ void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias,
   printf("       E = %f\n", E);
   printf("       sigma = %f\n", sigma);
   printf("       e_dry = %f\n", e_dry);
-  printf("       l_rough = %f\n", l_rough);
   printf("       order = %d\n", order);
 #endif
 #ifdef DOUBLE
@@ -191,22 +186,22 @@ void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias,
 
   if(Nx == 0 && Ny == 0 && Nz == 0){ // random case
     seeder(N, loa, a, aFx, aFy, aFz, aLx, aLy, aLz, rho, E, sigma, e_dry, 
-      l_rough, order, rs_r, spring_k, spring_x, spring_y, spring_z, spring_l,
+      order, rs_r, spring_k, spring_x, spring_y, spring_z, spring_l,
       trans, rot);   
   }
   else if(ddz == 0.0 && bias == 0.0 && nperturb == 0){ // array case
     seeder_array(Nx, Ny, Nz, loa, a, aFx, aFy, aFz, aLx, aLy, aLz, rho, E, 
-    sigma, e_dry, l_rough, order, rs_r, spring_k, spring_x, spring_y, spring_z, 
+    sigma, e_dry, order, rs_r, spring_k, spring_x, spring_y, spring_z, 
     spring_l,trans, rot);      
   }
   else if(ddz != 0.0 && bias == 0.0 && nperturb == 0){ // hex case
     seeder_hex(Nx, Ny, Nz, ddz, loa, a, aFx, aFy, aFz, aLx, aLy, aLz, rho, E, 
-    sigma, e_dry, l_rough, order, rs_r, spring_k, spring_x, spring_y, spring_z, 
+    sigma, e_dry, order, rs_r, spring_k, spring_x, spring_y, spring_z, 
     spring_l, trans, rot);
   }
   else if(ddz == 0.0 && bias != 0 && nperturb != 0){ // perturb case
     seeder_high_vol_random(Nx, Ny, Nz, bias, nperturb, loa, a, aFx, aFy, aFz, 
-    aLx, aLy, aLz, rho, E, sigma, e_dry, l_rough, order, rs_r, spring_k, 
+    aLx, aLy, aLz, rho, E, sigma, e_dry, order, rs_r, spring_k, 
     spring_x, spring_y, spring_z, spring_l, trans, rot);    
   }
   else{
@@ -217,7 +212,7 @@ void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias,
 
 void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz, 
   real aLx, real aLy, real aLz, real rho, real E, real sigma, real e_dry,
-  real l_rough, int o, real rs, real spring_k, real spring_x, real spring_y,
+  int o, real rs, real spring_k, real spring_x, real spring_y,
   real spring_z, real spring_l, int t, int r) {
 
   printf("Running bluebottle seeder for %d particles...\n\n", nparts);
@@ -302,7 +297,6 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
   parts[0].E = E;
   parts[0].sigma = sigma;
   parts[0].e_dry = e_dry;
-  parts[0].l_rough = l_rough;
   parts[0].order = o;
   parts[0].rs = rs;
   parts[0].spring_k = spring_k;
@@ -370,7 +364,6 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
       parts[i].E = E;
       parts[i].sigma = sigma;
       parts[i].e_dry = e_dry;
-      parts[i].l_rough = l_rough;
       parts[i].order = o;
       parts[i].rs = rs;
       parts[i].spring_k = spring_k;
@@ -799,7 +792,6 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
     fprintf(ofile, "E %f\n", parts[i].E);
     fprintf(ofile, "sigma %f\n", parts[i].sigma);
     fprintf(ofile, "e_dry %f\n", parts[i].e_dry);
-    fprintf(ofile, "l_rough %f\n", parts[i].l_rough);
     fprintf(ofile, "order %d\n", parts[i].order);
     fprintf(ofile, "rs/r %f\n", parts[i].rs);
     fprintf(ofile, "spring_k %f\n", parts[i].spring_k);
@@ -823,7 +815,7 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
 
 void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy, 
   real aFz, real aLx, real aLy, real aLz, real rho, real E, real sigma, 
-  real e_dry, real l_rough, int o, real rs, real spring_k, real spring_x, 
+  real e_dry, int o, real rs, real spring_k, real spring_x, 
   real spring_y, real spring_z, real spring_l, int t, int r)
 {
   printf("Running bluebottle seeder for %d particles...\n\n", Nx*Ny*Nz);
@@ -880,7 +872,6 @@ void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy,
         parts[i + j*Nx + k*(Nx*Ny)].E = E;
         parts[i + j*Nx + k*(Nx*Ny)].sigma = sigma;
         parts[i + j*Nx + k*(Nx*Ny)].e_dry = e_dry;
-        parts[i + j*Nx + k*(Nx*Ny)].l_rough = l_rough; 
         parts[i + j*Nx + k*(Nx*Ny)].order = o;
         parts[i + j*Nx + k*(Nx*Ny)].rs = rs;
         parts[i + j*Nx + k*(Nx*Ny)].spring_k = spring_k;
@@ -923,7 +914,6 @@ void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy,
     fprintf(ofile, "E %f\n", parts[i].E);
     fprintf(ofile, "sigma %f\n", parts[i].sigma);
     fprintf(ofile, "e_dry %f\n", parts[i].e_dry);
-    fprintf(ofile, "l_rough %f\n", parts[i].l_rough);
     fprintf(ofile, "order %d\n", parts[i].order);
     fprintf(ofile, "rs/r %f\n", parts[i].rs);
     fprintf(ofile, "spring_k %f\n", parts[i].spring_k);
@@ -946,7 +936,7 @@ void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy,
 }
 void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx, 
   real aFy, real aFz, real aLx, real aLy, real aLz, real rho, real E, 
-  real sigma, real e_dry, real l_rough, int o, real rs, real spring_k, 
+  real sigma, real e_dry, int o, real rs, real spring_k, 
   real spring_x, real spring_y, real spring_z, real spring_l, int t, int r)
 {
 
@@ -1029,7 +1019,6 @@ void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx,
         parts[index].E = E;
         parts[index].sigma = sigma;
         parts[index].e_dry = e_dry;
-        parts[index].l_rough = l_rough;         
         parts[index].order = o;
         parts[index].rs = rs;
         parts[index].spring_k = spring_k;
@@ -1073,7 +1062,6 @@ void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx,
     fprintf(ofile, "E %f\n", parts[i].E);
     fprintf(ofile, "sigma %f\n", parts[i].sigma);
     fprintf(ofile, "e_dry %f\n", parts[i].e_dry);
-    fprintf(ofile, "l_rough %f\n", parts[i].l_rough);
     fprintf(ofile, "order %d\n", parts[i].order);
     fprintf(ofile, "rs/r %f\n", parts[i].rs);
     fprintf(ofile, "spring_k %f\n", parts[i].spring_k);
@@ -1096,7 +1084,7 @@ void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx,
 }
 void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int nperturb, 
   real loa, real a, real aFx, real aFy, real aFz, real aLx, real aLy, real aLz,
-  real rho, real E, real sigma, real e_dry, real l_rough, int o, real rs, 
+  real rho, real E, real sigma, real e_dry, int o, real rs, 
   real spring_k, real spring_x, real spring_y, real spring_z, real spring_l, 
   int t, int r)
 {
@@ -1229,7 +1217,6 @@ void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int nperturb,
         parts[i + j*Nx + k*(Nx*Ny)].E = E;
         parts[i + j*Nx + k*(Nx*Ny)].sigma = sigma;
         parts[i + j*Nx + k*(Nx*Ny)].e_dry = e_dry;
-        parts[i + j*Nx + k*(Nx*Ny)].l_rough = l_rough; 
         parts[i + j*Nx + k*(Nx*Ny)].order = o;
         parts[i + j*Nx + k*(Nx*Ny)].rs = rs;
         parts[i + j*Nx + k*(Nx*Ny)].spring_k = spring_k;
@@ -1272,7 +1259,6 @@ void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int nperturb,
     fprintf(ofile, "E %f\n", parts[i].E);
     fprintf(ofile, "sigma %f\n", parts[i].sigma);
     fprintf(ofile, "e_dry %f\n", parts[i].e_dry);
-    fprintf(ofile, "l_rough %f\n", parts[i].l_rough);
     fprintf(ofile, "order %d\n", parts[i].order);
     fprintf(ofile, "rs/r %f\n", parts[i].rs);
     fprintf(ofile, "spring_k %f\n", parts[i].spring_k);

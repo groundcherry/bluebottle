@@ -1323,7 +1323,7 @@ __global__ void update_p(real *Lp, real *p0, real *p, real *phi,
   if(tj < dom->Gcc._je && tk < dom->Gcc._ke) {
     for(int i = dom->Gcc._is; i < dom->Gcc._ie; i++) {
       int C = i + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b;
-      p[C] = (phase[C] < 0) * (p0[C] + phi[C] - 0.5*nu*dt*Lp[C]);
+      p[C] = (phase[C] < 0) * (p0[C] + phi[C]);// - 0.5*nu*dt*Lp[C]);
     }
   }
 }
@@ -2030,6 +2030,18 @@ __global__ void forcing_reset_z(real *fz, dom_struct *dom)
   }
 }
 
+__global__ void forcing_add_c_const(real val, real *cc, dom_struct *dom)
+{
+  int tj = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+
+  for(int i = dom->Gcc._isb; i < dom->Gcc._ieb; i++) {
+    if(tj < dom->Gcc._jnb && tk < dom->Gcc._knb) {
+      cc[i + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b] += val;
+    }
+  }
+}
+
 __global__ void forcing_add_x_const(real val, real *fx, dom_struct *dom)
 {
   int tj = blockIdx.x * blockDim.x + threadIdx.x;
@@ -2477,9 +2489,9 @@ __global__ void bin_start(int *binStart, int *binEnd, int *partBin, int nparts)
 }
 
 __global__ void collision_parts(part_struct *parts, int nparts,
-  dom_struct *dom, real eps, real mu, BC bc, int *binStart, int *binEnd,
-  int *partBin, int *partInd, dom_struct *binDom, int interactionLength,
-  real dt)
+  dom_struct *dom, real eps, real mu, real rhof, real nu, BC bc, int *binStart,
+  int *binEnd, int *partBin, int *partInd, dom_struct *binDom,
+  int interactionLength, real dt)
 {
   int index = threadIdx.x + blockIdx.x*blockDim.x;
 
@@ -2496,6 +2508,8 @@ __global__ void collision_parts(part_struct *parts, int nparts,
     int target, j;                        // target indices
     int adjBin, adjStart, adjEnd;         // adjacent bin stuff
     int iStride, kStride, jStride;        // how to get to adjacent bin
+    
+    int q;                                // iterator
 
     // predefine face locations 
     // -1, -2 due to local vs global indexing and defiinition of dom_struct
@@ -2710,6 +2724,16 @@ __global__ void collision_parts(part_struct *parts, int nparts,
                 utcrossnz = utx*ny - uty*nx;
 
                 if(h < hN && h > 0) {
+                  // remove contact from list if it is there
+                  q = 0;
+                  while(parts[i].iSt[q] != j && q < MAX_NEIGHBORS) {
+                    q++;
+                  }
+                  if(parts[i].iSt[q] == j) {
+                    parts[i].iSt[q] = -1;
+                    parts[i].St[q] = 0.;
+                  }
+
                   if(h < eps*parts[i].r) h = eps*parts[i].r;
                   ah = ai/h - ai/hN;
                   lnah = log(hN/h);
@@ -2751,8 +2775,23 @@ __global__ void collision_parts(part_struct *parts, int nparts,
                   Loz = 0;
                 }
 
-          /** TODO implement variable alpha damping as is done for the walls **/
                 if(h < 0) {
+                  // determine whether this is a new contact
+                  int Q = -1;
+                  q = 0;
+                  while(parts[i].iSt[q] != j && q < MAX_NEIGHBORS) {
+                    q++;
+                  }
+                  if(q == MAX_NEIGHBORS) {
+                    q = 0;
+                    while(parts[i].iSt[q] != -1) {
+                      q++;
+                    }
+                    parts[i].iSt[q] = j;
+                    parts[i].St[q] = 1./9.*parts[i].rho/rhof*2.*parts[i].r
+                      *abs(udotn)/nu;
+                  }
+
                   real Vx = utx + 0.5*(ai + aj + h)*ocrossnx;
                   real Vy = uty + 0.5*(ai + aj + h)*ocrossny;
                   real Vz = utz + 0.5*(ai + aj + h)*ocrossnz;
@@ -2768,21 +2807,24 @@ __global__ void collision_parts(part_struct *parts, int nparts,
 
                   ah = 0;
                   lnah = 0;
-                  real denom = 0.75*((1-parts[i].sigma*parts[i].sigma)
-                    /parts[i].E
-                    + (1-parts[j].sigma*parts[j].sigma)/parts[j].E)
-                    *sqrt(1./ai + 1./aj);
-                    
-                  Fnx = (sqrt(-h*h*h)/denom
-                    - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*udotn)
-                    *nx;
-                  Fny = (sqrt(-h*h*h)/denom
-                    - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*udotn)
-                    *ny;
-                  Fnz = (sqrt(-h*h*h)/denom
-                    - sqrt(4./3.*PI*ai*ai*ai*parts[i].rho/denom*sqrt(-h))*udotn)
-                    *nz;
+                  real k = 4./3./((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
+                    + (1.-parts[j].sigma*parts[j].sigma)/parts[j].E)
+                    /sqrt(1./ai + 1./aj);
+                  // estimate damping coefficient
+                  real xcx0 = 1.e-3;
+                  real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[Q]
+                    *log(xcx0);
+                  if(e < 0) e = 0;
+                  real alpha = -2.263*pow(e,0.3948)+2.22;
+                  real eta = alpha*sqrt(4./3.*PI*ai*ai*ai*parts[i].rho
+                    *k*sqrt(-h));
 
+                  // normal contact forces
+                  Fnx = (sqrt(-h*h*h)*k - eta*udotn)*nx;
+                  Fny = (sqrt(-h*h*h)*k - eta*udotn)*ny;
+                  Fnz = (sqrt(-h*h*h)*k - eta*udotn)*nz;
+
+                  // tangential contact forces
                   real coeff_fric = 0.5 * (parts[i].coeff_fric
                     + parts[j].coeff_fric);
                   Ftx = -kt * sx;
@@ -2826,6 +2868,8 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
   int i = threadIdx.x + blockIdx.x*blockDim.x;
   /**** parallelize this further by using a CUDA block for each wall ****/
 
+  int q;  // iterator
+
   if(i < nparts) {
     real dx = 0;
     real dy = 0;
@@ -2848,11 +2892,21 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     h = dx - ai;
     isTrue = (bc.pW == NEUMANN); // collision force applied ifTrue
     if(h < hN && h > 0) {
-      Un = parts[i].u - bc.uWD;
+      // remove from contact list if it is there
+      q = 0;
+      while(parts[i].iSt[q] != -10 && q < MAX_NEIGHBORS) {
+        q++;
+      }
+      if(parts[i].iSt[q] == -10) {
+        parts[i].iSt[q] = -1;
+        parts[i].St[q] = 0.;
+      }
+
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
       lnah = log(hN/h);
 
+      Un = parts[i].u - bc.uWD;
       Utx = 0.;
       Uty = parts[i].v - bc.vWD;
       Utz = parts[i].w - bc.wWD;
@@ -2884,14 +2938,26 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLx += isTrue * Lox;
       parts[i].iLy += isTrue * Loy;
       parts[i].iLz += isTrue * Loz;
-
-      // if no contact, mark with a -1
-      parts[i].St = -1.;
     }
     if(h < 0) {
       Un = parts[i].u - bc.uWD;
       real Uty = 0.5*(parts[i].v+parts[i].v0) - bc.vSD;
       real Utz = 0.5*(parts[i].w+parts[i].w0) - bc.wSD;
+
+      // determine whether this is a new contact
+      int Q = -1;
+      q = 0;
+      while(parts[i].iSt[q] != -10 && q < MAX_NEIGHBORS) {
+        q++;
+      }
+      if(q == MAX_NEIGHBORS) {
+        q = 0;
+        while(parts[i].iSt[q] != -1) {
+          q++;
+        }
+        parts[i].iSt[q] = -10;
+        parts[i].St[q] = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
+      }
 
       omx = 0.5*(parts[i].ox+parts[i].ox0);
       omy = 0.5*(parts[i].oy+parts[i].oy0);
@@ -2907,19 +2973,13 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real sy = Vy * dt;
       real sz = Vz * dt;
 
-      // if this is the first time step with contact, set St
-      // otherwise, use St that was set at the beginning of the contact
-      if(parts[i].St == -1.) {
-        parts[i].St = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
-      }
       lnah = 0;
-      /** for now, use particle material as wall materal in second V term **/
       real k = 4./3./((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
-      // estimate alpha according to Tsuji (1991) p. 32 and Joseph (2000) p. 344
-      real xcx0 = parts[i].l_rough/(2.*parts[i].r)*100.;
-      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
+      // estimate damping coefficient
+      real xcx0 = 1e-3;
+      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[Q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
 
@@ -2940,14 +3000,23 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iFz += isTrue * Ftz;
 
       parts[i].iLy += isTrue * ai * Ftz;
-      parts[i].iLz -= isTrue * ai * Ftx;
+      parts[i].iLz -= isTrue * ai * Fty;
     }
-
     // east wall
     dx = fabs(parts[i].x - (dom->xe - bc.dsE));
     h = dx - ai;
     isTrue = (bc.pE == NEUMANN);
     if(h < hN && h > 0) {
+      // remove from contact list if it is there
+      q = 0;
+      while(parts[i].iSt[q] != -11 && q < MAX_NEIGHBORS) {
+        q++;
+      }
+      if(parts[i].iSt[q] == -11) {
+        parts[i].iSt[q] = -1;
+        parts[i].St[q] = 0.;
+      }
+
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
       lnah = log(hN/h);
@@ -2984,21 +3053,33 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLx += isTrue * Lox;
       parts[i].iLy += isTrue * Loy;
       parts[i].iLz += isTrue * Loz;
-
-      // if no contact, mark with a -1
-      parts[i].St = -1.;
     } 
     if(h < 0) {
       Un = -(parts[i].u - bc.uED);
       real Uty = 0.5*(parts[i].v+parts[i].v0) - bc.vSD;
       real Utz = 0.5*(parts[i].w+parts[i].w0) - bc.wSD;
 
+      // determine whether this is a new contact
+      int Q = -1;
+      q = 0;
+      while(parts[i].iSt[q] != -11 && q < MAX_NEIGHBORS) {
+        q++;
+      }
+      if(q == MAX_NEIGHBORS) {
+        q = 0;
+        while(parts[i].iSt[q] != -1) {
+          q++;
+        }
+        parts[i].iSt[q] = -11;
+        parts[i].St[q] = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
+      }
+
       omx = 0.5*(parts[i].ox+parts[i].ox0);
       omy = 0.5*(parts[i].oy+parts[i].oy0);
       omz = 0.5*(parts[i].oz+parts[i].oz0);
 
-      real Vy = Uty + (ai + 0.5*h)*omz;
-      real Vz = Utz - (ai + 0.5*h)*omx;
+      real Vy = -(Uty - (ai + 0.5*h)*omz);
+      real Vz = -(Utz + (ai + 0.5*h)*omx);
 
       real Hi = 0.5*parts[i].E/(1.+parts[i].sigma);
       real kt = 8./((1.-parts[i].sigma*parts[i].sigma)/Hi
@@ -3007,19 +3088,13 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real sy = Vy * dt;
       real sz = Vz * dt;
 
-      // if this is the first time step with contact, set St
-      // otherwise, use St that was set at the beginning of the contact
-      if(parts[i].St == -1.) {
-        parts[i].St = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
-      }
       lnah = 0;
-      /** for now, use particle material as wall materal in second V term **/
       real k = 4./3./((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
-      // estimate alpha according to Tsuji (1991) p. 32 and Joseph (2000) p. 344
-      real xcx0 = parts[i].l_rough/(2.*parts[i].r)*100.;
-      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
+      // estimate damping coefficient
+      real xcx0 = 1e-3;
+      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[Q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
 
@@ -3048,6 +3123,16 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     h = dy - ai;
     isTrue = (bc.pS == NEUMANN);
     if(h < hN && h > 0) {
+      // remove from contact list if it is there
+      q = 0;
+      while(parts[i].iSt[q] != -12 && q < MAX_NEIGHBORS) {
+        q++;
+      }
+      if(parts[i].iSt[q] == -12) {
+        parts[i].iSt[q] = -1;
+        parts[i].St[q] = 0.;
+      }
+
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
       lnah = log(hN/h);
@@ -3084,14 +3169,26 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLx += isTrue * Lox;
       parts[i].iLy += isTrue * Loy;
       parts[i].iLz += isTrue * Loz;
-
-      // if no contact, mark with a -1
-      parts[i].St = -1.;
     }
     if(h < 0) {
       Un = parts[i].v - bc.vSD;
       real Utx = 0.5*(parts[i].u+parts[i].u0) - bc.uSD;
       real Utz = 0.5*(parts[i].w+parts[i].w0) - bc.wSD;
+
+      // determine whether this is a new contact
+      int Q = -1;
+      q = 0;
+      while(parts[i].iSt[q] != -12 && q < MAX_NEIGHBORS) {
+        q++;
+      }
+      if(q == MAX_NEIGHBORS) {
+        q = 0;
+        while(parts[i].iSt[q] != -1) {
+          q++;
+        }
+        parts[i].iSt[q] = -12;
+        parts[i].St[q] = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
+      }
 
       omx = 0.5*(parts[i].ox+parts[i].ox0);
       omy = 0.5*(parts[i].oy+parts[i].oy0);
@@ -3107,19 +3204,13 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real sx = Vx * dt;
       real sz = Vz * dt;
 
-      // if this is the first time step with contact, set St
-      // otherwise, use St that was set at the beginning of the contact
-      if(parts[i].St == -1.) {
-        parts[i].St = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
-      }
       lnah = 0;
-      /** for now, use particle material as wall materal in second V term **/
       real k = 4./3./((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
-      // estimate alpha according to Tsuji (1991) p. 32 and Joseph (2000) p. 344
-      real xcx0 = parts[i].l_rough/(2.*parts[i].r)*100.;
-      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
+      // estimate damping coefficient
+      real xcx0 = 1e-3;
+      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[Q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
 
@@ -3148,6 +3239,16 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     h = dy - ai;
     isTrue = (bc.pN == NEUMANN);
     if(h < hN && h > 0) {
+      // remove from contact list if it is there
+      q = 0;
+      while(parts[i].iSt[q] != -13 && q < MAX_NEIGHBORS) {
+        q++;
+      }
+      if(parts[i].iSt[q] == -13) {
+        parts[i].iSt[q] = -1;
+        parts[i].St[q] = 0.;
+      }
+
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
       lnah = log(hN/h);
@@ -3184,21 +3285,33 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLx += isTrue * Lox;
       parts[i].iLy += isTrue * Loy;
       parts[i].iLz += isTrue * Loz;
-
-      // if no contact, mark with a -1
-      parts[i].St = -1.;
     }
     if(h < 0) {
       Un = -(parts[i].v - bc.vND);
       real Utx = 0.5*(parts[i].u+parts[i].u0) - bc.uSD;
       real Utz = 0.5*(parts[i].w+parts[i].w0) - bc.wSD;
 
+      // determine whether this is a new contact
+      int Q = -1;
+      q = 0;
+      while(parts[i].iSt[q] != -13 && q < MAX_NEIGHBORS) {
+        q++;
+      }
+      if(q == MAX_NEIGHBORS) {
+        q = 0;
+        while(parts[i].iSt[q] != -1) {
+          q++;
+        }
+        parts[i].iSt[q] = -13;
+        parts[i].St[q] = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
+      }
+
       omx = 0.5*(parts[i].ox+parts[i].ox0);
       omy = 0.5*(parts[i].oy+parts[i].oy0);
       omz = 0.5*(parts[i].oz+parts[i].oz0);
 
-      real Vx = Utx - (ai + 0.5*h)*omz;
-      real Vz = Utz + (ai + 0.5*h)*omx;
+      real Vx = -(Utx + (ai + 0.5*h)*omz);
+      real Vz = -(Utz - (ai + 0.5*h)*omx);
 
       real Hi = 0.5*parts[i].E/(1.+parts[i].sigma);
       real kt = 8./((1.-parts[i].sigma*parts[i].sigma)/Hi
@@ -3207,19 +3320,13 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real sx = Vx * dt;
       real sz = Vz * dt;
 
-      // if this is the first time step with contact, set St
-      // otherwise, use St that was set at the beginning of the contact
-      if(parts[i].St == -1.) {
-        parts[i].St = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
-      }
       lnah = 0;
-      /** for now, use particle material as wall materal in second V term **/
       real k = 4./3./((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
-      // estimate alpha according to Tsuji (1991) p. 32 and Joseph (2000) p. 344
-      real xcx0 = parts[i].l_rough/(2.*parts[i].r)*100.;
-      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
+      // estimate damping coefficient
+      real xcx0 = 1e-3;
+      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[Q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
 
@@ -3248,6 +3355,16 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     h = dz - ai;
     isTrue = (bc.pB == NEUMANN);
     if(h < hN && h > 0) {
+      // remove from contact list if it is there
+      q = 0;
+      while(parts[i].iSt[q] != -14 && q < MAX_NEIGHBORS) {
+        q++;
+      }
+      if(parts[i].iSt[q] == -14) {
+        parts[i].iSt[q] = -1;
+        parts[i].St[q] = 0.;
+      }
+
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
       lnah = log(hN/h);
@@ -3284,14 +3401,26 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLx += isTrue * Lox;
       parts[i].iLy += isTrue * Loy;
       parts[i].iLz += isTrue * Loz;
-
-      // if no contact, mark with a -1
-      parts[i].St = -1.;
     }
     if(h < 0) {
       Un = parts[i].w - bc.wBD;
       real Utx = 0.5*(parts[i].u+parts[i].u0) - bc.uSD;
       real Uty = 0.5*(parts[i].v+parts[i].v0) - bc.vSD;
+
+      // determine whether this is a new contact
+      int Q = -1;
+      q = 0;
+      while(parts[i].iSt[q] != -14 && q < MAX_NEIGHBORS) {
+        q++;
+      }
+      if(q == MAX_NEIGHBORS) {
+        q = 0;
+        while(parts[i].iSt[q] != -1) {
+          q++;
+        }
+        parts[i].iSt[q] = -14;
+        parts[i].St[q] = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
+      }
 
       omx = 0.5*(parts[i].ox+parts[i].ox0);
       omy = 0.5*(parts[i].oy+parts[i].oy0);
@@ -3307,19 +3436,13 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real sx = Vx * dt;
       real sy = Vy * dt;
 
-      // if this is the first time step with contact, set St
-      // otherwise, use St that was set at the beginning of the contact
-      if(parts[i].St == -1.) {
-        parts[i].St = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
-      }
       lnah = 0;
-      // for now, use particle material as wall materal in second V term //
       real k = 4./3./((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
-      // estimate alpha according to Tsuji (1991) p. 32 and Joseph (2000) p. 344
-      real xcx0 = parts[i].l_rough/(2.*parts[i].r)*100.;
-      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
+      // estimate damping coefficient
+      real xcx0 = 1e-3;
+      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[Q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
 
@@ -3348,6 +3471,16 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
     h = dz - ai;
     isTrue = (bc.pT == NEUMANN);
     if(h < hN && h > 0) {
+      // remove from contact list if it is there
+      q = 0;
+      while(parts[i].iSt[q] != -15 && q < MAX_NEIGHBORS) {
+        q++;
+      }
+      if(parts[i].iSt[q] == -15) {
+        parts[i].iSt[q] = -1;
+        parts[i].St[q] = 0.;
+      }
+
       if(h < eps*parts[i].r) h = eps*parts[i].r;
       ah = ai/h - ai/hN;
       lnah = log(hN/h);
@@ -3384,21 +3517,33 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       parts[i].iLx += isTrue * Lox;
       parts[i].iLy += isTrue * Loy;
       parts[i].iLz += isTrue * Loz;
-
-      // if no contact, mark with a -1
-      parts[i].St = -1.;
     }
     if(h < 0) {
       Un = -(parts[i].w - bc.wTD);
       real Utx = 0.5*(parts[i].u+parts[i].u0) - bc.uSD;
       real Uty = 0.5*(parts[i].v+parts[i].v0) - bc.vSD;
 
+      // determine whether this is a new contact
+      int Q = -1;
+      q = 0;
+      while(parts[i].iSt[q] != -15 && q < MAX_NEIGHBORS) {
+        q++;
+      }
+      if(q == MAX_NEIGHBORS) {
+        q = 0;
+        while(parts[i].iSt[q] != -1) {
+          q++;
+        }
+        parts[i].iSt[q] = -15;
+        parts[i].St[q] = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
+      }
+
       omx = 0.5*(parts[i].ox+parts[i].ox0);
       omy = 0.5*(parts[i].oy+parts[i].oy0);
       omz = 0.5*(parts[i].oz+parts[i].oz0);
 
-      real Vx = Utx + (ai + 0.5*h)*omy;
-      real Vy = Uty - (ai + 0.5*h)*omx;
+      real Vx = -(Utx - (ai + 0.5*h)*omy);
+      real Vy = -(Uty + (ai + 0.5*h)*omx);
 
       real Hi = 0.5*parts[i].E/(1.+parts[i].sigma);
       real kt = 8./((1.-parts[i].sigma*parts[i].sigma)/Hi
@@ -3407,19 +3552,13 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real sx = Vx * dt;
       real sy = Vy * dt;
 
-      // if this is the first time step with contact, set St
-      // otherwise, use St that was set at the beginning of the contact
-      if(parts[i].St == -1.) {
-        parts[i].St = 1./9.*parts[i].rho/rhof*2.*parts[i].r*abs(Un)/nu;
-      }
       lnah = 0;
-      // for now, use particle material as wall materal in second V term //
       real k = 4./3./((1.-parts[i].sigma*parts[i].sigma)/parts[i].E
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
-      // estimate alpha according to Tsuji (1991) p. 32 and Joseph (2000) p. 344
-      real xcx0 = parts[i].l_rough/(2.*parts[i].r)*100.;
-      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St*log(xcx0);
+      // estimate damping coefficient
+      real xcx0 = 1e-3;
+      real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[Q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
 

@@ -919,7 +919,6 @@ void cgns_particles(real dtout)
     real *E = malloc(nparts * sizeof(real));
     real *sigma = malloc(nparts * sizeof(real));
     real *e_dry = malloc(nparts * sizeof(real));
-    real *l_rough = malloc(nparts * sizeof(real));
     real *coeff_fric = malloc(nparts * sizeof(real));
     // cpumem += nparts * sizeof(int);
     int *order = malloc(nparts * sizeof(int));
@@ -1133,7 +1132,6 @@ void cgns_particles(real dtout)
       E[i] = parts[i].E;
       sigma[i] = parts[i].sigma;
       e_dry[i] = parts[i].e_dry;
-      l_rough[i] = parts[i].l_rough;
       coeff_fric[i] = parts[i].coeff_fric;
       order[i] = parts[i].order;
       u[i] = parts[i].u;
@@ -1451,8 +1449,6 @@ void cgns_particles(real dtout)
     cg_field_write(fn, bn, zn, sn, RealDouble, "YoungsModulus", E, &fnr);
     cg_field_write(fn, bn, zn, sn, RealDouble, "PoissonsRatio", sigma, &fnr);
     cg_field_write(fn, bn, zn, sn, RealDouble, "DryCoeffRest", e_dry, &fnr);
-    cg_field_write(fn, bn, zn, sn, RealDouble, "RoughnessLength", l_rough,
-      &fnr);
     cg_field_write(fn, bn, zn, sn, RealDouble, "FricCoeff", coeff_fric, &fnr);
     cg_field_write(fn, bn, zn, sn, Integer, "LambOrder", order, &fnr);
     cg_field_write(fn, bn, zn, sn, RealDouble, "VelocityX", u, &fnr);
@@ -1643,7 +1639,6 @@ void cgns_particles(real dtout)
     free(E);
     free(sigma);
     free(e_dry);
-    free(l_rough);
     free(coeff_fric);
 
     free(order);

@@ -45,6 +45,18 @@
  ******
  */
 
+/****d* particle/MAX_NEIGHBORS
+ * NAME
+ *  MAX_NEIGHBORS
+ * TYPE
+ */
+#define MAX_NEIGHBORS 14
+/*
+ * PURPOSE
+ *  Define the maximum number of neighbors a particle can have (close packed).
+ ******
+ */
+
 /****v* particle/phase
  * NAME
  *  phase
@@ -307,9 +319,9 @@ typedef struct part_struct {
   int translating;
   int rotating;
   int bin;
-  real St;
+  real St[MAX_NEIGHBORS];
+  int iSt[MAX_NEIGHBORS];
   real e_dry;
-  real l_rough;
   real coeff_fric;
 } part_struct;
 /*
@@ -385,9 +397,9 @@ typedef struct part_struct {
  *  * rotating -- 1 if allowed to rotate, 0 if not
  *  * bin -- which bin the particle resides in
  *  * e_dry -- dry coefficient of restitution
- *  * l_rough -- particle surface roughness length
  *  * coeff_fric -- coefficient of friction
- *  * St -- particle-wall interaction Stokes number
+ *  * St -- particle contact Stokes number list
+ *  * iSt -- particle contact Stokes number indices
  ******
  */
 

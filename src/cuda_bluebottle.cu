@@ -3476,7 +3476,7 @@ real cuda_find_dt(void)
   free(dts);
 
 #ifdef IMPLICIT
-  if(min > 1.5*dt) min = 1.5*dt;
+  if(min > 1.1*dt) min = 1.1*dt;
 #endif
 
   return min;
@@ -3554,13 +3554,21 @@ void cuda_update_p()
     (cudaMalloc((void**) &_Lp,
       sizeof(real)*dom[dev].Gcc.s3b));
 
-    update_p_laplacian<<<numBlocks_p, dimBlocks_p>>>(_Lp, _phi[dev], _dom[dev]);
+    //update_p_laplacian<<<numBlocks_p, dimBlocks_p>>>(_Lp, _phi[dev], _dom[dev]);
 
     update_p<<<numBlocks_p, dimBlocks_p>>>(_Lp, _p0[dev], _p[dev], _phi[dev],
       _dom[dev], nu, dt, _phase[dev]);
 
     // clean up temporary array
     (cudaFree(_Lp));
+
+    // set mean pressure to zero
+    real *_p_mean;
+    (cudaMalloc((void**) &_p_mean, sizeof(real)*dom[dev].Gcc.s3));
+    copy_p_noghost<<<numBlocks_p, dimBlocks_p>>>(_p_mean, _p[dev], _dom[dev]);
+    real pmean = avg_entries(dom[dev].Gcc.s3, _p_mean);
+    cudaFree(_p_mean);
+    forcing_add_c_const<<<numBlocks_p, dimBlocks_p>>>(-pmean, _p[dev], _dom[dev]);
   }
 }
 
@@ -4101,56 +4109,56 @@ void cuda_solvability(void)
       case WEST:
         // normalize eps by face surface area
         eps_x = eps_x/dom[dev].yl/dom[dev].zl;
-        //eps_y = eps_y/dom[dev].yl/dom[dev].zl;
-        //eps_z = eps_z/dom[dev].yl/dom[dev].zl;
+        eps_y = eps_y/dom[dev].yl/dom[dev].zl;
+        eps_z = eps_z/dom[dev].yl/dom[dev].zl;
         plane_eps_x_W<<<numBlocks_x, dimBlocks_x>>>
-          //(eps_x+eps_y+eps_z, _u_star[dev], _dom[dev]);
-          (eps_x, _u_star[dev], _dom[dev]);
+          (eps_x+eps_y+eps_z, _u_star[dev], _dom[dev]);
+          //(eps_x, _u_star[dev], _dom[dev]);
         break;
       case EAST:
         // normalize eps by face surface area
         eps_x = eps_x/dom[dev].yl/dom[dev].zl;
-        //eps_y = eps_y/dom[dev].yl/dom[dev].zl;
-        //eps_z = eps_z/dom[dev].yl/dom[dev].zl;
+        eps_y = eps_y/dom[dev].yl/dom[dev].zl;
+        eps_z = eps_z/dom[dev].yl/dom[dev].zl;
         plane_eps_x_E<<<numBlocks_x, dimBlocks_x>>>
-          //(eps_x+eps_y+eps_z, _u_star[dev], _dom[dev]);
-          (eps_x, _u_star[dev], _dom[dev]);
+          (eps_x+eps_y+eps_z, _u_star[dev], _dom[dev]);
+          //(eps_x, _u_star[dev], _dom[dev]);
         break;
       case SOUTH:
         // normalize eps by face surface area
-        //eps_x = eps_x/dom[dev].zl/dom[dev].xl;
+        eps_x = eps_x/dom[dev].zl/dom[dev].xl;
         eps_y = eps_y/dom[dev].zl/dom[dev].xl;
-        //eps_z = eps_z/dom[dev].zl/dom[dev].xl;
+        eps_z = eps_z/dom[dev].zl/dom[dev].xl;
         plane_eps_y_S<<<numBlocks_y, dimBlocks_y>>>
-          //(eps_x+eps_y+eps_z, _v_star[dev], _dom[dev]);
-          (eps_y, _v_star[dev], _dom[dev]);
+          (eps_x+eps_y+eps_z, _v_star[dev], _dom[dev]);
+          //(eps_y, _v_star[dev], _dom[dev]);
         break;
       case NORTH:
         // normalize eps by face surface area
-        //eps_x = eps_x/dom[dev].zl/dom[dev].xl;
+        eps_x = eps_x/dom[dev].zl/dom[dev].xl;
         eps_y = eps_y/dom[dev].zl/dom[dev].xl;
-        //eps_z = eps_z/dom[dev].zl/dom[dev].xl;
+        eps_z = eps_z/dom[dev].zl/dom[dev].xl;
         plane_eps_y_N<<<numBlocks_y, dimBlocks_y>>>
-          //(eps_x+eps_y+eps_z, _v_star[dev], _dom[dev]);
-          (eps_y, _v_star[dev], _dom[dev]);
+          (eps_x+eps_y+eps_z, _v_star[dev], _dom[dev]);
+          //(eps_y, _v_star[dev], _dom[dev]);
         break;
       case BOTTOM:
         // normalize eps by face surface area
-        //eps_x = eps_x/dom[dev].xl/dom[dev].yl;
-        //eps_y = eps_y/dom[dev].xl/dom[dev].yl;
+        eps_x = eps_x/dom[dev].xl/dom[dev].yl;
+        eps_y = eps_y/dom[dev].xl/dom[dev].yl;
         eps_z = eps_z/dom[dev].xl/dom[dev].yl;
         plane_eps_z_B<<<numBlocks_z, dimBlocks_z>>>
-          //(eps_x+eps_y+eps_z, _w_star[dev], _dom[dev]);
-          (eps_z, _w_star[dev], _dom[dev]);
+          (eps_x+eps_y+eps_z, _w_star[dev], _dom[dev]);
+          //(eps_z, _w_star[dev], _dom[dev]);
         break;
       case TOP:
         // normalize eps by face surface area
-        //eps_x = eps_x/dom[dev].xl/dom[dev].yl;
-        //eps_y = eps_y/dom[dev].xl/dom[dev].yl;
+        eps_x = eps_x/dom[dev].xl/dom[dev].yl;
+        eps_y = eps_y/dom[dev].xl/dom[dev].yl;
         eps_z = eps_z/dom[dev].xl/dom[dev].yl;
         plane_eps_z_T<<<numBlocks_z, dimBlocks_z>>>
-          //(eps_x+eps_y+eps_z, _w_star[dev], _dom[dev]);
-          (eps_z, _w_star[dev], _dom[dev]);
+          (eps_x+eps_y+eps_z, _w_star[dev], _dom[dev]);
+          //(eps_z, _w_star[dev], _dom[dev]);
         break;
       case HOMOGENEOUS:
         // spread the errors over the entire domain
@@ -4201,7 +4209,7 @@ void cuda_move_parts_sub()
     dim3 numBlocks(blocks);
 
     if(nparts > 0) {
-      real eps = 0.01;
+      real eps = 0.001;
 
       if(nparts == 1) {
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
@@ -4270,8 +4278,8 @@ void cuda_move_parts_sub()
 
         // launch a thread per particle to calc collision
         collision_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts,
-         _dom[dev], eps, mu, bc, _binStart, _binEnd, _partBin, _partInd, 
-         _binDom, interactionLength, dt);
+         _dom[dev], eps, mu, rho_f, nu, bc, _binStart, _binEnd, _partBin,
+          _partInd, _binDom, interactionLength, dt);
 
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
@@ -4282,8 +4290,8 @@ void cuda_move_parts_sub()
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         
         collision_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts,
-         _dom[dev], eps, mu, bc, _binStart, _binEnd, _partBin, _partInd, 
-         _binDom, interactionLength, dt);
+         _dom[dev], eps, mu, rho_f, nu, bc, _binStart, _binEnd, _partBin,
+          _partInd, _binDom, interactionLength, dt);
 
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
@@ -4319,7 +4327,7 @@ void cuda_move_parts()
     dim3 numBlocks(blocks);
 
     if(nparts > 0) {
-      real eps = 0.01;
+      real eps = 0.001;
 
       if(nparts == 1) {
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
@@ -4388,8 +4396,8 @@ void cuda_move_parts()
 
         // launch a thread per particle to calc collision
         collision_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts,
-         _dom[dev], eps, mu, bc, _binStart, _binEnd, _partBin, _partInd, 
-         _binDom, interactionLength, dt);
+         _dom[dev], eps, mu, rho_f, nu, bc, _binStart, _binEnd, _partBin,
+          _partInd, _binDom, interactionLength, dt);
 
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
@@ -4400,8 +4408,8 @@ void cuda_move_parts()
         collision_init<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         
         collision_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts,
-         _dom[dev], eps, mu, bc, _binStart, _binEnd, _partBin, _partInd, 
-         _binDom, interactionLength, dt);
+         _dom[dev], eps, mu, rho_f, nu, bc, _binStart, _binEnd, _partBin,
+          _partInd, _binDom, interactionLength, dt);
 
         spring_parts<<<numBlocks, dimBlocks>>>(_parts[dev], nparts);
         collision_walls<<<numBlocks, dimBlocks>>>(_dom[dev], _parts[dev],
