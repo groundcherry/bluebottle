@@ -25,11 +25,12 @@
 #include <thrust/reduce.h>
 #include <thrust/functional.h>
 #include <thrust/sort.h>
+#include <thrust/device_free.h>
 
 #include "cuda_bicgstab.h"
 #include "cuda_bluebottle.h"
 #include "cuda_particle.h"
-#include "entrySearch.h"
+//#include "entrySearch.h"
 
 extern "C"
 void cuda_dom_malloc(void)
@@ -3425,9 +3426,18 @@ real cuda_find_dt(void)
     (cudaSetDevice(dev + dev_start));
 
     // search
-    real u_max = find_max_mag(dom[dev].Gfx.s3b, _u[dev]);
-    real v_max = find_max_mag(dom[dev].Gfy.s3b, _v[dev]);
-    real w_max = find_max_mag(dom[dev].Gfz.s3b, _w[dev]);
+    //real u_max = find_max_mag(dom[dev].Gfx.s3b, _u[dev]);
+    //real v_max = find_max_mag(dom[dev].Gfy.s3b, _v[dev]);
+    //real w_max = find_max_mag(dom[dev].Gfz.s3b, _w[dev]);
+    thrust::device_ptr<real> t_umax(_u[dev]);
+    real u_max = thrust::reduce(t_umax, t_umax + dom[dev].Gfx.s3b, (real) 0.,
+      thrust::maximum<real>());
+    thrust::device_ptr<real> t_vmax(_v[dev]);
+    real v_max = thrust::reduce(t_vmax, t_vmax + dom[dev].Gfy.s3b, (real) 0.,
+      thrust::maximum<real>());
+    thrust::device_ptr<real> t_wmax(_w[dev]);
+    real w_max = thrust::reduce(t_wmax, t_wmax + dom[dev].Gfz.s3b, (real) 0.,
+      thrust::maximum<real>());
 
 #ifndef IMPLICIT
     real tmp = u_max / dom[dev].dx + 2.*nu/dom[dev].dx/dom[dev].dx;
@@ -3566,7 +3576,11 @@ void cuda_update_p()
     real *_p_mean;
     (cudaMalloc((void**) &_p_mean, sizeof(real)*dom[dev].Gcc.s3));
     copy_p_noghost<<<numBlocks_p, dimBlocks_p>>>(_p_mean, _p[dev], _dom[dev]);
-    real pmean = avg_entries(dom[dev].Gcc.s3, _p_mean);
+    thrust::device_ptr<real> t_p_mean(_p_mean);
+    real pmean = thrust::reduce(t_p_mean, t_p_mean + dom[dev].Gcc.s3, (real) 0.,
+      thrust::plus<real>());
+    pmean = pmean / dom[dev].Gcc.s3;
+    //real pmean = avg_entries(dom[dev].Gcc.s3, _p_mean);
     cudaFree(_p_mean);
     forcing_add_c_const<<<numBlocks_p, dimBlocks_p>>>(-pmean, _p[dev], _dom[dev]);
   }
@@ -3803,9 +3817,21 @@ void cuda_compute_turb_forcing(void)
     cuda_colocate_Gfy(_v[dev], _v_co, _dom[dev]);
     cuda_colocate_Gfz(_w[dev], _w_co, _dom[dev]);
 
-    real umean = avg_entries(dom[dev].Gcc.s3, _u_co);
-    real vmean = avg_entries(dom[dev].Gcc.s3, _v_co);
-    real wmean = avg_entries(dom[dev].Gcc.s3, _w_co);
+    //real umean = avg_entries(dom[dev].Gcc.s3, _u_co);
+    //real vmean = avg_entries(dom[dev].Gcc.s3, _v_co);
+    //real wmean = avg_entries(dom[dev].Gcc.s3, _w_co);
+    thrust::device_ptr<real> t_u_co(_u_co);
+    real umean = thrust::reduce(t_u_co, t_u_co + dom[dev].Gcc.s3, (real) 0.,
+      thrust::plus<real>());
+    umean = umean / dom[dev].Gcc.s3;
+    thrust::device_ptr<real> t_v_co(_v_co);
+    real vmean = thrust::reduce(t_v_co, t_v_co + dom[dev].Gcc.s3, (real) 0.,
+      thrust::plus<real>());
+    vmean = vmean / dom[dev].Gcc.s3;
+    thrust::device_ptr<real> t_w_co(_w_co);
+    real wmean = thrust::reduce(t_w_co, t_w_co + dom[dev].Gcc.s3, (real) 0.,
+      thrust::plus<real>());
+    wmean = wmean / dom[dev].Gcc.s3;
 
     // clean up workspace
     (cudaFree(_u_co));
@@ -3883,7 +3909,12 @@ real cuda_compute_energy(void)
     energy_multiply<<<numBlocks, dimBlocks>>>(_u_co, _v_co, _w_co, _u_co,
       _dom[dev]);
     // do the averaging
-    k_dom[dev] = 0.5 * avg_entries(dom[dev].Gcc.s3, _u_co);
+    //k_dom[dev] = 0.5 * avg_entries(dom[dev].Gcc.s3, _u_co);
+
+    thrust::device_ptr<real> t_u_co(_u_co);
+    k_dom[dev] = thrust::reduce(t_u_co, t_u_co + dom[dev].Gcc.s3, (real) 0.,
+      thrust::plus<real>());
+    k_dom[dev] = k_dom[dev] / dom[dev].Gcc.s3 * 0.5;
 
     // clean up workspace
     (cudaFree(_u_co));
@@ -4091,17 +4122,26 @@ void cuda_solvability(void)
     // calculate x-face surface integrals
     surf_int_x_copy<<<numBlocks_x, dimBlocks_x>>>(_u_star[dev],
       u_star_red, _dom[dev]);
-    eps_x = sum_entries(2 * Nx, u_star_red);
+    //eps_x = sum_entries(2 * Nx, u_star_red);
+    thrust::device_ptr<real> t_u_star_red(u_star_red);
+    eps_x = thrust::reduce(t_u_star_red, t_u_star_red + 2 * Nx, (real) 0.,
+      thrust::plus<real>());
     eps_x = eps_x * dom[dev].dy*dom[dev].dz;
     // calculate y-face surface integrals
     surf_int_y_copy<<<numBlocks_y, dimBlocks_y>>>(_v_star[dev],
       v_star_red, _dom[dev]);
-    eps_y = sum_entries(2 * Ny, v_star_red);
+    //eps_y = sum_entries(2 * Ny, v_star_red);
+    thrust::device_ptr<real> t_v_star_red(v_star_red);
+    eps_y = thrust::reduce(t_v_star_red, t_v_star_red + 2 * Ny, (real) 0.,
+      thrust::plus<real>());
     eps_y = eps_y * dom[dev].dx*dom[dev].dz;
     // calculate z-face surface integrals
     surf_int_z_copy<<<numBlocks_z, dimBlocks_z>>>(_w_star[dev],
       w_star_red, _dom[dev]);
-    eps_z = sum_entries(2 * Nz, w_star_red);
+    //eps_z = sum_entries(2 * Nz, w_star_red);
+    thrust::device_ptr<real> t_w_star_red(w_star_red);
+    eps_z = thrust::reduce(t_w_star_red, t_w_star_red + 2 * Ny, (real) 0.,
+      thrust::plus<real>());
     eps_z = eps_z * dom[dev].dx*dom[dev].dy;
 
     // subtract eps from outflow plane

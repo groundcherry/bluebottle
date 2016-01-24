@@ -423,7 +423,7 @@ int main(int argc, char *argv[]) {
 
       // initialize ParaView VTK output PVD file
       if(runrestart != 1) {
-        #ifdef DEBUG
+        #ifdef DDEBUG
           init_VTK_ghost();
         #else
           if(rec_paraview_dt > 0) {
@@ -461,7 +461,7 @@ int main(int argc, char *argv[]) {
         }
       }
 
-      #ifdef DEBUG
+      #ifdef DDEBUG
         // write config to screen
         printf("\n=====DEBUG");
         printf("================================");
@@ -534,7 +534,7 @@ int main(int argc, char *argv[]) {
           cuda_dom_pull();
           cuda_part_pull();
 
-        #ifdef DEBUG
+        #ifdef DDEBUG
             printf("Writing ParaView file %d (t = %e)...",
             rec_paraview_stepnum_out, ttime);
             fflush(stdout);
@@ -728,7 +728,7 @@ int main(int argc, char *argv[]) {
                   rec_paraview_stepnum_out, ttime);
                 fflush(stdout);
               #endif
-              #ifdef DEBUG
+              #ifdef DDEBUG
                 out_VTK_ghost();
               #else
                 out_VTK();
@@ -749,7 +749,7 @@ int main(int argc, char *argv[]) {
                   ttime);
                 fflush(stdout);
               #endif
-              #ifdef DEBUG
+              #ifdef DDEBUG
                 recorder_lamb("lamb.rec", iter);
               #else
                 cgns_particles(rec_particle_dt);
@@ -1080,7 +1080,7 @@ int main(int argc, char *argv[]) {
               rec_prec_stepnum_out, ttime);
             fflush(stdout);
           #endif
-          #ifdef DEBUG
+          #ifdef DDEBUG
             out_VTK_ghost();
           #else
             out_VTK_turb();
