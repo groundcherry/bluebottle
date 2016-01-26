@@ -3681,7 +3681,7 @@ __global__ void yank_w_WE(real *w, dom_struct *dom, real *plane_w, real *plane_e
   if((tj < dom->Gfz._jnb) && (tk < dom->Gfz._knb)) {
     // find index of node
     // for now, ignore motion tangential to plane
-    int floor((xpos - dom->xs) * ddx) + DOM_BUF;
+    int i = floor((xpos - dom->xs) * ddx) + DOM_BUF;
     if(i < dom->Gfz.is) i += dom->Gfz.inb;
     if(i > dom->Gfz.ie-1) i -= dom->Gfz.inb;
     real xx_w = (i-DOM_BUF - 0.5) * dom->dx + dom->xs;
