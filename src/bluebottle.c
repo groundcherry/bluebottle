@@ -524,10 +524,10 @@ int main(int argc, char *argv[]) {
 
         // get initial dt; this is an extra check for the SHEAR initialization
         dt = cuda_find_dt();
-	printf("cuda_find_dt\n");
+
         // share this with the precursor domain
         expd_compare_dt(np, status);
-	printf("expd_compare_dt\n");
+
         // update the boundary condition config info to share with precursor
         expd_update_BC(np, status);
         // apply boundary conditions to field variables
@@ -928,6 +928,10 @@ int main(int argc, char *argv[]) {
 
     // initialize the domain
     int domain_init_flag = domain_init_turb();
+
+    // apply boundary conditions to field variables before send bc to MASTER
+    cuda_dom_BC();
+  
     if(domain_init_flag == EXIT_FAILURE) {
       printf("\nThe number of devices in DEV RANGE is insufficient\n");
       printf("for the given turbulence domain decomposition.  Exiting now.\n");
@@ -1002,8 +1006,6 @@ int main(int argc, char *argv[]) {
     prec_update_BC(np, rank, status);
 
     // begin simulation
-    // apply boundary conditions to field variables
-    cuda_dom_BC();
 
     // write initial fields
     if(rec_prec_dt > 0 && runrestart != 1) {

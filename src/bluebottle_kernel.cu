@@ -3654,7 +3654,7 @@ __global__ void yank_v_WE(real *v, dom_struct *dom, real *plane_w, real *plane_e
   if((tj < dom->Gfy._jnb) && (tk < dom->Gfy._knb)) {
     // find index of node
     // for now, ignore motion tangential to plane
-    int i = floor((xpos - dom->xs) * ddx - 0.5) + DOM_BUF;
+    int i = floor((xpos - dom->xs) * ddx) + DOM_BUF;
     if(i < dom->Gfy.is) i += dom->Gfy.inb;
     if(i > dom->Gfy.ie-1) i -= dom->Gfy.inb;
     real xx_w = (i-DOM_BUF-0.5) * dom->dx + dom->xs;
@@ -3666,7 +3666,7 @@ __global__ void yank_v_WE(real *v, dom_struct *dom, real *plane_w, real *plane_e
     real dvdx_e = (v[E] - v[M]) * ddx;
 
     plane_w[tj + tk*dom->Gfy.jnb] = v[W] + dvdx_w * (xpos - 0.5*dom->dx - xx_w);
-    plane_e[tj + tk*dom->Gfy.jnb] = v[M] + dvdx_e * (xpos - 0.5*dom->dx - xx_e);
+    plane_e[tj + tk*dom->Gfy.jnb] = v[M] + dvdx_e * (xpos + 0.5*dom->dx - xx_e);
   }
 }
 
@@ -3681,7 +3681,7 @@ __global__ void yank_w_WE(real *w, dom_struct *dom, real *plane_w, real *plane_e
   if((tj < dom->Gfz._jnb) && (tk < dom->Gfz._knb)) {
     // find index of node
     // for now, ignore motion tangential to plane
-    int i = floor((xpos - dom->xs) * ddx - 0.5) + DOM_BUF;
+    int floor((xpos - dom->xs) * ddx) + DOM_BUF;
     if(i < dom->Gfz.is) i += dom->Gfz.inb;
     if(i > dom->Gfz.ie-1) i -= dom->Gfz.inb;
     real xx_w = (i-DOM_BUF - 0.5) * dom->dx + dom->xs;
@@ -3693,7 +3693,7 @@ __global__ void yank_w_WE(real *w, dom_struct *dom, real *plane_w, real *plane_e
     real dwdx_e = (w[E] - w[M]) * ddx;
 
     plane_w[tj + tk*dom->Gfz.jnb] = w[W] + dwdx_w * (xpos -0.5*dom->dx - xx_w);
-    plane_e[tj + tk*dom->Gfz.jnb] = w[M] + dwdx_e * (xpos -0.5*dom->dx - xx_e);
+    plane_e[tj + tk*dom->Gfz.jnb] = w[M] + dwdx_e * (xpos +0.5*dom->dx - xx_e);
   }
 }
 
@@ -3708,7 +3708,7 @@ __global__ void yank_u_SN(real *u, dom_struct *dom, real *plane_s, real *plane_n
   if((tk < dom->Gfx._inb) && (ti < dom->Gfx._inb)) {
     // find index of node
     // for now, ignore motion tangential to plane
-    int j = floor((ypos - dom->ys) * ddy - 0.5) + DOM_BUF;
+    int j = floor((ypos - dom->ys) * ddy) + DOM_BUF;
     if(j < dom->Gfx.js) j += dom->Gfx.jnb;
     if(j > dom->Gfx.je-1) j -= dom->Gfx.jnb;
     real yy_s = (j-DOM_BUF - 0.5) * dom->dy + dom->ys;
@@ -3720,7 +3720,7 @@ __global__ void yank_u_SN(real *u, dom_struct *dom, real *plane_s, real *plane_n
     real dudy_n = (u[N] - u[M]) * ddy;
 
     plane_s[tk + ti*dom->Gfx.knb] = u[S] + dudy_s * (ypos - 0.5*dom->dy - yy_s);
-    plane_n[tk + ti*dom->Gfx.knb] = u[M] + dudy_n * (ypos - 0.5*dom->dy - yy_n);
+    plane_n[tk + ti*dom->Gfx.knb] = u[M] + dudy_n * (ypos + 0.5*dom->dy - yy_n);
   }
 }
 
@@ -3758,7 +3758,7 @@ __global__ void yank_w_SN(real *w, dom_struct *dom, real *plane_s, real *plane_n
   if((ti < dom->Gfz._inb) && (tk < dom->Gfz._knb)) {
     // find index of node
     // for now, ignore motion tangential to plane
-    int j = floor((ypos - dom->ys) * ddy - 0.5) + DOM_BUF;
+    int j = floor((ypos - dom->ys) * ddy) + DOM_BUF;
     if(j < dom->Gfz.js) j += dom->Gfz.jnb;
     if(j > dom->Gfz.je-1) j -= dom->Gfz.jnb;
     real yy_s = (j-DOM_BUF - 0.5) * dom->dy + dom->ys;
@@ -3770,7 +3770,7 @@ __global__ void yank_w_SN(real *w, dom_struct *dom, real *plane_s, real *plane_n
     real dwdy_n = (w[N] - w[M]) * ddy;
 
     plane_s[tk + ti*dom->Gfz.knb] = w[S] + dwdy_s * (ypos - 0.5*dom->dy - yy_s);
-    plane_n[tk + ti*dom->Gfz.knb] = w[M] = dwdy_n * (ypos - 0.5*dom->dy - yy_n);
+    plane_n[tk + ti*dom->Gfz.knb] = w[M] = dwdy_n * (ypos + 0.5*dom->dy - yy_n);
   }
 }
 
@@ -3785,7 +3785,7 @@ __global__ void yank_u_BT(real *u, dom_struct *dom, real *plane_b, real *plane_t
   if((ti < dom->Gfx._inb) && (tj < dom->Gfx._jnb)) {
     // find index of node
     // for now, ignore motion tangential to plane
-    int k = floor((zpos - dom->zs) * ddz - 0.5) + DOM_BUF;
+    int k = floor((zpos - dom->zs) * ddz) + DOM_BUF;
     if(k < dom->Gfx.ks) k += dom->Gfx.knb;
     if(k > dom->Gfx.ke-1) k -= dom->Gfx.knb;
     real zz_b = (k-DOM_BUF - 0.5) * dom->dz + dom->zs;
@@ -3796,7 +3796,7 @@ __global__ void yank_u_BT(real *u, dom_struct *dom, real *plane_b, real *plane_t
     real dudz_b = (u[M] - u[B]) * ddz;
     real dudz_t = (u[T] - u[M]) * ddz;
     plane_b[ti + tj*dom->Gfx.inb] = u[B] + dudz_b * (zpos - dom->dz*0.5 - zz_b);
-    plane_t[ti + tj*dom->Gfx.inb] = u[M] + dudz_t * (zpos - dom->dz*0.5 - zz_t);
+    plane_t[ti + tj*dom->Gfx.inb] = u[M] + dudz_t * (zpos + dom->dz*0.5 - zz_t);
   }
 }
 
@@ -3811,7 +3811,7 @@ __global__ void yank_v_BT(real *v, dom_struct *dom, real *plane_b, real *plane_t
   if((ti < dom->Gfy._inb) && (tj < dom->Gfy._jnb)) {
     // find index of node
     // for now, ignore motion tangential to plane
-    int k = floor((zpos - dom->zs) * ddz - 0.5) + DOM_BUF;
+    int k = floor((zpos - dom->zs) * ddz) + DOM_BUF;
     if(k < dom->Gfy.ks) k += dom->Gfy.knb;
     if(k > dom->Gfy.ke-1) k -= dom->Gfy.knb;
     real zz_b = (k-DOM_BUF - 0.5) * dom->dz + dom->zs;
@@ -3823,7 +3823,7 @@ __global__ void yank_v_BT(real *v, dom_struct *dom, real *plane_b, real *plane_t
     real dvdz_t = (v[T] - v[M]) * ddz;
 
     plane_b[ti + tj*dom->Gfy.inb] = v[B] + dvdz_b * (zpos - dom->dz*0.5 - zz_b);
-    plane_t[ti + tj*dom->Gfy.inb] = v[M] + dvdz_t * (zpos - dom->dz*0.5 - zz_t);
+    plane_t[ti + tj*dom->Gfy.inb] = v[M] + dvdz_t * (zpos + dom->dz*0.5 - zz_t);
   }
 }
 
