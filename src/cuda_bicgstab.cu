@@ -2,7 +2,7 @@
  ********************************* BLUEBOTTLE **********************************
  *******************************************************************************
  *
- *  Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
+ *  Copyright 2012 - 2016 Adam Sierakowski, The Johns Hopkins University
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@
 
 #include "cuda_bicgstab.h"
 #include "cuda_bluebottle.h"
-#include "entrySearch.h"
+//#include "entrySearch.h"
 #include "cuda_particle.h"
 
 #ifdef TEST
@@ -815,6 +815,83 @@ void cuda_PP_bicgstab(int rank)
     coeffs_particle<<<numBlocks_x, dimBlocks_x>>>(_dom[dev], _A_p->values.pitch,
       thrust::raw_pointer_cast(&_A_p->values.values[0]), _phase[dev]);
 
+/*
+    cusp::dia_matrix<int, real, cusp::host_memory> AA = *_A_p;
+    printf("\n");
+    for(int i = 0; i < dom[dev].Gcc.s3; i++) {
+      for(int j = 0; j < dom[dev].Gcc.s3; j++) {
+        if(j == AA.diagonal_offsets[0] + i)
+          if(AA.values(i, 0) == 0)
+            printf("  ");
+          else
+            printf("%1.0f ", AA.values(i, 0));
+        else if(j == AA.diagonal_offsets[1] + i)
+          if(AA.values(i, 1) == 0)
+            printf("  ");
+          else
+            printf("%1.0f ", AA.values(i, 1));
+        else if(j == AA.diagonal_offsets[2] + i)
+          if(AA.values(i, 2) == 0)
+            printf("  ");
+          else
+            printf("%1.0f ", AA.values(i, 2));
+        else if(j == AA.diagonal_offsets[3] + i)
+          if(AA.values(i, 3) == 0)
+            printf("  ");
+          else
+            printf("%1.0f ", AA.values(i, 3));
+        else if(j == AA.diagonal_offsets[4] + i)
+          if(AA.values(i, 4) == 0)
+            printf("  ");
+          else
+            printf("%1.0f ", AA.values(i, 4));
+        else if(j == AA.diagonal_offsets[5] + i)
+          if(AA.values(i, 5) == 0)
+            printf("  ");
+          else
+            printf("%1.0f ", AA.values(i, 5));
+        else if(j == AA.diagonal_offsets[6] + i)
+          if(AA.values(i, 6) == 0)
+            printf("  ");
+          else
+            printf("%1.0f ", AA.values(i, 6));
+        else if(j == AA.diagonal_offsets[7] + i)
+          if(AA.values(i, 7) == 0)
+            printf("  ");
+          else
+            printf("%1.0f ", AA.values(i, 7));
+        else if(j == AA.diagonal_offsets[8] + i)
+          if(AA.values(i, 8) == 0)
+            printf("  ");
+          else
+            printf("%1.0f ", AA.values(i, 8));
+        else if(j == AA.diagonal_offsets[9] + i)
+          if(AA.values(i, 9) == 0)
+            printf("  ");
+          else
+            printf("%1.0f ", AA.values(i, 9));
+        else if(j == AA.diagonal_offsets[10] + i)
+          if(AA.values(i, 10) == 0)
+            printf("  ");
+          else
+            printf("%1.0f ", AA.values(i, 10));
+        else if(j == AA.diagonal_offsets[11] + i)
+          if(AA.values(i, 11) == 0)
+            printf("  ");
+          else
+            printf("%1.0f ", AA.values(i, 11));
+        else if(j == AA.diagonal_offsets[12] + i)
+          if(AA.values(i, 12) == 0)
+            printf("  ");
+          else
+            printf("%1.0f ", AA.values(i, 12));
+        else
+            printf("  ");
+      }
+    printf("\n");
+    }
+*/
+
 /*    cusp::dia_matrix<int, real, cusp::host_memory> AA = *_A_p;
     FILE *mat = fopen("mat.txt", "w");
     for(int i = 0; i < dom[dev].Gcc.s3; i++) {
@@ -893,8 +970,7 @@ void cuda_PP_bicgstab(int rank)
 
     // copy p0 to array without ghost cells and use it as an initial guess and solution space
     real *_phinoghost;
-    (cudaMalloc((void**) &_phinoghost,
-      sizeof(real)*dom[dev].Gcc.s3b));
+    (cudaMalloc((void**) &_phinoghost, sizeof(real)*dom[dev].Gcc.s3));
     copy_p_noghost<<<numBlocks_x, dimBlocks_x>>>(_phinoghost, _phi[dev],
       _dom[dev]);
     thrust::device_ptr<real> _ptr_p_sol(_phinoghost);
@@ -918,10 +994,23 @@ cusp::print(*_pp);
 
     // normalize the problem by the right-hand side before sending to CUSP
     real norm = cusp::blas::nrm2(*_pp);
+    //printf("norm = %e\n", norm/dom[dev].Gcc.s3);
+    //if(norm > 100.*pp_residual) {//== 0)
     if(norm == 0)
       norm = 1.;
+
     cusp::blas::scal(*_pp, 1. / norm);
     cusp::blas::scal(*_p_sol, 1. / norm);
+
+/*cusp::array1d<real, cusp::host_memory> PP = *_pp;
+cusp::blas::scal(PP, norm);
+//cusp::print(PP);
+real ppsum = 0.;
+for(int s = 0; s < dom[dev].Gcc.s3; s++) {
+  ppsum += PP[s]*dom[dev].dx*dom[dev].dy*dom[dev].dz;
+}
+printf("PPSUM_1 = %e\n", ppsum*norm*dt/rho_f);
+*/
 
     // call BiCGSTAB to solve for p_sol
     cusp::monitor<real> monitor(*_pp, pp_max_iter, pp_residual);
@@ -946,24 +1035,37 @@ cusp::print(*_pp);
     cusp::blas::scal(*_p_sol, norm);
 
     // calculate average pressure
-    real p_avg = avg_entries(dom[dev].Gcc.s3,
-      thrust::raw_pointer_cast(_p_sol->data()));
+    //real p_avg = avg_entries(dom[dev].Gcc.s3,
+    //  thrust::raw_pointer_cast(_p_sol->data()));
+    real p_avg = thrust::reduce(_p_sol->begin(), _p_sol->end(), (real) 0.,
+      thrust::plus<real>()) / dom[dev].Gcc.s3;
 
     // subtract average value from pressure
     cusp::array1d<real, cusp::device_memory> ones(dom[dev].Gcc.s3, 1.);
     cusp::blas::axpy(ones, *_p_sol, -p_avg);
 
-/*
-printf("_p_sol_out\n");
-cusp::print(*_p_sol);
-*/
+  /*
+  printf("_p_sol_out\n");
+  cusp::print(*_p_sol);
+  */
 
-    // copy solution back to pressure field
-    copy_p_ghost<<<numBlocks_x, dimBlocks_x>>>(_phi[dev],
-      thrust::raw_pointer_cast(_p_sol->data()), _dom[dev]);
+      // copy solution back to pressure field
+      copy_p_ghost<<<numBlocks_x, dimBlocks_x>>>(_phi[dev],
+        thrust::raw_pointer_cast(_p_sol->data()), _dom[dev]);
+//  } else {
+//      // write convergence data to file (solver did not run)
+//      if(rank == 0) {
+//        char nam[FILE_NAME_SIZE] = "solver_expd.rec";
+//        recorder_bicgstab(nam, 0.,0.);
+//      } else {
+//        char nam[FILE_NAME_SIZE] = "solver_prec.rec";
+//        recorder_bicgstab(nam, 0.,0.);
+//      }
+//  }
+
 
     // clean up
-    (cudaFree(_phinoghost));
+    cudaFree(_phinoghost);
     delete(_p_sol);
     delete(_pp);
     delete(_A_p);

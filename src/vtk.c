@@ -2,7 +2,7 @@
  ********************************* BLUEBOTTLE **********************************
  *******************************************************************************
  *
- *  Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
+ *  Copyright 2012 - 2016 Adam Sierakowski, The Johns Hopkins University
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -124,14 +124,14 @@ void dom_out_VTK(void)
   fprintf(outfile, "<PDataArray type=\"Float32\" Name=\"z\"/>\n");
   fprintf(outfile, "</PCoordinates>\n");
   for(l = 0; l < 6 * nsubdom; l += 6) {
-    ncx_l = (dom[l].xe - dom[l].xs) / Dom.dx;
-    ncx_s = (dom[l].xs - Dom.xs) / Dom.dx;
+    ncx_l = round((dom[l].xe - dom[l].xs) / Dom.dx);
+    ncx_s = round((dom[l].xs - Dom.xs) / Dom.dx);
     ncx_e = ncx_s + ncx_l;
-    ncy_l = (dom[l].ye - dom[l].ys) / Dom.dy;
-    ncy_s = (dom[l].ys - Dom.ys) / Dom.dy;
+    ncy_l = round((dom[l].ye - dom[l].ys) / Dom.dy);
+    ncy_s = round((dom[l].ys - Dom.ys) / Dom.dy);
     ncy_e = ncy_s + ncy_l;
-    ncz_l = (dom[l].ze - dom[l].zs) / Dom.dz;
-    ncz_s = (dom[l].zs - Dom.zs) / Dom.dz;
+    ncz_l = round((dom[l].ze - dom[l].zs) / Dom.dz);
+    ncz_s = round((dom[l].zs - Dom.zs) / Dom.dz);
     ncz_e = ncz_s + ncz_l;
     fprintf(outfile, "<Piece Extent=\"");
     fprintf(outfile, "%d %d ", ncx_s, ncx_e);

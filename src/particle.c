@@ -2,7 +2,7 @@
  ********************************* BLUEBOTTLE **********************************
  *******************************************************************************
  *
- *  Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
+ *  Copyright 2012 - 2016 Adam Sierakowski, The Johns Hopkins University
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -124,7 +124,7 @@ void parts_read_input(int turb)
     fret = fscanf(infile, "E %lf\n", &parts[i].E);
     fret = fscanf(infile, "sigma %lf\n", &parts[i].sigma);
     fret = fscanf(infile, "e_dry %lf\n", &parts[i].e_dry);
-    fret = fscanf(infile, "l_rough %lf\n", &parts[i].l_rough);
+    fret = fscanf(infile, "coeff_fric %lf\n", &parts[i].coeff_fric);
 #else // single precision
     fret = fscanf(infile, "r %f\n", &parts[i].r);
     fret = fscanf(infile, "(x, y, z) %f %f %f\n",
@@ -137,7 +137,7 @@ void parts_read_input(int turb)
     fret = fscanf(infile, "E %f\n", &parts[i].E);
     fret = fscanf(infile, "sigma %f\n", &parts[i].sigma);
     fret = fscanf(infile, "e_dry %f\n", &parts[i].e_dry);
-    fret = fscanf(infile, "l_rough %f\n", &parts[i].l_rough);
+    fret = fscanf(infile, "coeff_fric %f\n", &parts[i].coeff_fric);
 #endif
     fret = fscanf(infile, "order %d\n", &parts[i].order);
 #ifdef DOUBLE
@@ -213,7 +213,7 @@ void parts_show_config(void)
     printf("    E = %e\n", parts[i].E);
     printf("    sigma = %e\n", parts[i].sigma);
     printf("    e_dry = %e\n", parts[i].e_dry);
-    printf("    l_rough = %e\n", parts[i].l_rough);
+    printf("    coeff_fric = %e\n", parts[i].coeff_fric);
     printf("    order = %d\n", parts[i].order);
     printf("    rs = %e\n", parts[i].rs);
     printf("    spring_k = %f\n", parts[i].spring_k);
@@ -464,8 +464,11 @@ int parts_init(void)
       parts[i].nodes[j] = -1;
     }
 
-    // initialize Stokes number
-    parts[i].St = 0.;
+    // initialize Stokes number lists to -1
+    for(j = 0; j < MAX_NEIGHBORS; j++) {
+      parts[i].St[j] = 0.;
+      parts[i].iSt[j] = -1;
+    }
   }
 
   // allocate Lamb's coefficients
