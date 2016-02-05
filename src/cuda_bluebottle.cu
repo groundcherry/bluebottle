@@ -2,7 +2,7 @@
  ********************************* BLUEBOTTLE **********************************
  *******************************************************************************
  *
- *  Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
+ *  Copyright 2012 - 2016 Adam Sierakowski, The Johns Hopkins University
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -4140,7 +4140,7 @@ void cuda_solvability(void)
       w_star_red, _dom[dev]);
     //eps_z = sum_entries(2 * Nz, w_star_red);
     thrust::device_ptr<real> t_w_star_red(w_star_red);
-    eps_z = thrust::reduce(t_w_star_red, t_w_star_red + 2 * Ny, (real) 0.,
+    eps_z = thrust::reduce(t_w_star_red, t_w_star_red + 2 * Nz, (real) 0.,
       thrust::plus<real>());
     eps_z = eps_z * dom[dev].dx*dom[dev].dy;
 

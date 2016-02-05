@@ -2,7 +2,7 @@
  ********************************* BLUEBOTTLE **********************************
  *******************************************************************************
  *
- *  Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
+ *  Copyright 2012 - 2016 Adam Sierakowski, The Johns Hopkins University
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -232,15 +232,16 @@ int main(int argc, char *argv[]) {
       tmp = tmp;  // prevent compiler warning
       if (c == 'Y' || c == 'y') {
         printf("Seed particles for which kind of");
-        printf(" array? (r)andom / (a)rray / (h)ex / (p)erturbed?\n");
+        printf(" array? (r)andom\n");// / (a)rray / (h)ex / (p)erturbed?\n");
         fflush(stdout);
         int type = getchar();
         tmp = getchar();
         int Nx = 0; int Ny = 0; int Nz = 0; 
-        double ddz = 0.0; double bias = 0.0; int nperturb = 0;
+        //double ddz = 0.0; double bias = 0.0; int nperturb = 0;
         if(type == 'r'){
-          seeder_read_input(Nx, Ny, Nz, ddz, bias, nperturb);
+          seeder_read_input(Nx, Ny, Nz);//, ddz, bias, nperturb);
         }
+        /*
         if(type == 'a'){
           printf("Please input the number of particles in the x direction\n");
           fflush(stdout);
@@ -292,6 +293,7 @@ int main(int argc, char *argv[]) {
             nperturb);
           seeder_read_input(Nx, Ny, Nz, ddz, bias, nperturb);
         }
+        */
         return EXIT_SUCCESS;
       } else {
         printf("Please specify the desired parameters in parts.config\n\n");
@@ -310,7 +312,7 @@ int main(int argc, char *argv[]) {
       recorder_read_config();
 
       // read simulation input configuration file
-      printf("\nRunning bluebottle_0.1...\n\n");
+      printf("\nRunning Bluebottle...\n\n");
       printf("Reading the domain and particle input files...\n\n");
       domain_read_input();
       parts_read_input(turb);
@@ -833,7 +835,8 @@ int main(int argc, char *argv[]) {
       printf("done.\n");
       fflush(stdout);
 
-      printf("\n...bluebottle_0.1 done.\n\n");
+      printf("\n...Bluebottle done.\n\n");
+      return EXIT_FAILURE;      // exit failure to stop SLURM resubmit
     }
   } else {
     int turb = 1;   // boolean
