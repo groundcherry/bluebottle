@@ -2,7 +2,7 @@
  ********************************* BLUEBOTTLE **********************************
  *******************************************************************************
  *
- *  Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
+ *  Copyright 2012 - 2016 Adam Sierakowski, The Johns Hopkins University
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -1729,6 +1729,22 @@ __global__ void forcing_reset_z(real *fz, dom_struct *dom);
  ******
  */
 
+/****f* cuda_bluebottle_kernel/forcing_add_c_const<<<>>>()
+ * NAME
+ *  forcing_add_c_const<<<>>>()
+ * USAGE
+ */
+__global__ void forcing_add_c_const(real val, real *cc, dom_struct *dom);
+/*
+ * FUNCTION 
+ *  Add a constant.
+ * ARGUMENTS
+ *  * val -- the value of the force to be added to the array
+ *  * cc -- the array
+ *  * dom -- the current subdomain
+ ******
+ */
+
 /****f* cuda_bluebottle_kernel/forcing_add_x_const<<<>>>()
  * NAME
  *  forcing_add_x_const<<<>>>()
@@ -2174,8 +2190,9 @@ __global__ void bin_start(int *binStart, int *binEnd, int *partBin, int nparts);
  * USAGE
  */
 __global__ void collision_parts(part_struct *parts, int nparts,
-  dom_struct *dom, real eps, real mu, BC bc, int *binStart, int *binEnd,
-  int *partBin, int *partInd, dom_struct *binDom, int interactionLength);
+  dom_struct *dom, real eps, real mu, real rho_f, real nu, BC bc, int *binStart,
+  int *binEnd, int *partBin, int *partInd, dom_struct *binDom,
+  int interactionLength, real dt);
 /*
  * FUNCTION
  *  Calculate collision forcing between particle i and all other particles.
@@ -2185,6 +2202,8 @@ __global__ void collision_parts(part_struct *parts, int nparts,
  *  * dom -- the device domain array
  *  * eps -- magnitude of forcing
  *  * mu -- fluid viscosity
+ *  * rho_f -- fluid density
+ *  * nu -- fluid viscosity
  *  * bc -- boundary condition data
  *  * binStart -- index of (sorted) partBin where each bin starts
  *  * binEnd -- index of (sorted) partBin where each bin ends
@@ -2192,6 +2211,7 @@ __global__ void collision_parts(part_struct *parts, int nparts,
  *  * partInd -- corresponding particle index for partBin
  *  * binDom -- the domain structure contaiing info about bin domain
  *  * interactionLength -- the compact support length for interactions
+ *  * dt -- time step size
  ******
  */
 

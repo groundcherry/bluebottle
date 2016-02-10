@@ -2,7 +2,7 @@
  ********************************* BLUEBOTTLE **********************************
  *******************************************************************************
  *
- *  Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
+ *  Copyright 2012 - 2016 Adam Sierakowski, The Johns Hopkins University
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -279,7 +279,7 @@ void cuda_part_pull(void)
   (cudaMemcpy(phase_shell, _phase_shell[0], sizeof(int) * dom[0].Gcc.s3b,
     cudaMemcpyDeviceToHost));
 
-#ifdef DEBUG
+#ifdef DDEBUG
   (cudaMemcpy(phase_shell, _phase_shell[0],
     sizeof(int) * dom[0].Gcc.s3b, cudaMemcpyDeviceToHost));
   (cudaMemcpy(flag_u, _flag_u[0], sizeof(int) * dom[0].Gfx.s3b,

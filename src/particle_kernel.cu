@@ -2,7 +2,7 @@
  ********************************* BLUEBOTTLE **********************************
  *******************************************************************************
  *
- *  Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
+ *  Copyright 2012 - 2016 Adam Sierakowski, The Johns Hopkins University
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -601,14 +601,14 @@ __global__ void part_BC_u(real *u, int *phase, int *flag_u,
         uu = 0;
       }
       x = (i-DOM_BUF) * dom->dx + dom->xs - X;
-      if(x < dom->xs - 0.5*dom->dx) x += dom->xl;
-      if(x > dom->xe + 0.5*dom->dx) x -= dom->xl;
+      if(x <= 2.*a-dom->xl) x += dom->xl;
+      if(x >= dom->xl-2.*a) x -= dom->xl;
       y = (tj-0.5) * dom->dy + dom->ys - Y;
-      if(y < dom->ys - 0.5*dom->dy) y += dom->yl;
-      if(y > dom->ye + 0.5*dom->dy) y -= dom->yl;
+      if(y <= 2.*a-dom->yl) y += dom->yl;
+      if(y >= dom->yl-2.*a) y -= dom->yl;
       z = (tk-0.5) * dom->dz + dom->zs - Z;
-      if(z < dom->zs - 0.5*dom->dz) z += dom->zl;
-      if(z > dom->ze + 0.5*dom->dz) z -= dom->zl;
+      if(z <= 2.*a-dom->zl) z += dom->zl;
+      if(z >= dom->zl-2.*a) z -= dom->zl;
       xyz2rtp(x, y, z, &r, &theta, &phi);
 
       // calculate analytic solution
@@ -620,7 +620,6 @@ __global__ void part_BC_u(real *u, int *phase, int *flag_u,
         nu, pnm_re, pnm_im, phinm_re, phinm_im,
         chinm_re, chinm_im,
         P, stride, &Ux, &Uy, &Uz);
-
 
       real ocrossr_x = oy*z - oz*y;
       real odotcrossr_x = oydot*z - ozdot*y;
@@ -703,14 +702,14 @@ __global__ void part_BC_v(real *v, int *phase, int *flag_v,
         vv = 0;
       }
       x = (ti-0.5) * dom->dx + dom->xs - X;
-      if(x < dom->xs - 0.5*dom->dx) x += dom->xl;
-      if(x > dom->xe + 0.5*dom->dx) x -= dom->xl;
+      if(x <= 2.*a-dom->xl) x += dom->xl;
+      if(x >= dom->xl-2.*a) x -= dom->xl;
       y = (j-DOM_BUF) * dom->dy + dom->ys - Y;
-      if(y < dom->ys - 0.5*dom->dy) y += dom->yl;
-      if(y > dom->ye + 0.5*dom->dy) y -= dom->yl;
+      if(y <= 2.*a-dom->yl) y += dom->yl;
+      if(y >= dom->yl-2.*a) y -= dom->yl;
       z = (tk-0.5) * dom->dz + dom->zs - Z;
-      if(z < dom->zs - 0.5*dom->dx) z += dom->zl;
-      if(z > dom->ze + 0.5*dom->dz) z -= dom->zl;
+      if(z <= 2.*a-dom->zl) z += dom->zl;
+      if(z >= dom->zl-2.*a) z -= dom->zl;
       xyz2rtp(x, y, z, &r, &theta, &phi);
 
       // calculate analytic solution
@@ -805,14 +804,14 @@ __global__ void part_BC_w(real *w, int *phase, int *flag_w,
         ww = 0;
       }
       x = (ti-0.5) * dom->dx + dom->xs - X;
-      if(x < dom->xs - 0.5*dom->dx) x += dom->xl;
-      if(x > dom->xe + 0.5*dom->dx) x -= dom->xl;
+      if(x <= 2.*a-dom->xl) x += dom->xl;
+      if(x >= dom->xl-2.*a) x -= dom->xl;
       y = (tj-0.5) * dom->dy + dom->ys - Y;
-      if(y < dom->ys - 0.5*dom->dy) y += dom->yl;
-      if(y > dom->ye + 0.5*dom->dy) y -= dom->yl;
+      if(y <= 2.*a-dom->yl) y += dom->yl;
+      if(y >= dom->yl-2.*a) y -= dom->yl;
       z = (k-DOM_BUF) * dom->dz + dom->zs - Z;
-      if(z < dom->zs - 0.5*dom->dz) z += dom->zl;
-      if(z > dom->ze + 0.5*dom->dz) z -= dom->zl;
+      if(z <= 2.*a-dom->zl) z += dom->zl;
+      if(z >= dom->zl-2.*a) z -= dom->zl;
       xyz2rtp(x, y, z, &r, &theta, &phi);
 
       // calculate analytic solution
@@ -892,14 +891,14 @@ __global__ void part_BC_p(real *p, real *p_rhs, int *phase, int *phase_shell,
         wdot = 0;
       }
       x = (i-0.5) * dom->dx + dom->xs - X;
-      if(x < dom->xs) x += dom->xl;
-      if(x > dom->xe) x -= dom->xl;
+      if(x <= 2.*a-dom->xl) x += dom->xl;
+      if(x >= dom->xl-2.*a) x -= dom->xl;
       y = (tj-0.5) * dom->dy + dom->ys - Y;
-      if(y < dom->ys) y += dom->yl;
-      if(y > dom->ye) y -= dom->yl;
+      if(y <= 2.*a-dom->yl) y += dom->yl;
+      if(y >= dom->yl-2.*a) y -= dom->yl;
       z = (tk-0.5) * dom->dz + dom->zs - Z;
-      if(z < dom->zs) z += dom->zl;
-      if(z > dom->ze) z -= dom->zl;
+      if(z <= 2.*a-dom->zl) z += dom->zl;
+      if(z >= dom->zl-2.*a) z -= dom->zl;
       xyz2rtp(x, y, z, &r, &theta, &phi);
 
       // calculate analytic solution
@@ -933,7 +932,7 @@ __global__ void part_BC_p(real *p, real *p_rhs, int *phase, int *phase_shell,
       // write BC if flagged, otherwise leave alone
       p_rhs[C] = (real) phase_shell[CC] * p_rhs[C]
         + (real) (1 - phase_shell[CC])
-        * ((pp_tmp - p[CC]) + 0.5*mu*p_rhs[C]);
+        * (pp_tmp - p[CC]);// + 0.5*mu*p_rhs[C]);
       p_rhs[C] = (real) (phase[CC] < 0 && phase_shell[CC]) * p_rhs[C];
 #endif
     }
@@ -987,14 +986,14 @@ __global__ void part_BC_p_fill(real *p, int *phase,
         wdot = 0;
       }
       x = (i-0.5) * dom->dx + dom->xs - X;
-      if(x < dom->xs) x += dom->xl;
-      if(x > dom->xe) x -= dom->xl;
+      if(x <= 2.*a-dom->xl) x += dom->xl;
+      if(x >= dom->xl-2.*a) x -= dom->xl;
       y = (tj-0.5) * dom->dy + dom->ys - Y;
-      if(y < dom->ys) y += dom->yl;
-      if(y > dom->ye) y -= dom->yl;
+      if(y <= 2.*a-dom->yl) y += dom->yl;
+      if(y >= dom->yl-2.*a) y -= dom->yl;
       z = (tk-0.5) * dom->dz + dom->zs - Z;
-      if(z < dom->zs) z += dom->zl;
-      if(z > dom->ze) z -= dom->zl;
+      if(z <= 2.*a-dom->zl) z += dom->zl;
+      if(z >= dom->zl-2.*a) z -= dom->zl;
       xyz2rtp(x, y, z, &r, &theta, &phi);
 
       // calculate analytic solution
@@ -1095,15 +1094,12 @@ __device__ void xyz2rtp(real x, real y, real z, real *r, real *theta, real *phi)
   real XY = x*x + y*y;
   real XYZ = XY + z*z;
   // We calculate the coefficients everywhere in space. If a particle is
-  // centered at the center of a cell, XYZ will be zero. We'll set it equal
-  // to one since these values aren't ever used.
-  if(XYZ >= 0 && XYZ < DIV_ST) XYZ = 1;//DIV_ST;
-  else if(XYZ < 0 && XYZ > -DIV_ST) XYZ = 1;//-DIV_ST;
+  // centered at the center of a cell, XYZ will be zero.
+  if(XYZ >= 0 && XYZ < DIV_ST) XYZ = DIV_ST;
   *r = sqrt(XYZ);
   *theta = acos(z / *r);
   // Note that XY cannot be set equal to one, because the values are used.
   if(XY >= 0 && XY < DIV_ST) XY = DIV_ST;
-  else if(XY < 0 && XY > -DIV_ST) XY = -DIV_ST;
   *phi = acos(x / sqrt(XY));
   if(y < 0.) *phi = 2.*PI - *phi;
 }

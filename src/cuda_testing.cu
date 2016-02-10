@@ -2,7 +2,7 @@
  ********************************* BLUEBOTTLE **********************************
  *******************************************************************************
  *
- *  Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
+ *  Copyright 2012 - 2016 Adam Sierakowski, The Johns Hopkins University
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.

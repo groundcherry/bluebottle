@@ -2,7 +2,7 @@
  ********************************* BLUEBOTTLE **********************************
  *******************************************************************************
  *
- *  Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
+ *  Copyright 2012 - 2016 Adam Sierakowski, The Johns Hopkins University
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@
  *  PI
  * TYPE
  */
-#define PI 3.1415926535897932385
+#define PI 3.14159265358979323846
 /*
  * PURPOSE
  *  Define the constant pi.
@@ -2856,8 +2856,8 @@ void cuda_collisions(void);
  *  seeder_read_input()
  * USAGE
  */
-void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias, 
-  int nperturb);
+void seeder_read_input(int Nx, int Ny, int Nz);//, double ddz, double bias, 
+  //int nperturb);
 /*
   * FUNCTION
   *   Read parts.config for seeder initialization
@@ -2878,7 +2878,7 @@ void seeder_read_input(int Nx, int Ny, int Nz, double ddz, double bias,
  */
 void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz, 
   real aLx, real aLy, real aLz, real rho, real E, real sigma, real e_dry,
-  real l_rough, int o, real rs_r, real spring_k, real spring_x, real spring_y,
+  real coeff_fric, int o, real rs_r, real spring_k, real spring_x, real spring_y,
   real spring_z, real spring_l, int t, int r);
 /*
  * FUNCTION
@@ -2901,7 +2901,7 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
  *  * E -- the particle Young's modulus
  *  * s -- the particle Poisson ratio (-1 < s <= 0.5)
  *  * e_dry -- dry coefficient of restitution
- *  * l_rough -- particle surface roughness
+ *  * coeff_fric -- coefficient of friction
  *  * o -- the order of truncation of the Lamb's solution
  *  * rs_r -- cage extent ratio
  *  * spring_k -- particle spring constant
@@ -2921,7 +2921,7 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
  */
 void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy, 
   real aFz, real aLx, real aLy, real aLz, real rho, real E, real sigma, 
-  real e_dry, real l_rough, int o, real rs_r, real spring_k, real spring_x, 
+  real e_dry, int o, real rs_r, real spring_k, real spring_x, 
   real spring_y, real spring_z, real spring_l, int t, int r);
 /* FUNCTION
  *  Seed Nx*Ny*Nz particles in the domain as a regular array shape. To use this 
@@ -2945,7 +2945,6 @@ void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy,
  *  * E -- the particle Young's modulus
  *  * s -- the particle Poisson ratio (-1 < s <= 0.5)
  *  * e_dry -- dry coefficient of restitution
- *  * l_rough -- particle surface roughness
  *  * o -- the order of truncation of the Lamb's solution
  *  * rs_r -- cage extent ratio
  *  * spring_k -- particle spring constant
@@ -2965,7 +2964,7 @@ void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy,
  */
 void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx, 
   real aFy, real aFz, real aLx, real aLy, real aLz, real rho, real E, 
-  real sigma, real e_dry, real l_rough, int o, real rs_r, real spring_k, 
+  real sigma, real e_dry, int o, real rs_r, real spring_k, 
   real spring_x, real spring_y, real spring_z, real spring_l, int t, int r);
 /* FUNCTION
  *  Seed Nx*Ny*Nz particles in the domain in a hex shape. To use this function, 
@@ -2990,7 +2989,6 @@ void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx,
  *  * E -- the particle Young's modulus
  *  * s -- the particle Poisson ratio (-1 < s <= 0.5)
  *  * e_dry -- dry coefficient of restitution
- *  * l_rough -- particle surface roughness
  *  * o -- the order of truncation of the Lamb's solution
  *  * rs_r -- cage extent ratio
  *  * spring_k -- particle spring constant
@@ -3010,7 +3008,7 @@ void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx,
  */
 void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int nperturb, 
   real loa, real a, real aFx, real aFy, real aFz, real aLx, real aLy, real aLz, 
-  real rho, real E, real sigma, real e_dry, real l_rough, int o, real rs, 
+  real rho, real E, real sigma, real e_dry, int o, real rs, 
   real spring_k, real spring_x, real spring_y, real spring_z, real spring_l, 
   int t, int r);
 /* FUNCTION
@@ -3037,7 +3035,6 @@ void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int nperturb,
  *  * E -- the particle Young's modulus
  *  * s -- the particle Poisson ratio (-1 < s <= 0.5)
  *  * e_dry -- dry coefficient of restitution
- *  * l_rough -- particle surface roughness
  *  * o -- the order of truncation of the Lamb's solution
  *  * rs_r -- cage extent ratio
  *  * spring_k -- particle spring constant
