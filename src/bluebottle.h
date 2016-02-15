@@ -1154,7 +1154,7 @@ extern real *u_SN_N;
 extern real *u_BT_B;
 /*
  * PURPOSE
- *  Hold the turbulence precursor plane for the u-velocity B or T face on ghost plane.
+ *  Hold the turbulence precursor plane for the u-velocity B or T face on bottom plane.
  ******
  */
 
@@ -1166,16 +1166,10 @@ extern real *u_BT_B;
 extern real *u_BT_T;
 /*
  * PURPOSE
- *  Hold the turbulence precursor plane for the u-velocity B or T face on first layer plane.
+ *  Hold the turbulence precursor plane for the u-velocity B or T face on top plane.
  ******
  */
 
-
-/****v* bluebottle/v_WE
- * NAME
- *  v_WE
- * TYPE
- */
 extern real *v_WE_W;
 /*
  * PURPOSE
@@ -1215,7 +1209,7 @@ extern real *v_SN;
 extern real *v_BT_B;
 /*
  * PURPOSE
- *  Hold the turbulence precursor plane for the v-velocity B or T face on ghost cell.
+ *  Hold the turbulence precursor plane for the v-velocity B or T face on bottom cell.
  ******
  */
 
@@ -1227,7 +1221,7 @@ extern real *v_BT_B;
 extern real *v_BT_T;
 /*
  * PURPOSE
- *  Hold the turbulence precursor plane for the v-velocity B or T face on the first layer.
+ *  Hold the turbulence precursor plane for the v-velocity B or T face on the top layer.
  ******
  */
 
@@ -1256,11 +1250,6 @@ extern real *w_WE_E;
  ******
  */
 
-/****v* bluebottle/w_SN
- * NAME
- *  w_SN
- * TYPE
- */
 extern real *w_SN_S;
 /*
  * PURPOSE
@@ -1268,11 +1257,6 @@ extern real *w_SN_S;
  ******
  */
 
-/****v* bluebottle/w_SN
- * NAME
- *  w_SN
- * TYPE
- */
 extern real *w_SN_N;
 /*
  * PURPOSE
@@ -1280,11 +1264,6 @@ extern real *w_SN_N;
  ******
  */
 
-/****v* bluebottle/w_BT
- * NAME
- *  w_BT
- * TYPE
- */
 extern real *w_BT;
 /*
  * PURPOSE
@@ -1305,11 +1284,6 @@ extern real **_u_WE;
  ******
  */
 
-/****v* bluebottle/_u_SN
- * NAME
- *  _u_SN
- * TYPE
- */
 extern real **_u_SN_S;
 /*
  * PURPOSE
@@ -1317,11 +1291,7 @@ extern real **_u_SN_S;
  *  Device version.
  ******
  */
-/****v* bluebottle/_u_SN
- * NAME
- *  _u_SN
- * TYPE
- */
+
 extern real **_u_SN_N;
 /*
  * PURPOSE
@@ -1338,7 +1308,7 @@ extern real **_u_SN_N;
 extern real **_u_BT_B;
 /*
  * PURPOSE
- *  Hold the turbulence precursor plane for the u-velocity B or T face on ghost cell.
+ *  Hold the turbulence precursor plane for the u-velocity B or T face on bottom cell.
  *  Device version.
  ******
  */
@@ -1351,17 +1321,11 @@ extern real **_u_BT_B;
 extern real **_u_BT_T;
 /*
  * PURPOSE
- *  Hold the turbulence precursor plane for the u-velocity B or T face on the first layer.
+ *  Hold the turbulence precursor plane for the u-velocity B or T face on the top layer.
  *  Device version.
  ******
  */
 
-
-/****v* bluebottle/_v_WE
- * NAME
- *  _v_WE
- * TYPE
- */
 extern real **_v_WE_W;
 /*
  * PURPOSE
@@ -1370,11 +1334,6 @@ extern real **_v_WE_W;
  ******
  */
 
-/****v* bluebottle/_v_WE
- * NAME
- *  _v_WE
- * TYPE
- */
 extern real **_v_WE_E;
 /*
  * PURPOSE
@@ -1404,7 +1363,7 @@ extern real **_v_SN;
 extern real **_v_BT_B;
 /*
  * PURPOSE
- *  Hold the turbulence precursor plane for the v-velocity B or T face on ghost cell.
+ *  Hold the turbulence precursor plane for the v-velocity B or T face on bottom cell.
  *  Device version.
  ******
  */
@@ -1417,16 +1376,11 @@ extern real **_v_BT_B;
 extern real **_v_BT_T;
 /*
  * PURPOSE
- *  Hold the turbulence precursor plane for the v-velocity B or T face on the first layer cell.
+ *  Hold the turbulence precursor plane for the v-velocity B or T face on the top cell.
  *  Device version.
  ******
  */
 
-/****v* bluebottle/_w_WE
- * NAME
- *  _w_WE
- * TYPE
- */
 extern real **_w_WE_W;
 /*
  * PURPOSE
@@ -1448,11 +1402,6 @@ extern real **_w_WE_E;
  ******
  */
 
-/****v* bluebottle/_w_SN
- * NAME
- *  _w_SN
- * TYPE
- */
 extern real **_w_SN_S;
 /*
  * PURPOSE
@@ -1461,11 +1410,6 @@ extern real **_w_SN_S;
  ******
  */
 
-/****v* bluebottle/_w_SN
- * NAME
- *  _w_SN
- * TYPE
- */
 extern real **_w_SN_N;
 /*
  * PURPOSE

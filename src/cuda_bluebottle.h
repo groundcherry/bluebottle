@@ -962,7 +962,7 @@ __global__ void BC_v_T_N(real *v, dom_struct *dom);
  *  BC_v_T_T<<<>>>()
  * USAGE
  */
-__global__ void BC_v_T_T(real *v, dom_struct *dom, real *bc_s, real *bc_n);
+__global__ void BC_v_T_T(real *v, dom_struct *dom, real *bc_b, real *bc_t);
 /*
  * FUNCTION
  *  Apply the precursor domain boundary conditions to the top face v-velocity

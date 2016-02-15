@@ -878,7 +878,7 @@ __global__ void BC_v_T_N(real *v, dom_struct *dom)
 }
 
 // v-velocity; top; Turbulent precursor
-__global__ void BC_v_T_T(real *v, dom_struct *dom, real* bc_s, real* bc_n)
+__global__ void BC_v_T_T(real *v, dom_struct *dom, real* bc_b, real* bc_t)
 {
   int ti = blockDim.x*blockIdx.x + threadIdx.x;
   int tj = blockDim.y*blockIdx.y + threadIdx.y;
@@ -887,9 +887,9 @@ __global__ void BC_v_T_T(real *v, dom_struct *dom, real* bc_s, real* bc_n)
   int s2b = dom->Gfy._s2b;
 
   if((ti < dom->Gfy._inb) && (tj < dom->Gfy._jnb)) {
-    v[ti + tj*s1b + (dom->Gfy._ke-1)*s2b] = bc_s[ti + tj*dom->Gfy.inb];
+    v[ti + tj*s1b + (dom->Gfy._ke-1)*s2b] = bc_b[ti + tj*dom->Gfy.inb];
     // velocity on ghost cell
-    v[ti + tj*s1b + (dom->Gfy._keb-1)*s2b] = bc_n[ti + tj*dom->Gfy.inb];
+    v[ti + tj*s1b + (dom->Gfy._keb-1)*s2b] = bc_t[ti + tj*dom->Gfy.inb];
   }
 }
 

@@ -1003,7 +1003,7 @@ int main(int argc, char *argv[]) {
     prec_update_BC(np, rank, status);
 
     // begin simulation
-    // apply boundary conditions to field variables before send bc to MASTER
+    // apply boundary conditions to field variables
     cuda_dom_BC(); 
    
     // write initial fields
