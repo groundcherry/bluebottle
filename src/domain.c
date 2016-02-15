@@ -715,8 +715,6 @@ void domain_read_input(void)
 #endif
   fret = fscanf(infile, "\n");
 
-  fret = fscanf(infile, "\n");
-
   fret = fscanf(infile, "PID CONTROLLER GAINS\n");
 #ifdef DOUBLE
   fret = fscanf(infile, "Kp %lf\n", &Kp);
