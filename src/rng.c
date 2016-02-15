@@ -59,3 +59,29 @@ double rng_dbl(void)
 {
   return 5.42101086242752217e-20 * rng_uint64();
 }
+
+// reference:http://c-faq.com/lib/gaussian.html
+// generate double random gaussian distribution
+double gaussrand(void)
+{
+        static double V1, V2, S;
+        static int phase = 0;
+        double X;
+
+        if(phase == 0){
+                do{
+                        double U1 = rng_dbl();
+                        double U2 = rng_dbl();
+
+                        V1 = 2*U1 - 1;
+                        V2 = 2*U2 - 1;
+                        S = V1 * V1 + V2 * V2;
+                        } while(S >=1 || S == 0);
+                X = V1 * sqrt(-2 * log(S)/S);
+        }else
+                X = V2 * sqrt(-2 * log(S)/S);
+
+        phase = 1 - phase;
+
+        return X;
+}
