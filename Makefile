@@ -52,7 +52,8 @@ SRCC =	bluebottle.c	\
 	precursor.c	\
 	recorder.c	\
 	seeder.c	\
-	vtk.c
+	vtk.c		\
+	rng.c
 
 SRCCUDA = cuda_bluebottle.cu	\
 	cuda_bicgstab.cu	\
@@ -78,7 +79,8 @@ EXTRA = Makefile		\
 	particle.h		\
 	precursor.h		\
 	recorder.h		\
-	vtk.h
+	vtk.h			\
+	rng.h
 
 # compile normally
 all: COPT += -O2
