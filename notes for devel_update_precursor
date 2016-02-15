@@ -1,6 +1,0 @@
-update:
-1, change the interpolation scheme
-2, add corresponding variables to store the data
-3, update the turbulence boundary condition for velocity
-4, apply bounday condition immediently after domain_init_turb
-
