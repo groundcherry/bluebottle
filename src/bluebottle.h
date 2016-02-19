@@ -2985,7 +2985,7 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
  *  change its name to part.config and run bluebottle normally.
  * ARGUMENTS
  *  * nparts -- the number of particles
- *  * loa -- particle interaction compact support length
+ *  * loa -- particle interaction compact support length ratio
  *  * a -- the radius of the particles
  *  * aFx -- particle x forcing
  *  * aFy -- particle y forcing
@@ -3029,7 +3029,7 @@ void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy,
  *  * Nx -- particle number in x direction
  *  * Ny -- particle number in y direction
  *  * Nz -- particle number is z direction
- *  * loa -- particle interaction compact support length
+ *  * loa -- particle interaction compact support length ratio
  *  * a -- the radius of the particles
  *  * aFx -- particle x forcing
  *  * aFy -- particle y forcing
@@ -3073,7 +3073,7 @@ void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx,
  * 	Ny -- particle number in y direction
  *  Nz -- particle number is z direction
  *	ddz -- distance from top of one layer to center of next layer
- *  * loa -- particle interaction compact support length
+ *  * loa -- particle interaction compact support length ratio
  *  * a -- the radius of the particles
  *  * aFx -- particle x forcing
  *  * aFy -- particle y forcing
@@ -3119,7 +3119,7 @@ void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int nperturb,
  *  Nz - particle number is z direction
  *	bias -- magnitude of pertubation
  *	nperturb -- number of pertubation times
- *  * loa -- particle interaction compact support length
+ *  * loa -- particle interaction compact support length ratio
  *  * a -- the radius of the particles
  *  * aFx -- particle x forcing
  *  * aFy -- particle y forcing

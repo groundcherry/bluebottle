@@ -798,7 +798,7 @@ int main(int argc, char *argv[]) {
           }
 
           // check for blow-up condition
-          if(dt < 1e-20) {
+          if(dt < 1.e-10 || dt > 1.e10) {
             printf("The solution has diverged.  Ending simulation.              \n");
             return EXIT_FAILURE;
           }
@@ -846,7 +846,6 @@ int main(int argc, char *argv[]) {
       fflush(stdout);
 
       printf("\n...Bluebottle done.\n\n");
-      return EXIT_FAILURE;      // exit failure to stop SLURM resubmit
     }
   } else {
     int turb = 1;   // boolean
@@ -1076,7 +1075,7 @@ int main(int argc, char *argv[]) {
       dt = cuda_find_dt();
      
       // check for blow-up condition
-      if(dt < 1e-20) {
+      if(dt < 1.e-10 || dt > 1.e10) {
         printf("The solution has diverged.  Ending simulation.              \n");
         return EXIT_FAILURE;
       }

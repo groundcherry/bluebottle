@@ -415,15 +415,15 @@ extern int nparts;
  ******
  */
 
-/****v* particle/interactionLength
+/****v* particle/interactionLengthRatio
  * NAME
- *  interactionLength
+ *  interactionLengthRatio
  * TYPE
  */
-extern real interactionLength;
+extern real interactionLengthRatio;
 /*
  * PURPOSE
- *  Defines the particle-particle interaction length
+ *  Defines the particle-particle interaction length ratio
  ******
  */
 

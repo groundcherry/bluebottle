@@ -33,7 +33,7 @@ int **_flag_v;
 int *flag_w;
 int **_flag_w;
 int nparts;
-real interactionLength;
+real interactionLengthRatio;
 part_struct *parts;
 part_struct **_parts;
 dom_struct binDom;
@@ -102,11 +102,9 @@ void parts_read_input(int turb)
   // allocate bin domain
   // read nbody parameters
   #ifdef DOUBLE  
-    fret = fscanf(infile, "(l/a) %lf\n", 
-                  &interactionLength);
+    fret = fscanf(infile, "(l/a) %lf\n", &interactionLengthRatio);
   #else
-    fret = fscanf(infile, "(l/a) %f\n", 
-                  &interactionLength);
+    fret = fscanf(infile, "(l/a) %f\n", &interactionLengthRatio);
   #endif
 
   // read nparts particles
@@ -166,9 +164,11 @@ void parts_show_config(void)
 
   printf("Particles:\n");
   #ifdef DOUBLE  
-    printf("  Interaction Support Length (l/a) = %lf\n", interactionLength);
+    printf("  Interaction Support Length Ratio (l/a) = %lf\n", 
+      interactionLengthRatio);
   #else
-    printf("  Interaction Support Length (l/a) = %f\n", interactionLength);
+    printf("  Interaction Support Length Ratio (l/a) = %f\n", 
+      interactionLengthRatio);
   #endif
   for(i = 0; i < nparts; i++) {
     printf("  Particle %d:\n", i);
@@ -605,7 +605,7 @@ int binDom_init(void)
   binDom.xs = Dom.xs;
   binDom.xe = Dom.xe;
   binDom.xl = Dom.xl;
-  binDom.xn = floor(Dom.xl/(2.*rmax + interactionLength));
+  binDom.xn = floor(Dom.xl/(2.*rmax + interactionLengthRatio*rmax));
   if (binDom.xn == 0) { // to avoid dividing by zero and having infinite bin
     binDom.xn = 1;
     binDom.dx = Dom.xl;
@@ -616,7 +616,7 @@ int binDom_init(void)
   binDom.ys = Dom.ys;
   binDom.ye = Dom.ye;
   binDom.yl = Dom.yl;
-  binDom.yn = floor(Dom.yl/(2.*rmax + interactionLength));
+  binDom.yn = floor(Dom.yl/(2.*rmax + interactionLengthRatio*rmax));
   if (binDom.yn == 0) {
     binDom.yn = 1;
     binDom.dy = Dom.yl;
@@ -627,7 +627,7 @@ int binDom_init(void)
   binDom.zs = Dom.zs;
   binDom.ze = Dom.ze;
   binDom.zl = Dom.zl;
-  binDom.zn = floor(Dom.zl/(2.*rmax + interactionLength));
+  binDom.zn = floor(Dom.zl/(2.*rmax + interactionLengthRatio*rmax));
   if (binDom.zn == 0) {
     binDom.zn = 1;
     binDom.dz = Dom.zl;

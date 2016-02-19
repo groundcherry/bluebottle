@@ -2500,7 +2500,7 @@ __global__ void bin_start(int *binStart, int *binEnd, int *partBin, int nparts)
 __global__ void collision_parts(part_struct *parts, int nparts,
   dom_struct *dom, real eps, real mu, real rhof, real nu, BC bc, int *binStart,
   int *binEnd, int *partBin, int *partInd, dom_struct *binDom,
-  int interactionLength, real dt)
+  int interactionLengthRatio, real dt)
 {
   int index = threadIdx.x + blockIdx.x*blockDim.x;
 
@@ -2594,7 +2594,7 @@ __global__ void collision_parts(part_struct *parts, int nparts,
                 real ai = parts[i].r;
                 real aj = parts[j].r;
                 real B = aj / ai;
-                real hN = interactionLength;
+                real hN = interactionLengthRatio * parts[i].r;
 
                 real ux, uy, uz;
                 real rx, rx1, rx2, ry, ry1, ry2, rz, rz1, rz2, r;
@@ -2800,9 +2800,9 @@ __global__ void collision_parts(part_struct *parts, int nparts,
                       *fabs(udotn)/nu;
                   }
 
-                  real Vx = utx + 0.5*(ai + aj + h)*ocrossnx;
-                  real Vy = uty + 0.5*(ai + aj + h)*ocrossny;
-                  real Vz = utz + 0.5*(ai + aj + h)*ocrossnz;
+                  real Vx = -utx + 0.5*(ai + aj + h)*ocrossnx;
+                  real Vy = -uty + 0.5*(ai + aj + h)*ocrossny;
+                  real Vz = -utz + 0.5*(ai + aj + h)*ocrossnz;
 
                   real Hi = 0.5*parts[i].E/(1.+parts[i].sigma);
                   real kt = 8./((1.-parts[i].sigma*parts[i].sigma)/Hi
@@ -2819,7 +2819,7 @@ __global__ void collision_parts(part_struct *parts, int nparts,
                     + (1.-parts[j].sigma*parts[j].sigma)/parts[j].E)
                     /sqrt(1./ai + 1./aj);
                   // estimate damping coefficient
-                  real xcx0 = 1.e-3;
+                  real xcx0 = 1.e-4;
                   real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[q]
                     *log(xcx0);
                   if(e < 0) e = 0;
@@ -2871,7 +2871,7 @@ __global__ void collision_parts(part_struct *parts, int nparts,
 
 __global__ void collision_walls(dom_struct *dom, part_struct *parts,
   int nparts, BC bc, real eps, real mu, real rhof, real nu,
-  int interactionLength, real dt)
+  int interactionLengthRatio, real dt)
 {
   int i = threadIdx.x + blockIdx.x*blockDim.x;
   /**** parallelize this further by using a CUDA block for each wall ****/
@@ -2887,7 +2887,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
     real ai = parts[i].r;
     real h = 0;
-    real hN = interactionLength;
+    real hN = interactionLengthRatio * parts[i].r;
     real ah, lnah;
 
     real Fnx, Fny, Fnz, Ftx, Fty, Ftz;
@@ -2985,7 +2985,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
       // estimate damping coefficient
-      real xcx0 = 1e-3;
+      real xcx0 = 1.e-4;
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
@@ -3099,7 +3099,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
       // estimate damping coefficient
-      real xcx0 = 1e-3;
+      real xcx0 = 1.e-4;
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
@@ -3214,7 +3214,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
       // estimate damping coefficient
-      real xcx0 = 1e-3;
+      real xcx0 = 1.e-4;
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
@@ -3329,7 +3329,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
       // estimate damping coefficient
-      real xcx0 = 1e-3;
+      real xcx0 = 1.e-4;
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
@@ -3444,7 +3444,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
       // estimate damping coefficient
-      real xcx0 = 1e-3;
+      real xcx0 = 1.e-4;
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
@@ -3559,7 +3559,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
       // estimate damping coefficient
-      real xcx0 = 1e-3;
+      real xcx0 = 1.e-4;
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;

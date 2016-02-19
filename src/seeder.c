@@ -31,7 +31,7 @@ void seeder_read_input(int Nx, int Ny, int Nz)//, double ddz, double bias,
 {
 
   int N;               // number of parts
-  real loa;            // interaction length
+  real loa;            // interaction length ratio
 
   real a;              // particle radius
   real x,y,z;          // particle positions
@@ -784,7 +784,7 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
     exit(EXIT_FAILURE);
   }
 
-  // write the number of particles and compact support length
+  // write the number of particles and compact support length ratio
   fprintf(ofile, "n %d\n", nparts);
   fprintf(ofile, "(l/a) %f\n", loa);
 
@@ -907,7 +907,7 @@ void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy,
     exit(EXIT_FAILURE);
   }
 
-  // write the number of particles and compact support length
+  // write the number of particles and compact support length ratio
   fprintf(ofile, "n %d\n", nparts);
   fprintf(ofile, "(l/a) %f\n", loa);
 
@@ -1055,7 +1055,7 @@ void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx,
     exit(EXIT_FAILURE);
   }
 
-  // write the number of particles and compact support length
+  // write the number of particles and compact support length ratio
   fprintf(ofile, "n %d\n", nparts);
   fprintf(ofile, "(l/a) %f\n", loa);
 
@@ -1252,7 +1252,7 @@ void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int nperturb,
     exit(EXIT_FAILURE);
   }
 
-  // write the number of particles and compact support length
+  // write the number of particles and compact support length ratio
   fprintf(ofile, "n %d\n", nparts);
   fprintf(ofile, "(l/a) %f\n", loa);
 
