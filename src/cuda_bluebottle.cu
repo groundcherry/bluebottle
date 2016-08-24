@@ -3569,9 +3569,9 @@ real cuda_find_dt(void)
   // clean up
   free(dts);
 
-#ifdef IMPLICIT
-  if(min > 1.1*dt) min = 1.1*dt;
-#endif
+//#ifdef IMPLICIT
+//  if(min > 1.1*dt) min = 1.1*dt;
+//#endif
 
   return min;
 }
@@ -3667,6 +3667,10 @@ void cuda_update_p()
     //real pmean = avg_entries(dom[dev].Gcc.s3, _p_mean);
     cudaFree(_p_mean);
     forcing_add_c_const<<<numBlocks_p, dimBlocks_p>>>(-pmean, _p[dev], _dom[dev]);
+
+    // set cells bounded on all sides equal to the average of its neighbors to
+    // prevent Poisson solver convergence failures
+    //average_solo<<<numBlocks_p, dimBlocks_p>>>(_dom[dev], _phase[dev], _p[dev]);
   }
 }
 

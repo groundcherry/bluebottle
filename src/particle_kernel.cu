@@ -108,7 +108,7 @@ __global__ void build_phase(int p, part_struct *parts, int *phase,
     xx = (ti-0.5)*dom->dx - (X-dom->xs);
     yy = (tj-0.5)*dom->dy - (Y-dom->ys);
     zz = (tk-0.5)*dom->dz - (Z-dom->zs);
-    d = sqrt(xx * xx + yy * yy + zz * zz);
+    d = sqrt(xx * xx + yy * yy + zz * zz);// + 0.50*(dom->dx + dom->dy + dom->dz)/3.;
 
     C = ti + tj*dom->Gcc.s1b + tk*dom->Gcc.s2b;
 
@@ -286,6 +286,37 @@ __global__ void phase_shell_z(part_struct *parts,
       phase_shell[T] = phase_shell[T]*(1 - (phase[B] < 0 && phase[T] > -1));
       // if phase changes from solid to fluid
       phase_shell[B] = phase_shell[B]*(1 - (phase[B] > -1 && phase[T] < 0));
+    }
+  }
+}
+
+__global__ void phase_shell_remove_islands(dom_struct *dom, int *phase_shell)
+{
+  int i;    // iterator
+
+  int W, E, S, N, B, T, C; // flag locations
+
+  int tj = blockDim.x*blockIdx.x + threadIdx.x + DOM_BUF;
+  int tk = blockDim.y*blockIdx.y + threadIdx.y + DOM_BUF;
+
+  if((tj < dom->Gcc.je) && (tk < dom->Gcc.ke)) {
+    for(i = dom->Gcc.is; i <= dom->Gcc.ie; i++) {
+      int neighbor_sum = 0;
+
+      C = i + tj*dom->Gcc.s1b + tk*dom->Gcc.s2b;
+      W = (i-1) + tj*dom->Gcc.s1b + tk*dom->Gcc.s2b;
+      E = (i+1) + tj*dom->Gcc.s1b + tk*dom->Gcc.s2b;
+      S = i + (tj-1)*dom->Gcc.s1b + tk*dom->Gcc.s2b;
+      N = i + (tj+1)*dom->Gcc.s1b + tk*dom->Gcc.s2b;
+      B = i + tj*dom->Gcc.s1b + (tk-1)*dom->Gcc.s2b;
+      T = i + tj*dom->Gcc.s1b + (tk+1)*dom->Gcc.s2b;
+
+      // if more than three of the six neighbors are marked, mark C as well
+      neighbor_sum = (1-phase_shell[W]) + (1-phase_shell[E])
+        + (1-phase_shell[S]) + (1-phase_shell[N])
+        + (1-phase_shell[B]) + (1-phase_shell[T]);
+
+      phase_shell[C] = phase_shell[C] - phase_shell[C] * (neighbor_sum > 3);
     }
   }
 }
@@ -932,7 +963,11 @@ __global__ void part_BC_p(real *p, real *p_rhs, int *phase, int *phase_shell,
       // write BC if flagged, otherwise leave alone
       p_rhs[C] = (real) phase_shell[CC] * p_rhs[C]
         + (real) (1 - phase_shell[CC])
+  #ifdef NOPRESSURECORRECTION
+        * (pp_tmp);// + 0.5*mu*p_rhs[C]);
+  #else
         * (pp_tmp - p[CC]);// + 0.5*mu*p_rhs[C]);
+  #endif
       p_rhs[C] = (real) (phase[CC] < 0 && phase_shell[CC]) * p_rhs[C];
 #endif
     }

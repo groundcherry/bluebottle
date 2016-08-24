@@ -767,6 +767,10 @@ void cuda_build_cages(void)
         _dom[dev]);
     }
 
+    // fill in island cells
+    //phase_shell_remove_islands<<<numBlocks_cu, dimBlocks_cu>>>(_dom[dev],
+      //_phase_shell[dev]);
+
     // flag u, v, w on particles
     // u
     

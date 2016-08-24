@@ -2,7 +2,7 @@
 ################################## BLUEBOTTLE ##################################
 ################################################################################
 #
-#   Copyright 2012 - 2015 Adam Sierakowski, The Johns Hopkins University
+#   Copyright 2012 - 2016 Adam Sierakowski, The Johns Hopkins University
 # 
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -21,16 +21,16 @@
 ################################################################################
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ EDIT: DEPENDENCIES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-MPI_DIR =
-HDF5_DIR =
-CGNS_DIR =
-CUSP_DIR =
-CUDA_DIR =
+MPI_DIR = /usr/lib/openmpi
+HDF5_DIR = /usr/local/hdf5
+CGNS_DIR = /usr/local/cgns
+CUSP_DIR = /usr/local/cusplibrary
+CUDA_DIR = /usr/local/cuda
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ EDIT: COMPILERS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-MPICC =
-NVCC =
+MPICC = mpicc.openmpi
+NVCC = nvcc
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 PREC = DOUBLE
@@ -42,7 +42,7 @@ COPT = -std=c99 -pedantic -Wall -Wextra -fopenmp -D$(PREC)
 LDINCS = -I $(MPI_DIR)/include -I $(CGNS_DIR)/include -I $(CUSP_DIR)
 LDLIBS = -lm -L $(HDF5_DIR)/lib -L $(CGNS_DIR)/lib -lcgns -lhdf5 
 
-CUDAOPT = -arch=sm_35 -Xcompiler -fopenmp -m64 -D$(PREC)
+CUDAOPT = -arch=sm_30 -Xcompiler -fopenmp -m64 -D$(PREC)
 
 CUDALIBS = -L $(CUDA_DIR)/lib64 -lcudart
 
@@ -97,15 +97,34 @@ stokes: COPT += -O2 -DSTOKESFLOW
 stokes: CUDAOPT += -O2 -DSTOKESFLOW
 stokes: bluebottle
 
+# compile without pressure correction for U*
+nocorrection: COPT += -O2 -DNOPRESSURECORRECTION
+nocorrection: CUDAOPT += -O2 -DNOPRESSURECORRECTION
+nocorrection: bluebottle
+
 # compile for batch job submission
 batch: COPT += -O2 -DBATCHRUN
 batch: CUDAOPT += -O2
 batch: bluebottle
 
+# compile with stair-stepped interior boundaries
+steps: COPT += -DSTEPS -O2
+steps: CUDAOPT += -DSTEPS -O2
+steps: bluebottle
+
 # compile with debug output
-debug: COPT += -DDEBUG -g
-debug: CUDAOPT += -DDEBUG -g -G
+debug: COPT += -DDDEBUG -g
+debug: CUDAOPT += -DDDEBUG -g -G
 debug: bluebottle
+
+# compile with testing code
+test: COPT += -DDDEBUG -DTEST -g
+test: CUDAOPT += -DDDEBUG -DTEST -g -G
+test: bluebottle
+
+# write robodoc documentation
+doc:
+	cd .. && robodoc --html --multidoc --doc doc/robodoc && robodoc --latex --singledoc --sections --doc doc/LaTeX/Bluebottle_0.1_robodoc && cd doc/LaTeX && pdflatex Bluebottle_0.1_robodoc.tex && pdflatex Bluebottle_0.1_robodoc.tex && pdflatex Bluebottle_0.1_robodoc.tex && echo '\nmake doc: Complete.'
 
 OBJS = $(addprefix $(SRC_DIR)/, $(addsuffix .o, $(basename $(SRCC))))
 OBJSCUDA = $(addprefix $(SRC_DIR)/, $(addsuffix .o, $(basename $(SRCCUDA))))

@@ -469,6 +469,9 @@ int parts_init(void)
       parts[i].St[j] = 0.;
       parts[i].iSt[j] = -1;
     }
+
+    //parts[i].ty = 0;
+    //parts[i].tz = 0;
   }
 
   // allocate Lamb's coefficients

@@ -2600,4 +2600,23 @@ __global__ void internal_w(real *w, part_struct *parts, dom_struct *dom,
  ******
  */
 
+/****f* bluebottle_kernel/average_solo<<<>>>()
+ * NAME
+ *  average_solo<<<>>>()
+ * TYPE
+ */
+__global__ void average_solo(dom_struct *dom, int *phase, real *p);
+/* PURPOSE
+ *  Set the value of any pressure cells bounded on all six sides by particle
+ *  pressure Dirichlet boundary conditions equal to the average of the six
+ *  neighbors. This is intended to prevent Poisson solver convergence failures
+ *  that have been correlated to the appearance of these strongly constrained
+ *  cells.
+ * ARGUMENTS
+ *  dom -- device domain information
+ *  phase -- device phase mask field
+ *  p -- pressure
+ ******
+ */
+
 #endif
