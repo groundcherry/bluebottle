@@ -620,32 +620,32 @@ __global__ void compute_error(real lamb_cut, int stride, int nparts,
   // sort the coefficients in shared memory and calculate errors along the way
   for(i = 0; i < 6*stride; i++) {
     // search for the largest magnitude value in shared and store its location
-//    tmp = 0.;//FLT_MIN;
-//    loc = 0;
-//    for(j = 0; j < 6*stride; j++) {
-//      if(s_coeffs[j]*s_coeffs[j] >= tmp) {
-//        tmp = s_coeffs[j]*s_coeffs[j];
-//        loc = j;
-//      }
-//    }
-//
-//    // move the largest value into sorted list
-//    coeffs[part*6*stride+i] = s_coeffs[loc];
-//
-//    // if its corresponding coefficient has large enough magnitude,
-//    // compute error for this coefficient
-//    if(fabs(s_coeffs[loc]) > lamb_cut*fabs(coeffs[part*6*stride+0])) {
+    tmp = 0.;//FLT_MIN;
+    loc = 0;
+    for(j = 0; j < 6*stride; j++) {
+      if(s_coeffs[j]*s_coeffs[j] >= tmp) {
+        tmp = s_coeffs[j]*s_coeffs[j];
+        loc = j;
+      }
+    }
+
+    // move the largest value into sorted list
+    coeffs[part*6*stride+i] = s_coeffs[loc];
+
+    // if its corresponding coefficient has large enough magnitude,
+    // compute error for this coefficient
+    if(fabs(s_coeffs[loc]) > lamb_cut*fabs(coeffs[part*6*stride+0])) {
       div = fabs(s_coeffs[loc]);// + fabs(avg)*1e-4;
       if(div < 1e-16) div = 1e-16;
       errors[part*6*stride+i] = fabs((s_coeffs[loc] - s_coeffs0[loc]) / div);
-//    } else errors[part*6*stride+i] = 0.;
+    } else errors[part*6*stride+i] = 0.;
 
 //printf("%d loc = %d  ", part,loc);
 //printf("coeffs=%e  ",coeffs[part*6*stride+i]);
 //printf("errors=%e\n",errors[part*6*stride+i]);
 
     // discard this value since we've used it once
-//    s_coeffs[loc] = 0.;
+    s_coeffs[loc] = 0.;
   }
 
   // find the largest error for each particle
