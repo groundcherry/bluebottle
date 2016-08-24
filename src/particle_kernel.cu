@@ -1371,7 +1371,7 @@ __device__ void lamb_vel(int order, real a, real r, real theta, real phi,
       + 0.25*n*((2.*n+1.)*od2np3*ar*ar-1.)*powarn)
       * X_pn(n, theta, phi, pnm_re, pnm_im, p_ind, stride);
     ur += (n*powranm1
-      + 0.5*n*(2.*n-1.-(2.*n+1.)*ra*ra)*pow(ar,n+2.))
+      + 0.5*n*(2.*n-1.-(2.*n+1.)*ra*ra)*powarnp2)
       * X_phin(n, theta, phi, phinm_re, phinm_im, p_ind, stride);
 
     ut += (0.5*(n+3.)*odnp1*od2np3*powranp1
