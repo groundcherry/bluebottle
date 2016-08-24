@@ -582,7 +582,7 @@ __global__ void compute_error(real lamb_cut, int stride, int nparts,
   real *coeffs, real *errors, real *part_errors, dom_struct *dom, real nu)
 {
   int part = blockIdx.x;
-  int i;//,j;
+  int i,j;
   real tmp = FLT_MIN;
   int loc = 0;
   real avg = 0;
