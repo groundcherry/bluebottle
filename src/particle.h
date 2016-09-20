@@ -321,6 +321,8 @@ typedef struct part_struct {
   int bin;
   real St[MAX_NEIGHBORS];
   int iSt[MAX_NEIGHBORS];
+  //real ty;
+  //real tz;
   real e_dry;
   real coeff_fric;
 } part_struct;
@@ -415,15 +417,15 @@ extern int nparts;
  ******
  */
 
-/****v* particle/interactionLength
+/****v* particle/interactionLengthRatio
  * NAME
- *  interactionLength
+ *  interactionLengthRatio
  * TYPE
  */
-extern real interactionLength;
+extern real interactionLengthRatio;
 /*
  * PURPOSE
- *  Defines the particle-particle interaction length
+ *  Defines the particle-particle interaction length ratio
  ******
  */
 

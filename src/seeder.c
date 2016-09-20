@@ -25,13 +25,14 @@
 #include "bluebottle.h"
 #include "domain.h"
 #include "particle.h"
+#include "rng.h"
 
 void seeder_read_input(int Nx, int Ny, int Nz)//, double ddz, double bias, 
   //int nperturb)
 {
 
   int N;               // number of parts
-  real loa;            // interaction length
+  real loa;            // interaction length ratio
 
   real a;              // particle radius
   real x,y,z;          // particle positions
@@ -231,7 +232,8 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
   int redo = 1;
 
   // seed the random number generator
-  srand(time(NULL));
+  //srand(time(NULL));
+  rng_init(time(NULL));
 
   // read domain input
   domain_read_input();
@@ -259,7 +261,8 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
   redo = 1;
   while(redo == 1) {
     redo = 0;
-    parts[0].x = rand() / (real)RAND_MAX;
+    //parts[0].x = rand() / (real)RAND_MAX;
+    parts[0].x = rng_dbl();
     parts[0].x *= xl;
     parts[0].x += xs;
     if((bc.uW != PERIODIC) && (parts[0].x < (xs + gap*parts[0].r)))
@@ -270,7 +273,8 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
   redo = 1;
   while(redo == 1) {
     redo = 0;
-    parts[0].y = rand() / (real)RAND_MAX;
+    //parts[0].y = rand() / (real)RAND_MAX;
+    parts[0].y = rng_dbl();
     parts[0].y *= yl;
     parts[0].y += ys;
     if((bc.vS != PERIODIC) && (parts[0].y < (ys + gap*parts[0].r)))
@@ -281,7 +285,8 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
   redo = 1;
   while(redo == 1) {
     redo = 0;
-    parts[0].z = rand() / (real)RAND_MAX;
+    //parts[0].z = rand() / (real)RAND_MAX;
+    parts[0].z = rng_dbl();
     //parts[0].z = acos(2.*(parts[0].z-0.5))/PI;
     parts[0].z *= zl;
     parts[0].z += zs;
@@ -328,7 +333,8 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
       redo = 1;
       while(redo == 1) {
         redo = 0;
-        parts[i].x = rand() / (real)RAND_MAX;
+        //parts[i].x = rand() / (real)RAND_MAX;
+        parts[i].x = rng_dbl();
         parts[i].x *= xl;
         parts[i].x += xs;
         if((bc.uW != PERIODIC) && (parts[i].x < (xs + gap*parts[i].r)))
@@ -339,7 +345,8 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
       redo = 1;
       while(redo == 1) {
         redo = 0;
-        parts[i].y = rand() / (real)RAND_MAX;
+        //parts[i].y = rand() / (real)RAND_MAX;
+        parts[i].y = rng_dbl();
         parts[i].y *= yl;
         parts[i].y += ys;
         if((bc.vS != PERIODIC) && (parts[i].y < (ys + gap*parts[i].r)))
@@ -350,7 +357,8 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
       redo = 1;
       while(redo == 1) {
         redo = 0;
-        parts[i].z = rand() / (real)RAND_MAX;
+        //parts[i].z = rand() / (real)RAND_MAX;
+        parts[i].z = rng_dbl();
         parts[i].z *= zl;
         parts[i].z += zs;
         if((bc.wB != PERIODIC) && (parts[i].z < (zs + gap*parts[i].r)))
@@ -403,20 +411,18 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
         // x only
         if(bc.uW == PERIODIC) {
           xx = parts[i].x - parts[j].x;
-          xx = xx * xx;
-          yy = parts[i].y - parts[j].y;
-          yy = yy * yy;
-          zz = parts[i].z - parts[j].z;
-          zz = zz * zz;
           if(parts[i].x < (xs + parts[i].r))
             xx = parts[i].x + xl - parts[j].x;
           if(parts[i].x > (xe - parts[i].r))
             xx = parts[i].x - xl - parts[j].x;
           xx = xx * xx;
+
           yy = parts[i].y - parts[j].y;
           yy = yy * yy;
+
           zz = parts[i].z - parts[j].z;
           zz = zz * zz;
+
           if(sqrt(xx + yy + zz) < (gap*parts[i].r + gap*parts[j].r)) {
             fits = !fits;
             break;
@@ -427,19 +433,17 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
         if(bc.vS == PERIODIC) {
           xx = parts[i].x - parts[j].x;
           xx = xx * xx;
+
           yy = parts[i].y - parts[j].y;
-          yy = yy * yy;
-          zz = parts[i].z - parts[j].z;
-          zz = zz * zz;
-          xx = parts[i].x - parts[j].x;
-          xx = xx * xx;
           if(parts[i].y < (ys + parts[i].r))
             yy = parts[i].y + yl - parts[j].y;
           if(parts[i].y > (ye - parts[i].r))
             yy = parts[i].y - yl - parts[j].y;
           yy = yy * yy;
+
           zz = parts[i].z - parts[j].z;
           zz = zz * zz;
+
           if(sqrt(xx + yy + zz) < (gap*parts[i].r + gap*parts[j].r)) {
             fits = !fits;
             break;
@@ -450,19 +454,17 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
         if(bc.wB == PERIODIC) {
           xx = parts[i].x - parts[j].x;
           xx = xx * xx;
+
           yy = parts[i].y - parts[j].y;
           yy = yy * yy;
+
           zz = parts[i].z - parts[j].z;
-          zz = zz * zz;
-          xx = parts[i].x - parts[j].x;
-          xx = xx * xx;
-          yy = parts[i].y - parts[j].y;
-          yy = yy * yy;
           if(parts[i].z < (zs + parts[i].r))
             zz = parts[i].z + zl - parts[j].z;
           if(parts[i].z > (ze - parts[i].r))
             zz = parts[i].z - zl - parts[j].z;
           zz = zz * zz;
+
           if(sqrt(xx + yy + zz) < (gap*parts[i].r + gap*parts[j].r)) {
             fits = !fits;
             break;
@@ -472,23 +474,22 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
         // x and y
         if(bc.uW == PERIODIC && bc.vS == PERIODIC) {
           xx = parts[i].x - parts[j].x;
-          xx = xx * xx;
-          yy = parts[i].y - parts[j].y;
-          yy = yy * yy;
-          zz = parts[i].z - parts[j].z;
-          zz = zz * zz;
           if(parts[i].x < (xs + parts[i].r))
             xx = parts[i].x + xl - parts[j].x;
           if(parts[i].x > (xe - parts[i].r))
             xx = parts[i].x - xl - parts[j].x;
           xx = xx * xx;
+
+          yy = parts[i].y - parts[j].y;
           if(parts[i].y < (ys + parts[i].r))
             yy = parts[i].y + yl - parts[j].y;
           if(parts[i].y > (ye - parts[i].r))
             yy = parts[i].y - yl - parts[j].y;
           yy = yy * yy;
+
           zz = parts[i].z - parts[j].z;
           zz = zz * zz;
+
           if(sqrt(xx + yy + zz) < (gap*parts[i].r + gap*parts[j].r)) {
             fits = !fits;
             break;
@@ -499,22 +500,21 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
         if(bc.vS == PERIODIC && bc.wB == PERIODIC) {
           xx = parts[i].x - parts[j].x;
           xx = xx * xx;
+
           yy = parts[i].y - parts[j].y;
-          yy = yy * yy;
-          zz = parts[i].z - parts[j].z;
-          zz = zz * zz;
-          xx = parts[i].x - parts[j].x;
-          xx = xx * xx;
           if(parts[i].y < (ys + parts[i].r))
             yy = parts[i].y + yl - parts[j].y;
           if(parts[i].y > (ye - parts[i].r))
             yy = parts[i].y - yl - parts[j].y;
           yy = yy * yy;
+
+          zz = parts[i].z - parts[j].z;
           if(parts[i].z < (zs + parts[i].r))
             zz = parts[i].z + zl - parts[j].z;
           if(parts[i].z > (ze - parts[i].r))
             zz = parts[i].z - zl - parts[j].z;
           zz = zz * zz;
+
           if(sqrt(xx + yy + zz) < (gap*parts[i].r + gap*parts[j].r)) {
             fits = !fits;
             break;
@@ -524,23 +524,22 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
         // z and x
         if(bc.uW == PERIODIC && bc.wB == PERIODIC) {
           xx = parts[i].x - parts[j].x;
-          xx = xx * xx;
-          yy = parts[i].y - parts[j].y;
-          yy = yy * yy;
-          zz = parts[i].z - parts[j].z;
-          zz = zz * zz;
           if(parts[i].x < (xs + parts[i].r))
             xx = parts[i].x + xl - parts[j].x;
           if(parts[i].x > (xe - parts[i].r))
             xx = parts[i].x - xl - parts[j].x;
           xx = xx * xx;
+
           yy = parts[i].y - parts[j].y;
           yy = yy * yy;
+
+          zz = parts[i].z - parts[j].z;
           if(parts[i].z < (zs + parts[i].r))
             zz = parts[i].z + zl - parts[j].z;
           if(parts[i].z > (ze - parts[i].r))
             zz = parts[i].z - zl - parts[j].z;
           zz = zz * zz;
+
           if(sqrt(xx + yy + zz) < (gap*parts[i].r + gap*parts[j].r)) {
             fits = !fits;
             break;
@@ -550,26 +549,26 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
         // x, y, and z
         if(bc.uW == PERIODIC && bc.vS == PERIODIC && bc.wB == PERIODIC) {
           xx = parts[i].x - parts[j].x;
-          xx = xx * xx;
-          yy = parts[i].y - parts[j].y;
-          yy = yy * yy;
-          zz = parts[i].z - parts[j].z;
-          zz = zz * zz;
           if(parts[i].x < (xs + parts[i].r))
             xx = parts[i].x + xl - parts[j].x;
           if(parts[i].x > (xe - parts[i].r))
             xx = parts[i].x - xl - parts[j].x;
           xx = xx * xx;
+
+          yy = parts[i].y - parts[j].y;
           if(parts[i].y < (ys + parts[i].r))
             yy = parts[i].y + yl - parts[j].y;
           if(parts[i].y > (ye - parts[i].r))
             yy = parts[i].y - yl - parts[j].y;
           yy = yy * yy;
+
+          zz = parts[i].z - parts[j].z;
           if(parts[i].z < (zs + parts[i].r))
             zz = parts[i].z + zl - parts[j].z;
           if(parts[i].z > (ze - parts[i].r))
             zz = parts[i].z - zl - parts[j].z;
           zz = zz * zz;
+
           if(sqrt(xx + yy + zz) < (gap*parts[i].r + gap*parts[j].r)) {
             fits = !fits;
             break;
@@ -580,20 +579,18 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
         // x only
         if(bc.uW == PERIODIC) {
           xx = parts[j].x - parts[i].x;
-          xx = xx * xx;
-          yy = parts[j].y - parts[i].y;
-          yy = yy * yy;
-          zz = parts[j].z - parts[i].z;
-          zz = zz * zz;
           if(parts[j].x < (xs + parts[j].r))
             xx = parts[j].x + xl - parts[i].x;
           if(parts[j].x > (xe - parts[j].r))
             xx = parts[j].x - xl - parts[i].x;
           xx = xx * xx;
+
           yy = parts[j].y - parts[i].y;
           yy = yy * yy;
+
           zz = parts[j].z - parts[i].z;
           zz = zz * zz;
+
           if(sqrt(xx + yy + zz) < (gap*parts[j].r + gap*parts[i].r)) {
             fits = !fits;
             break;
@@ -604,19 +601,17 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
         if(bc.vS == PERIODIC) {
           xx = parts[j].x - parts[i].x;
           xx = xx * xx;
+
           yy = parts[j].y - parts[i].y;
-          yy = yy * yy;
-          zz = parts[j].z - parts[i].z;
-          zz = zz * zz;
-          xx = parts[j].x - parts[i].x;
-          xx = xx * xx;
           if(parts[j].y < (ys + parts[j].r))
             yy = parts[j].y + yl - parts[i].y;
           if(parts[j].y > (ye - parts[j].r))
             yy = parts[j].y - yl - parts[i].y;
           yy = yy * yy;
+
           zz = parts[j].z - parts[i].z;
           zz = zz * zz;
+
           if(sqrt(xx + yy + zz) < (gap*parts[j].r + gap*parts[i].r)) {
             fits = !fits;
             break;
@@ -627,19 +622,17 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
         if(bc.wB == PERIODIC) {
           xx = parts[j].x - parts[i].x;
           xx = xx * xx;
+
           yy = parts[j].y - parts[i].y;
           yy = yy * yy;
+
           zz = parts[j].z - parts[i].z;
-          zz = zz * zz;
-          xx = parts[j].x - parts[i].x;
-          xx = xx * xx;
-          yy = parts[j].y - parts[i].y;
-          yy = yy * yy;
           if(parts[j].z < (zs + parts[j].r))
             zz = parts[j].z + zl - parts[i].z;
           if(parts[j].z > (ze - parts[j].r))
             zz = parts[j].z - zl - parts[i].z;
           zz = zz * zz;
+
           if(sqrt(xx + yy + zz) < (gap*parts[j].r + gap*parts[i].r)) {
             fits = !fits;
             break;
@@ -649,23 +642,22 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
         // x and y
         if(bc.uW == PERIODIC && bc.vS == PERIODIC) {
           xx = parts[j].x - parts[i].x;
-          xx = xx * xx;
-          yy = parts[j].y - parts[i].y;
-          yy = yy * yy;
-          zz = parts[j].z - parts[i].z;
-          zz = zz * zz;
           if(parts[j].x < (xs + parts[j].r))
             xx = parts[j].x + xl - parts[i].x;
           if(parts[j].x > (xe - parts[j].r))
             xx = parts[j].x - xl - parts[i].x;
           xx = xx * xx;
+
+          yy = parts[j].y - parts[i].y;
           if(parts[j].y < (ys + parts[j].r))
             yy = parts[j].y + yl - parts[i].y;
           if(parts[j].y > (ye - parts[j].r))
             yy = parts[j].y - yl - parts[i].y;
           yy = yy * yy;
+
           zz = parts[j].z - parts[i].z;
           zz = zz * zz;
+
           if(sqrt(xx + yy + zz) < (gap*parts[j].r + gap*parts[i].r)) {
             fits = !fits;
             break;
@@ -676,22 +668,21 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
         if(bc.vS == PERIODIC && bc.wB == PERIODIC) {
           xx = parts[j].x - parts[i].x;
           xx = xx * xx;
+
           yy = parts[j].y - parts[i].y;
-          yy = yy * yy;
-          zz = parts[j].z - parts[i].z;
-          zz = zz * zz;
-          xx = parts[j].x - parts[i].x;
-          xx = xx * xx;
           if(parts[j].y < (ys + parts[j].r))
             yy = parts[j].y + yl - parts[i].y;
           if(parts[j].y > (ye - parts[j].r))
             yy = parts[j].y - yl - parts[i].y;
           yy = yy * yy;
+
+          zz = parts[j].z - parts[i].z;
           if(parts[j].z < (zs + parts[j].r))
             zz = parts[j].z + zl - parts[i].z;
           if(parts[j].z > (ze - parts[j].r))
             zz = parts[j].z - zl - parts[i].z;
           zz = zz * zz;
+
           if(sqrt(xx + yy + zz) < (gap*parts[j].r + gap*parts[i].r)) {
             fits = !fits;
             break;
@@ -701,23 +692,22 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
         // z and x
         if(bc.uW == PERIODIC && bc.wB == PERIODIC) {
           xx = parts[j].x - parts[i].x;
-          xx = xx * xx;
-          yy = parts[j].y - parts[i].y;
-          yy = yy * yy;
-          zz = parts[j].z - parts[i].z;
-          zz = zz * zz;
           if(parts[j].x < (xs + parts[j].r))
             xx = parts[j].x + xl - parts[i].x;
           if(parts[j].x > (xe - parts[j].r))
             xx = parts[j].x - xl - parts[i].x;
           xx = xx * xx;
+
           yy = parts[j].y - parts[i].y;
           yy = yy * yy;
+
+          zz = parts[j].z - parts[i].z;
           if(parts[j].z < (zs + parts[j].r))
             zz = parts[j].z + zl - parts[i].z;
           if(parts[j].z > (ze - parts[j].r))
             zz = parts[j].z - zl - parts[i].z;
           zz = zz * zz;
+
           if(sqrt(xx + yy + zz) < (gap*parts[j].r + gap*parts[i].r)) {
             fits = !fits;
             break;
@@ -727,38 +717,38 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
         // x, y, and z
         if(bc.uW == PERIODIC && bc.vS == PERIODIC && bc.wB == PERIODIC) {
           xx = parts[j].x - parts[i].x;
-          xx = xx * xx;
-          yy = parts[j].y - parts[i].y;
-          yy = yy * yy;
-          zz = parts[j].z - parts[i].z;
-          zz = zz * zz;
           if(parts[j].x < (xs + parts[j].r))
             xx = parts[j].x + xl - parts[i].x;
           if(parts[j].x > (xe - parts[j].r))
             xx = parts[j].x - xl - parts[i].x;
           xx = xx * xx;
+
+          yy = parts[j].y - parts[i].y;
           if(parts[j].y < (ys + parts[j].r))
             yy = parts[j].y + yl - parts[i].y;
           if(parts[j].y > (ye - parts[j].r))
             yy = parts[j].y - yl - parts[i].y;
           yy = yy * yy;
+
+          zz = parts[j].z - parts[i].z;
           if(parts[j].z < (zs + parts[j].r))
             zz = parts[j].z + zl - parts[i].z;
           if(parts[j].z > (ze - parts[j].r))
             zz = parts[j].z - zl - parts[i].z;
           zz = zz * zz;
+
           if(sqrt(xx + yy + zz) < (gap*parts[j].r + gap*parts[i].r)) {
             fits = !fits;
             break;
           }
         }
-
       }
       if(attempts == 1e5*nparts) {
         fail = !fail;
         break;
       }
     }
+  printf("Placed %d of %d particles in %d attempts...\r", i-1, nparts, attempts);
   }
 
   if(fail) {
@@ -784,7 +774,7 @@ void seeder(int nparts, real loa, real a, real aFx, real aFy, real aFz,
     exit(EXIT_FAILURE);
   }
 
-  // write the number of particles and compact support length
+  // write the number of particles and compact support length ratio
   fprintf(ofile, "n %d\n", nparts);
   fprintf(ofile, "(l/a) %f\n", loa);
 
@@ -907,7 +897,7 @@ void seeder_array(int Nx, int Ny, int Nz, real loa, real a, real aFx, real aFy,
     exit(EXIT_FAILURE);
   }
 
-  // write the number of particles and compact support length
+  // write the number of particles and compact support length ratio
   fprintf(ofile, "n %d\n", nparts);
   fprintf(ofile, "(l/a) %f\n", loa);
 
@@ -1055,7 +1045,7 @@ void seeder_hex(int Nx, int Ny, int Nz, double ddz, real loa, real a, real aFx,
     exit(EXIT_FAILURE);
   }
 
-  // write the number of particles and compact support length
+  // write the number of particles and compact support length ratio
   fprintf(ofile, "n %d\n", nparts);
   fprintf(ofile, "(l/a) %f\n", loa);
 
@@ -1252,7 +1242,7 @@ void seeder_high_vol_random(int Nx, int Ny, int Nz, double bias, int nperturb,
     exit(EXIT_FAILURE);
   }
 
-  // write the number of particles and compact support length
+  // write the number of particles and compact support length ratio
   fprintf(ofile, "n %d\n", nparts);
   fprintf(ofile, "(l/a) %f\n", loa);
 

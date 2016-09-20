@@ -345,7 +345,7 @@ __global__ void BC_u_S_N(real *u, dom_struct *dom)
 }
 
 // u-velocity; south; Turbulent precursor
-__global__ void BC_u_S_T(real *u, dom_struct *dom, real* bc)
+__global__ void BC_u_S_T(real *u, dom_struct *dom, real* bc_s, real* bc_n)
 {
   int tk = blockDim.x*blockIdx.x + threadIdx.x;
   int ti = blockDim.y*blockIdx.y + threadIdx.y;
@@ -354,8 +354,8 @@ __global__ void BC_u_S_T(real *u, dom_struct *dom, real* bc)
   int s2b = dom->Gfx._s2b;
 
   if((ti < dom->Gfx._inb) && (tk < dom->Gfx._knb)) {
-    u[ti + dom->Gfx._jsb*s1b + tk*s2b] = 2. * bc[tk + ti*dom->Gfx.knb]
-      - u[ti + dom->Gfx._js*s1b + tk*s2b];
+    u[ti + dom->Gfx._jsb*s1b + tk*s2b] = bc_s[tk + ti*dom->Gfx.knb];
+    u[ti + dom->Gfx._js*s1b + tk*s2b] = bc_n[tk + ti*dom->Gfx.knb];
   }
 }
 
@@ -404,7 +404,7 @@ __global__ void BC_u_N_N(real *u, dom_struct *dom)
 }
 
 // u-velocity; north; Turbulent precursor
-__global__ void BC_u_N_T(real *u, dom_struct *dom, real* bc)
+__global__ void BC_u_N_T(real *u, dom_struct *dom, real* bc_s, real* bc_n)
 {
   int tk = blockDim.x*blockIdx.x + threadIdx.x;
   int ti = blockDim.y*blockIdx.y + threadIdx.y;
@@ -413,8 +413,11 @@ __global__ void BC_u_N_T(real *u, dom_struct *dom, real* bc)
   int s2b = dom->Gfx._s2b;
 
   if((ti < dom->Gfx._inb) && (tk < dom->Gfx._knb)) {
-    u[ti + (dom->Gfx._jeb-1)*s1b + tk*s2b] = 2. * bc[tk + ti*dom->Gfx.knb]
-      - u[ti + (dom->Gfx._je-1)*s1b + tk*s2b];
+    // velocity within computational domain, near the boundary
+    u[ti + (dom->Gfx._je-1)*s1b + tk*s2b] = bc_s[tk + ti*dom->Gfx.knb];
+    //velocity on ghost cells
+    u[ti + (dom->Gfx._jeb-1)*s1b + tk*s2b] = bc_n[tk + ti*dom->Gfx.knb];
+    
   }
 }
 
@@ -460,7 +463,7 @@ __global__ void BC_u_B_N(real *u, dom_struct *dom)
 }
 
 // u-velocity; bottom; Turbulent precursor
-__global__ void BC_u_B_T(real *u, dom_struct *dom, real* bc)
+__global__ void BC_u_B_T(real *u, dom_struct *dom, real* bc_b, real* bc_t)
 {
   int ti = blockDim.x*blockIdx.x + threadIdx.x;
   int tj = blockDim.y*blockIdx.y + threadIdx.y;
@@ -469,8 +472,9 @@ __global__ void BC_u_B_T(real *u, dom_struct *dom, real* bc)
   int s2b = dom->Gfx._s2b;
 
   if((ti < dom->Gfx._inb) && (tj < dom->Gfx._jnb)) {
-    u[ti + tj*s1b + dom->Gfx._ksb*s2b] = 2. * bc[ti + tj*dom->Gfx.inb]
-      - u[ti + tj*s1b + dom->Gfx._ks*s2b];
+	// copy u velocity on bottom from precursor to ghost point and first layer
+	u[ti + tj*s1b + dom->Gfx._ksb*s2b] = bc_b[ti + tj*dom->Gfx.inb];
+        u[ti + tj*s1b + dom->Gfx._ks*s2b] = bc_t[ti + tj*dom->Gfx.inb];
   }
 }
 
@@ -518,7 +522,7 @@ __global__ void BC_u_T_N(real *u, dom_struct *dom)
 }
 
 // u-velocity; top; Turbulent precursor
-__global__ void BC_u_T_T(real *u, dom_struct *dom, real* bc)
+__global__ void BC_u_T_T(real *u, dom_struct *dom, real* bc_b, real* bc_t)
 {
   int ti = blockDim.x*blockIdx.x + threadIdx.x;
   int tj = blockDim.y*blockIdx.y + threadIdx.y;
@@ -527,8 +531,9 @@ __global__ void BC_u_T_T(real *u, dom_struct *dom, real* bc)
   int s2b = dom->Gfx._s2b;
 
   if((ti < dom->Gfx._inb) && (tj < dom->Gfx._jnb)) {
-    u[ti + tj*s1b + (dom->Gfx._keb-1)*s2b] = 2. * bc[ti + tj*dom->Gfx.inb]
-      - u[ti + tj*s1b + (dom->Gfx._ke-1)*s2b];
+    u[ti + tj*s1b + (dom->Gfx._ke-1)*s2b] = bc_b[ti + tj*dom->Gfx.inb];
+    // velocity on ghost cell
+    u[ti + tj*s1b + (dom->Gfx._keb-1)*s2b] = bc_t[ti + tj*dom->Gfx.inb];
   }
 }
 
@@ -575,7 +580,7 @@ __global__ void BC_v_W_N(real *v, dom_struct *dom)
 }
 
 // v-velocity; west; Turbulent precursor
-__global__ void BC_v_W_T(real *v, dom_struct *dom, real* bc)
+__global__ void BC_v_W_T(real *v, dom_struct *dom, real* bc_w, real* bc_e)
 {
   int tj = blockDim.x*blockIdx.x + threadIdx.x;
   int tk = blockDim.y*blockIdx.y + threadIdx.y;
@@ -584,9 +589,9 @@ __global__ void BC_v_W_T(real *v, dom_struct *dom, real* bc)
   int s2b = dom->Gfy._s2b;
 
   if((tj < dom->Gfy._jnb) && (tk < dom->Gfy._knb)) {
-    v[dom->Gfy._isb + tj*s1b + tk*s2b] = 2. * bc[tj + tk*dom->Gfy.jnb]
-      - v[(dom->Gfy._is) + tj*s1b + tk*s2b];
-  }
+    v[dom->Gfy._isb + tj*s1b + tk*s2b] = bc_w[tj + tk*dom->Gfy.jnb];
+    v[dom->Gfy._is + tj*s1b + tk*s2b] = bc_e[tj + tk*dom->Gfy.jnb]; 
+ }
 }
 
 // v-velocity; east; periodic
@@ -634,7 +639,7 @@ __global__ void BC_v_E_N(real *v, dom_struct *dom)
 }
 
 // v-velocity; east; Turbulent precursor
-__global__ void BC_v_E_T(real *v, dom_struct *dom, real* bc)
+__global__ void BC_v_E_T(real *v, dom_struct *dom, real* bc_w, real* bc_e)
 {
   int tj = blockDim.x*blockIdx.x + threadIdx.x;
   int tk = blockDim.y*blockIdx.y + threadIdx.y;
@@ -643,8 +648,9 @@ __global__ void BC_v_E_T(real *v, dom_struct *dom, real* bc)
   int s2b = dom->Gfy._s2b;
 
   if((tj < dom->Gfy._jnb) && (tk < dom->Gfy._knb)) {
-    v[(dom->Gfy._ieb-1) + tj*s1b + tk*s2b] = 2. * bc[tj + tk*dom->Gfy.jnb]
-      - v[(dom->Gfy._ie-1) + tj*s1b + tk*s2b];
+    v[(dom->Gfy._ie-1) + tj*s1b + tk*s2b] = bc_w[tj + tk*dom->Gfy.jnb];
+    //velocity on ghost cell
+    v[dom->Gfy._ieb-1 + tj*s1b + tk*s2b] = bc_e[tj + tk*dom->Gfy.jnb];
   }
 }
 
@@ -814,7 +820,7 @@ __global__ void BC_v_B_N(real *v, dom_struct *dom)
 }
 
 // v-velocity; bottom; Turbulent precursor
-__global__ void BC_v_B_T(real *v, dom_struct *dom, real* bc)
+__global__ void BC_v_B_T(real *v, dom_struct *dom, real* bc_b, real* bc_t)
 {
   int ti = blockDim.x*blockIdx.x + threadIdx.x;
   int tj = blockDim.y*blockIdx.y + threadIdx.y;
@@ -823,9 +829,9 @@ __global__ void BC_v_B_T(real *v, dom_struct *dom, real* bc)
   int s2b = dom->Gfy._s2b;
 
   if((ti < dom->Gfy._inb) && (tj < dom->Gfy._jnb)) {
-    v[ti + tj*s1b + dom->Gfy._ksb*s2b] = 2. * bc[ti + tj*dom->Gfy.inb]
-      - v[ti + tj*s1b + dom->Gfy._ks*s2b];
-  }
+	v[ti + tj*s1b + dom->Gfy._ksb*s2b] = bc_b[ti + tj*dom->Gfy.inb];
+	v[ti + tj*s1b + dom->Gfy._ks*s2b] = bc_t[ti + tj*dom->Gfy.inb];
+ }
 }
 
 // v-velocity; top; periodic
@@ -872,7 +878,7 @@ __global__ void BC_v_T_N(real *v, dom_struct *dom)
 }
 
 // v-velocity; top; Turbulent precursor
-__global__ void BC_v_T_T(real *v, dom_struct *dom, real* bc)
+__global__ void BC_v_T_T(real *v, dom_struct *dom, real* bc_b, real* bc_t)
 {
   int ti = blockDim.x*blockIdx.x + threadIdx.x;
   int tj = blockDim.y*blockIdx.y + threadIdx.y;
@@ -881,8 +887,9 @@ __global__ void BC_v_T_T(real *v, dom_struct *dom, real* bc)
   int s2b = dom->Gfy._s2b;
 
   if((ti < dom->Gfy._inb) && (tj < dom->Gfy._jnb)) {
-    v[ti + tj*s1b + (dom->Gfy._keb-1)*s2b] = 2. * bc[ti + tj*dom->Gfy.inb]
-      - v[ti + tj*s1b + (dom->Gfy._ke-1)*s2b];
+    v[ti + tj*s1b + (dom->Gfy._ke-1)*s2b] = bc_b[ti + tj*dom->Gfy.inb];
+    // velocity on ghost cell
+    v[ti + tj*s1b + (dom->Gfy._keb-1)*s2b] = bc_t[ti + tj*dom->Gfy.inb];
   }
 }
 
@@ -928,7 +935,7 @@ __global__ void BC_w_W_N(real *w, dom_struct *dom)
 }
 
 // w-velocity; west; Turbulent precursor
-__global__ void BC_w_W_T(real *w, dom_struct *dom, real* bc)
+__global__ void BC_w_W_T(real *w, dom_struct *dom, real* bc_w, real* bc_e)
 {
   int tj = blockDim.x*blockIdx.x + threadIdx.x;
   int tk = blockDim.y*blockIdx.y + threadIdx.y;
@@ -937,8 +944,8 @@ __global__ void BC_w_W_T(real *w, dom_struct *dom, real* bc)
   int s2b = dom->Gfz._s2b;
 
   if((tj < dom->Gfz._jnb) && (tk < dom->Gfz._knb)) {
-    w[dom->Gfz._isb + tj*s1b + tk*s2b] = 2. * bc[tj + tk*dom->Gfz.jnb]
-      - w[(dom->Gfz._is) + tj*s1b + tk*s2b];
+    w[dom->Gfz._isb + tj*s1b + tk*s2b] = bc_w[tj + tk*dom->Gfz.jnb];
+    w[dom->Gfz._is + tj*s1b + tk*s2b] = bc_e[tj + tk*dom->Gfz.jnb];
   }
 }
 
@@ -986,7 +993,7 @@ __global__ void BC_w_E_N(real *w, dom_struct *dom)
 }
 
 // w-velocity; east; Turbulent precursor
-__global__ void BC_w_E_T(real *w, dom_struct *dom, real* bc)
+__global__ void BC_w_E_T(real *w, dom_struct *dom, real* bc_w, real* bc_e)
 {
   int tj = blockDim.x*blockIdx.x + threadIdx.x;
   int tk = blockDim.y*blockIdx.y + threadIdx.y;
@@ -995,8 +1002,9 @@ __global__ void BC_w_E_T(real *w, dom_struct *dom, real* bc)
   int s2b = dom->Gfz._s2b;
 
   if((tj < dom->Gfz._jnb) && (tk < dom->Gfz._knb)) {
-    w[(dom->Gfz._ieb-1) + tj*s1b + tk*s2b] = 2. * bc[tj + tk*dom->Gfz.jnb]
-      - w[(dom->Gfz._ie-1) + tj*s1b + tk*s2b];
+    w[(dom->Gfz._ie-1) + tj*s1b + tk*s2b] = bc_w[tj + tk*dom->Gfz.jnb];
+    //velocity on ghost cell
+    w[(dom->Gfz._ieb-1) + tj*s1b + tk*s2b] = bc_e[tj + tk*dom->Gfz.jnb];
   }
 }
 
@@ -1043,7 +1051,7 @@ __global__ void BC_w_S_N(real *w, dom_struct *dom)
 }
 
 // w-velocity; south; Turbulent precursor
-__global__ void BC_w_S_T(real *w, dom_struct *dom, real* bc)
+__global__ void BC_w_S_T(real *w, dom_struct *dom, real* bc_s, real* bc_n)
 {
   int tk = blockDim.x*blockIdx.x + threadIdx.x;
   int ti = blockDim.y*blockIdx.y + threadIdx.y;
@@ -1052,8 +1060,8 @@ __global__ void BC_w_S_T(real *w, dom_struct *dom, real* bc)
   int s2b = dom->Gfz._s2b;
 
   if((ti < dom->Gfz._inb) && (tk < dom->Gfz._knb)) {
-    w[ti + dom->Gfz._jsb*s1b + tk*s2b] = 2. * bc[tk + ti*dom->Gfz.knb]
-      - w[ti + dom->Gfz._js*s1b + tk*s2b];
+    w[ti + dom->Gfz._jsb*s1b + tk*s2b] = bc_s[tk + ti*dom->Gfz.knb];
+    w[ti + dom->Gfz._js*s1b + tk*s2b] = bc_n[tk + ti*dom->Gfz.knb];
   }
 }
 
@@ -1101,7 +1109,7 @@ __global__ void BC_w_N_N(real *w, dom_struct *dom)
 }
 
 // w-velocity; north; Turbulent precursor
-__global__ void BC_w_N_T(real *w, dom_struct *dom, real* bc)
+__global__ void BC_w_N_T(real *w, dom_struct *dom, real* bc_s, real* bc_n)
 {
   int tk = blockDim.x*blockIdx.x + threadIdx.x;
   int ti = blockDim.y*blockIdx.y + threadIdx.y;
@@ -1110,8 +1118,9 @@ __global__ void BC_w_N_T(real *w, dom_struct *dom, real* bc)
   int s2b = dom->Gfz._s2b;
 
   if((ti < dom->Gfz._inb) && (tk < dom->Gfz._knb)) {
-    w[ti + (dom->Gfz._jeb-1)*s1b + tk*s2b] = 2. * bc[tk + ti*dom->Gfz.knb]
-      - w[ti + (dom->Gfz._je-1)*s1b + tk*s2b];
+    w[ti + (dom->Gfz._je-1)*s1b + tk*s2b] = bc_s[tk + ti*dom->Gfz.knb];
+    //velocity on ghost cell
+    w[ti + (dom->Gfz._jeb-1)*s1b + tk*s2b] = bc_n[tk + ti*dom->Gfz.knb];
   }
 }
 
@@ -1323,7 +1332,11 @@ __global__ void update_p(real *Lp, real *p0, real *p, real *phi,
   if(tj < dom->Gcc._je && tk < dom->Gcc._ke) {
     for(int i = dom->Gcc._is; i < dom->Gcc._ie; i++) {
       int C = i + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b;
+#ifdef NOPRESSURECORRECTION
+      p[C] = (phase[C] < 0) * (phi[C]);// - 0.5*nu*dt*Lp[C]);
+#else
       p[C] = (phase[C] < 0) * (p0[C] + phi[C]);// - 0.5*nu*dt*Lp[C]);
+#endif
     }
   }
 }
@@ -1562,9 +1575,13 @@ __global__ void u_star_2(real rho_f, real nu,
     if((tj > 0 && tj < blockDim.x-1) && (tk > 0 && tk < blockDim.y-1)
       && j < dom->Gfx.jeb && k < dom->Gfx.keb) {
       // pressure gradient
+#ifdef NOPRESSURECORRECTION
+      s_u_star[tj + tk*blockDim.x] = 0;
+#else
       s_u_star[tj + tk*blockDim.x] =
         (p[(i-1) + j*dom->Gcc._s1b + k*dom->Gcc._s2b]
         - p[i + j*dom->Gcc._s1b + k*dom->Gcc._s2b]) * ddx / rho_f;
+#endif
 
       // grab the required data points for calculations
       real u011 = s_u0[tj + tk*blockDim.x];
@@ -1729,9 +1746,13 @@ __global__ void v_star_2(real rho_f, real nu,
     if((tk > 0 && tk < blockDim.x-1) && (ti > 0 && ti < blockDim.y-1)
       && k < dom->Gfy.keb && i < dom->Gfy.ieb) {
       // pressure gradient
+#ifdef NOPRESSURECORRECTION
+      s_v_star[tk + ti*blockDim.x] = 0;
+#else
       s_v_star[tk + ti*blockDim.x] =
         (p[i + (j-1)*dom->Gcc._s1b + k*dom->Gcc._s2b]
         - p[i + j*dom->Gcc._s1b + k*dom->Gcc._s2b]) * ddy / rho_f;
+#endif
 
       // grab the required data points for calculations
       real v101 = s_v0[tk + ti*blockDim.x];
@@ -1896,9 +1917,13 @@ __global__ void w_star_2(real rho_f, real nu,
     if((ti > 0 && ti < blockDim.x-1) && (tj > 0 && tj < blockDim.y-1)
       && i < dom->Gfz.ieb && j < dom->Gfz.jeb) {
       // pressure gradient
+#ifdef NOPRESSURECORRECTION
+      s_w_star[ti + tj*blockDim.x] = 0;
+#else
       s_w_star[ti + tj*blockDim.x] =
         (p[i + j*dom->Gcc._s1b + (k-1)*dom->Gcc._s2b]
         - p[i + j*dom->Gcc._s1b + k*dom->Gcc._s2b]) * ddz / rho_f;
+#endif
 
       // grab the required data points for calculations
       real w110 = s_w0[ti + tj*blockDim.x];
@@ -2325,6 +2350,9 @@ __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
       parts[pp].udot0 = parts[pp].udot;
       parts[pp].vdot0 = parts[pp].vdot;
       parts[pp].wdot0 = parts[pp].wdot;
+
+      //parts[pp].ty = parts[pp].iFy;
+      //parts[pp].tz = parts[pp].iFz;
     }
     if(parts[pp].rotating) {
       // update angular accelerations
@@ -2491,7 +2519,7 @@ __global__ void bin_start(int *binStart, int *binEnd, int *partBin, int nparts)
 __global__ void collision_parts(part_struct *parts, int nparts,
   dom_struct *dom, real eps, real mu, real rhof, real nu, BC bc, int *binStart,
   int *binEnd, int *partBin, int *partInd, dom_struct *binDom,
-  int interactionLength, real dt)
+  int interactionLengthRatio, real dt)
 {
   int index = threadIdx.x + blockIdx.x*blockDim.x;
 
@@ -2585,7 +2613,7 @@ __global__ void collision_parts(part_struct *parts, int nparts,
                 real ai = parts[i].r;
                 real aj = parts[j].r;
                 real B = aj / ai;
-                real hN = interactionLength;
+                real hN = interactionLengthRatio * parts[i].r;
 
                 real ux, uy, uz;
                 real rx, rx1, rx2, ry, ry1, ry2, rz, rz1, rz2, r;
@@ -2791,9 +2819,9 @@ __global__ void collision_parts(part_struct *parts, int nparts,
                       *fabs(udotn)/nu;
                   }
 
-                  real Vx = utx + 0.5*(ai + aj + h)*ocrossnx;
-                  real Vy = uty + 0.5*(ai + aj + h)*ocrossny;
-                  real Vz = utz + 0.5*(ai + aj + h)*ocrossnz;
+                  real Vx = -utx + 0.5*(ai + aj + h)*ocrossnx;
+                  real Vy = -uty + 0.5*(ai + aj + h)*ocrossny;
+                  real Vz = -utz + 0.5*(ai + aj + h)*ocrossnz;
 
                   real Hi = 0.5*parts[i].E/(1.+parts[i].sigma);
                   real kt = 8./((1.-parts[i].sigma*parts[i].sigma)/Hi
@@ -2810,7 +2838,7 @@ __global__ void collision_parts(part_struct *parts, int nparts,
                     + (1.-parts[j].sigma*parts[j].sigma)/parts[j].E)
                     /sqrt(1./ai + 1./aj);
                   // estimate damping coefficient
-                  real xcx0 = 1.e-3;
+                  real xcx0 = 1.e-4;
                   real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[q]
                     *log(xcx0);
                   if(e < 0) e = 0;
@@ -2862,7 +2890,7 @@ __global__ void collision_parts(part_struct *parts, int nparts,
 
 __global__ void collision_walls(dom_struct *dom, part_struct *parts,
   int nparts, BC bc, real eps, real mu, real rhof, real nu,
-  int interactionLength, real dt)
+  int interactionLengthRatio, real dt)
 {
   int i = threadIdx.x + blockIdx.x*blockDim.x;
   /**** parallelize this further by using a CUDA block for each wall ****/
@@ -2878,7 +2906,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
     real ai = parts[i].r;
     real h = 0;
-    real hN = interactionLength;
+    real hN = interactionLengthRatio * parts[i].r;
     real ah, lnah;
 
     real Fnx, Fny, Fnz, Ftx, Fty, Ftz;
@@ -2964,6 +2992,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real Vy = Uty - (ai + 0.5*h)*omz;
       real Vz = Utz + (ai + 0.5*h)*omx;
 
+      // Mindlin's theory for tangential stiffness
       real Hi = 0.5*parts[i].E/(1.+parts[i].sigma);
       real kt = 8./((1.-parts[i].sigma*parts[i].sigma)/Hi
         +(1.-parts[i].sigma*parts[i].sigma)/Hi)/sqrt(1./ai)*sqrt(-h);
@@ -2976,7 +3005,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
       // estimate damping coefficient
-      real xcx0 = 1e-3;
+      real xcx0 = 1.e-4;
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
@@ -2985,8 +3014,10 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
       // use the same coeff_fric for particle and wall
       real coeff_fric = parts[i].coeff_fric;
-      real Fty = -kt * sy;
-      real Ftz = -kt * sz;
+      //real Fty = parts[i].ty - k * sy;
+      //real Ftz = parts[i].tz - k * sz;
+      real Fty = - k * sy;
+      real Ftz = - k * sz;
       real Ft = sqrt(Fty*Fty + Ftz*Ftz);
       if(Ft > fabs(coeff_fric * (sqrt(-h*h*h)*k - eta*Un))) {
         Fty = coeff_fric * (sqrt(-h*h*h)*k - eta*Un) * Fty / Ft;
@@ -3090,7 +3121,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
       // estimate damping coefficient
-      real xcx0 = 1e-3;
+      real xcx0 = 1.e-4;
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
@@ -3205,7 +3236,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
       // estimate damping coefficient
-      real xcx0 = 1e-3;
+      real xcx0 = 1.e-4;
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
@@ -3320,7 +3351,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
       // estimate damping coefficient
-      real xcx0 = 1e-3;
+      real xcx0 = 1.e-4;
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
@@ -3435,7 +3466,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
       // estimate damping coefficient
-      real xcx0 = 1e-3;
+      real xcx0 = 1.e-4;
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
@@ -3550,7 +3581,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
         + (1.-parts[i].sigma*parts[i].sigma)/parts[i].E)/sqrt(1./ai);
 
       // estimate damping coefficient
-      real xcx0 = 1e-3;
+      real xcx0 = 1.e-4;
       real e = parts[i].e_dry + (1.+parts[i].e_dry)/parts[i].St[q]*log(xcx0);
       if(e < 0) e = 0;
       real alpha = -2.263*pow(e,0.3948)+2.22;
@@ -3627,7 +3658,7 @@ __global__ void yank_u_WE(real *u, dom_struct *dom, real *plane, real xpos,
   }
 }
 
-__global__ void yank_v_WE(real *v, dom_struct *dom, real *plane, real xpos,
+__global__ void yank_v_WE(real *v, dom_struct *dom, real *plane_w, real *plane_e, real xpos,
   real vel)
 {
   int tj = blockDim.x*blockIdx.x + threadIdx.x;
@@ -3638,19 +3669,23 @@ __global__ void yank_v_WE(real *v, dom_struct *dom, real *plane, real xpos,
   if((tj < dom->Gfy._jnb) && (tk < dom->Gfy._knb)) {
     // find index of node
     // for now, ignore motion tangential to plane
-    int i = floor((xpos - dom->xs) * ddx - 0.5) + DOM_BUF;
+    int i = floor((xpos - dom->xs) * ddx) + DOM_BUF;
     if(i < dom->Gfy.is) i += dom->Gfy.inb;
     if(i > dom->Gfy.ie-1) i -= dom->Gfy.inb;
-    real xx = (i-DOM_BUF+0.5) * dom->dx + dom->xs;
-    int W = i + tj*dom->Gfy.s1b + tk*dom->Gfy.s2b;
+    real xx_w = (i-DOM_BUF-0.5) * dom->dx + dom->xs;
+    real xx_e = (i-DOM_BUF+0.5) * dom->dx + dom->xs;
+    int W = (i-1) + tj*dom->Gfy.s1b + tk*dom->Gfy.s2b;
+    int M = i + tj*dom->Gfy.s1b + tk*dom->Gfy.s2b;
     int E = (i+1) + tj*dom->Gfy.s1b + tk*dom->Gfy.s2b;
-    real dvdx = (v[E] - v[W]) * ddx;
+    real dvdx_w = (v[M] - v[W]) * ddx;
+    real dvdx_e = (v[E] - v[M]) * ddx;
 
-    plane[tj + tk*dom->Gfy.jnb] = v[W] + dvdx * (xpos - xx);
+    plane_w[tj + tk*dom->Gfy.jnb] = v[W] + dvdx_w * (xpos - 0.5*dom->dx - xx_w);
+    plane_e[tj + tk*dom->Gfy.jnb] = v[M] + dvdx_e * (xpos + 0.5*dom->dx - xx_e);
   }
 }
 
-__global__ void yank_w_WE(real *w, dom_struct *dom, real *plane, real xpos,
+__global__ void yank_w_WE(real *w, dom_struct *dom, real *plane_w, real *plane_e, real xpos,
   real vel)
 {
   int tj = blockDim.x*blockIdx.x + threadIdx.x;
@@ -3661,19 +3696,23 @@ __global__ void yank_w_WE(real *w, dom_struct *dom, real *plane, real xpos,
   if((tj < dom->Gfz._jnb) && (tk < dom->Gfz._knb)) {
     // find index of node
     // for now, ignore motion tangential to plane
-    int i = floor((xpos - dom->xs) * ddx - 0.5) + DOM_BUF;
+    int i = floor((xpos - dom->xs) * ddx) + DOM_BUF;
     if(i < dom->Gfz.is) i += dom->Gfz.inb;
     if(i > dom->Gfz.ie-1) i -= dom->Gfz.inb;
-    real xx = (i-DOM_BUF + 0.5) * dom->dx + dom->xs;
-    int W = i + tj*dom->Gfz.s1b + tk*dom->Gfz.s2b;
+    real xx_w = (i-DOM_BUF - 0.5) * dom->dx + dom->xs;
+    real xx_e = (i-DOM_BUF + 0.5) * dom->dx + dom->xs;
+    int W = (i-1) + tj*dom->Gfz.s1b + tk*dom->Gfz.s2b;
+    int M = i + tj*dom->Gfz.s1b + tk*dom->Gfz.s2b;
     int E = (i+1) + tj*dom->Gfz.s1b + tk*dom->Gfz.s2b;
-    real dwdx = (w[E] - w[W]) * ddx;
+    real dwdx_w = (w[M] - w[W]) * ddx;
+    real dwdx_e = (w[E] - w[M]) * ddx;
 
-    plane[tj + tk*dom->Gfz.jnb] = w[W] + dwdx * (xpos - xx);
+    plane_w[tj + tk*dom->Gfz.jnb] = w[W] + dwdx_w * (xpos -0.5*dom->dx - xx_w);
+    plane_e[tj + tk*dom->Gfz.jnb] = w[M] + dwdx_e * (xpos +0.5*dom->dx - xx_e);
   }
 }
 
-__global__ void yank_u_SN(real *u, dom_struct *dom, real *plane, real ypos,
+__global__ void yank_u_SN(real *u, dom_struct *dom, real *plane_s, real *plane_n, real ypos,
   real vel)
 {
   int tk = blockDim.x*blockIdx.x + threadIdx.x;
@@ -3684,15 +3723,19 @@ __global__ void yank_u_SN(real *u, dom_struct *dom, real *plane, real ypos,
   if((tk < dom->Gfx._inb) && (ti < dom->Gfx._inb)) {
     // find index of node
     // for now, ignore motion tangential to plane
-    int j = floor((ypos - dom->ys) * ddy - 0.5) + DOM_BUF;
+    int j = floor((ypos - dom->ys) * ddy) + DOM_BUF;
     if(j < dom->Gfx.js) j += dom->Gfx.jnb;
     if(j > dom->Gfx.je-1) j -= dom->Gfx.jnb;
-    real yy = (j-DOM_BUF + 0.5) * dom->dy + dom->ys;
-    int S = ti + j*dom->Gfx.s1b + tk*dom->Gfx.s2b;
+    real yy_s = (j-DOM_BUF - 0.5) * dom->dy + dom->ys;
+    real yy_n = (j-DOM_BUF + 0.5) * dom->dy + dom->ys;
+    int S = ti + (j-1)*dom->Gfx.s1b + tk*dom->Gfx.s2b;
+    int M = ti + j*dom->Gfx.s1b + tk*dom->Gfx.s2b;
     int N = ti + (j+1)*dom->Gfx.s1b + tk*dom->Gfx.s2b;
-    real dudy = (u[N] - u[S]) * ddy;
+    real dudy_s = (u[M] - u[S]) * ddy;
+    real dudy_n = (u[N] - u[M]) * ddy;
 
-    plane[tk + ti*dom->Gfx.knb] = u[S] + dudy * (ypos - yy);
+    plane_s[tk + ti*dom->Gfx.knb] = u[S] + dudy_s * (ypos - 0.5*dom->dy - yy_s);
+    plane_n[tk + ti*dom->Gfx.knb] = u[M] + dudy_n * (ypos + 0.5*dom->dy - yy_n);
   }
 }
 
@@ -3719,7 +3762,7 @@ __global__ void yank_v_SN(real *v, dom_struct *dom, real *plane, real ypos,
   }
 }
 
-__global__ void yank_w_SN(real *w, dom_struct *dom, real *plane, real ypos,
+__global__ void yank_w_SN(real *w, dom_struct *dom, real *plane_s, real *plane_n, real ypos,
   real vel)
 {
   int tk = blockDim.x*blockIdx.x + threadIdx.x;
@@ -3730,42 +3773,49 @@ __global__ void yank_w_SN(real *w, dom_struct *dom, real *plane, real ypos,
   if((ti < dom->Gfz._inb) && (tk < dom->Gfz._knb)) {
     // find index of node
     // for now, ignore motion tangential to plane
-    int j = floor((ypos - dom->ys) * ddy - 0.5) + DOM_BUF;
+    int j = floor((ypos - dom->ys) * ddy) + DOM_BUF;
     if(j < dom->Gfz.js) j += dom->Gfz.jnb;
     if(j > dom->Gfz.je-1) j -= dom->Gfz.jnb;
-    real yy = (j-DOM_BUF + 0.5) * dom->dy + dom->ys;
-    int S = ti + j*dom->Gfz.s1b + tk*dom->Gfz.s2b;
+    real yy_s = (j-DOM_BUF - 0.5) * dom->dy + dom->ys;
+    real yy_n = (j-DOM_BUF + 0.5) * dom->dy + dom->ys;
+    int S = ti + (j-1)*dom->Gfz.s1b + tk*dom->Gfz.s2b;
+    int M = ti + j*dom->Gfz.s1b + tk*dom->Gfz.s2b;
     int N = ti + (j+1)*dom->Gfz.s1b + tk*dom->Gfz.s2b;
-    real dwdy = (w[N] - w[S]) * ddy;
+    real dwdy_s = (w[M] - w[S]) * ddy;
+    real dwdy_n = (w[N] - w[M]) * ddy;
 
-    plane[tk + ti*dom->Gfz.knb] = w[S] + dwdy * (ypos - yy);
+    plane_s[tk + ti*dom->Gfz.knb] = w[S] + dwdy_s * (ypos - 0.5*dom->dy - yy_s);
+    plane_n[tk + ti*dom->Gfz.knb] = w[M] = dwdy_n * (ypos + 0.5*dom->dy - yy_n);
   }
 }
 
-__global__ void yank_u_BT(real *u, dom_struct *dom, real *plane, real zpos,
+__global__ void yank_u_BT(real *u, dom_struct *dom, real *plane_b, real *plane_t, real zpos,
   real vel)
 {
   int ti = blockDim.x*blockIdx.x + threadIdx.x;
   int tj = blockDim.y*blockIdx.y + threadIdx.y;
 
   real ddz = 1. / dom->dz;
-
+  // this is not the ideal situation, try to change to better interpolation
   if((ti < dom->Gfx._inb) && (tj < dom->Gfx._jnb)) {
     // find index of node
     // for now, ignore motion tangential to plane
-    int k = floor((zpos - dom->zs) * ddz - 0.5) + DOM_BUF;
+    int k = floor((zpos - dom->zs) * ddz) + DOM_BUF;
     if(k < dom->Gfx.ks) k += dom->Gfx.knb;
     if(k > dom->Gfx.ke-1) k -= dom->Gfx.knb;
-    real zz = (k-DOM_BUF + 0.5) * dom->dz + dom->zs;
-    int B = ti + tj*dom->Gfx.s1b + k*dom->Gfx.s2b;
+    real zz_b = (k-DOM_BUF - 0.5) * dom->dz + dom->zs;
+    real zz_t = (k-DOM_BUF + 0.5) * dom->dz + dom->zs;
+    int B = ti + tj*dom->Gfx.s1b + (k-1)*dom->Gfx.s2b;
+    int M = ti + tj*dom->Gfx.s1b + k*dom->Gfx.s2b;
     int T = ti + tj*dom->Gfx.s1b + (k+1)*dom->Gfx.s2b;
-    real dudz = (u[T] - u[B]) * ddz;
-
-    plane[ti + tj*dom->Gfx.inb] = u[B] + dudz * (zpos - zz);
+    real dudz_b = (u[M] - u[B]) * ddz;
+    real dudz_t = (u[T] - u[M]) * ddz;
+    plane_b[ti + tj*dom->Gfx.inb] = u[B] + dudz_b * (zpos - dom->dz*0.5 - zz_b);
+    plane_t[ti + tj*dom->Gfx.inb] = u[M] + dudz_t * (zpos + dom->dz*0.5 - zz_t);
   }
 }
 
-__global__ void yank_v_BT(real *v, dom_struct *dom, real *plane, real zpos,
+__global__ void yank_v_BT(real *v, dom_struct *dom, real *plane_b, real *plane_t, real zpos,
   real vel)
 {
   int ti = blockDim.x*blockIdx.x + threadIdx.x;
@@ -3776,15 +3826,19 @@ __global__ void yank_v_BT(real *v, dom_struct *dom, real *plane, real zpos,
   if((ti < dom->Gfy._inb) && (tj < dom->Gfy._jnb)) {
     // find index of node
     // for now, ignore motion tangential to plane
-    int k = floor((zpos - dom->zs) * ddz - 0.5) + DOM_BUF;
+    int k = floor((zpos - dom->zs) * ddz) + DOM_BUF;
     if(k < dom->Gfy.ks) k += dom->Gfy.knb;
     if(k > dom->Gfy.ke-1) k -= dom->Gfy.knb;
-    real zz = (k-DOM_BUF + 0.5) * dom->dz + dom->zs;
-    int B = ti + tj*dom->Gfy.s1b + k*dom->Gfy.s2b;
+    real zz_b = (k-DOM_BUF - 0.5) * dom->dz + dom->zs;
+    real zz_t = (k-DOM_BUF + 0.5) * dom->dz + dom->zs;
+    int B = ti + tj*dom->Gfy.s1b + (k-1)*dom->Gfy.s2b;
+    int M = ti + tj*dom->Gfy.s1b + k*dom->Gfy.s2b;
     int T = ti + tj*dom->Gfy.s1b + (k+1)*dom->Gfy.s2b;
-    real dvdz = (v[T] - v[B]) * ddz;
+    real dvdz_b = (v[M] - v[B]) * ddz;
+    real dvdz_t = (v[T] - v[M]) * ddz;
 
-    plane[ti + tj*dom->Gfy.inb] = v[B] + dvdz * (zpos - zz);
+    plane_b[ti + tj*dom->Gfy.inb] = v[B] + dvdz_b * (zpos - dom->dz*0.5 - zz_b);
+    plane_t[ti + tj*dom->Gfy.inb] = v[M] + dvdz_t * (zpos + dom->dz*0.5 - zz_t);
   }
 }
 
@@ -3982,6 +4036,39 @@ __global__ void internal_w(real *w, part_struct *parts, dom_struct *dom,
 
       w[C] = (pb == -1 || pt == -1 || f == -1) * w[C]
         + (pb > -1 && pt > -1 && f != -1) * (ocrossr_z + parts[p].w);
+    }
+  }
+}
+
+__global__ void average_solo(dom_struct *dom, int *phase, real *p)
+{
+  int tj = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+
+  int C, W, E, S, N, B, T;
+
+  int neighbor_sum;
+  real average = 0;
+
+  for(int i = dom->Gcc._isb; i < dom->Gcc._ieb; i++) {
+    if(tj < dom->Gcc._jnb && tk < dom->Gcc._knb) {
+      C = i + tj*dom->Gcc.s1b + tk*dom->Gcc.s2b;
+      W = (i-1) + tj*dom->Gcc.s1b + tk*dom->Gcc.s2b;
+      E = (i+1) + tj*dom->Gcc.s1b + tk*dom->Gcc.s2b;
+      S = i + (tj-1)*dom->Gcc.s1b + tk*dom->Gcc.s2b;
+      N = i + (tj+1)*dom->Gcc.s1b + tk*dom->Gcc.s2b;
+      B = i + tj*dom->Gcc.s1b + (tk-1)*dom->Gcc.s2b;
+      T = i + tj*dom->Gcc.s1b + (tk+1)*dom->Gcc.s2b;
+
+      neighbor_sum = (phase[W] == -1) + (phase[E] == -1) + (phase[S] == -1)
+                   + (phase[N] == -1) + (phase[B] == -1) + (phase[T] == -1);
+
+      average = (p[W] + p[E] + p[S] + p[N] + p[B] + p[T]) / 6.;
+
+      // don't write to p until all reads have completed
+      __syncthreads();
+
+      p[C] = (neighbor_sum > 0) * p[C] + (1 - (neighbor_sum > 0)) * average;
     }
   }
 }

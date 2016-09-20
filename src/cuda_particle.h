@@ -66,6 +66,8 @@ __global__ void reset_phase_shell(int *phase_shell, dom_struct *dom);
  *  * dom -- the device subdomain
  ******
  */
+
+__global__ void phase_shell_remove_islands(dom_struct *dom, int *phase_shell);
  
 /****f* cuda_particle_kernel/reset_flag_u<<<>>>()
  * NAME
