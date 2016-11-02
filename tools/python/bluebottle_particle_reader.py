@@ -117,3 +117,10 @@ def part_mean(q):
   for p in q:
     m = m + p
   return m / len(q)
+
+# compute mean square displacement in each direction
+def msd(x1, y1, z1, x0, y0, z0):
+  dx = (x1 - x0) * (x1 - x0)
+  dy = (y1 - y0) * (y1 - y0)
+  dz = (z1 - z0) * (z1 - z0)
+  return (dx, dy, dz)
