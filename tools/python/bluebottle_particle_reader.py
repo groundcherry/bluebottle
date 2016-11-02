@@ -26,7 +26,6 @@ import h5py as h5
 # Initialize the reader by passing the directory containing the CGNS files. This
 # returns a list containing the rounded time values available for reading.
 def init(basedir):
-  global t_read
   global base
 
   base = basedir
@@ -71,7 +70,6 @@ def open2(time1, time2):
   except OSError:
     print("file", infile2, "does not exist")
 
-# Close a particular CGNS file.
 def close():
   f.close()
 
@@ -112,3 +110,10 @@ def read_part_velocity():
     return (u1,v1,w1)
   else:
     return ((u1,v1,w1),(u2,v2,w2))
+
+# compute mean of a quantity
+def part_mean(q):
+  m = 0
+  for p in q:
+    m = m + p
+  return m / len(q)
