@@ -54,8 +54,8 @@ for realization in ensemble:
   bb.close()
 
 # overwrite number of time outputs to read (for testing)
-#nt = 100
-#t_end = 1.0
+nt = 100
+t_end = 1.0
 
 ####################################################################
 # average particle velocity over all particles as a function of time

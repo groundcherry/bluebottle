@@ -28,7 +28,14 @@ import numpy
 import matplotlib.pyplot as plt
 
 # get all base directories
-ensemble = glob.glob("/home/asiera/bluebottle/cases/shear-laura/*")
+#ensemble = glob.glob("/home/asiera/bluebottle/cases/shear-laura/*")
+ensemble = glob.glob("/home/asiera/bluebottle/tools/python/ensemble/*")
+
+# input some domain info (TODO: automate this)
+Lx = 12
+Ly = 12
+Lz = 12
+a = 1
 
 ############################################################
 # visit each realization to find minimum simulation duration
@@ -54,8 +61,8 @@ for realization in ensemble:
   bb.close()
 
 # overwrite number of time outputs to read (for testing)
-nt = 50
-t_end = 0.5
+#nt = 30
+#t_end = 0.3
 
 ####################################################################
 # store particle position data at initial time t_init
@@ -63,10 +70,7 @@ t_end = 0.5
 
 timeseries = bb.init(ensemble[-1] + "/output")
 bb.open(timeseries[0])  # using time step 0 for now
-(XX, YY, ZZ) = bb.read_part_position()
-X_init = numpy.array(XX)
-Y_init = numpy.array(YY)
-Z_init = numpy.array(ZZ)
+(X_init, Y_init, Z_init) = bb.read_part_position()
 T_init = bb.read_time()
 np = len(X_init)  # also store particle number
 bb.close()
@@ -100,6 +104,12 @@ rcount = 0
 percent = 0
 dpercent = 100. / len(ensemble) / nt
 for realization in ensemble:
+
+  # create particle periodic displacement counters
+  X_per = numpy.zeros(np)
+  Y_per = numpy.zeros(np)
+  Z_per = numpy.zeros(np)
+
   rcount = rcount + 1
   timeseries = bb.init(realization + "/output")
 
@@ -116,8 +126,20 @@ for realization in ensemble:
     t = bb.read_time()
     if t < t_end: # only read until reach end time of shortest simulation
       [X, Y, Z] = bb.read_part_position()
-      [xMSD[tind][:], yMSD[tind][:], zMSD[tind][:]] = bb.msd(X, Y, Z,
-        X_init, Y_init, Z_init)
+
+      # update periodic counters
+      [px, py, pz] = bb.periodic_crossings(X, Y, Z, X0, Y0, Z0, Lx, Ly, Lz, a)
+      X_per = X_per + Lx*px
+      Y_per = Y_per + Ly*py
+      Z_per = Z_per + Lz*pz
+
+      [xmsd, ymsd, zmsd] = bb.msd(X, Y, Z, X_init, Y_init, Z_init,
+        X_per, Y_per, Z_per)
+
+      xMSD[tind] = xMSD[tind] + xmsd
+      yMSD[tind] = yMSD[tind] + ymsd
+      zMSD[tind] = zMSD[tind] + zmsd
+
       T[tind] = t
       tind = tind + 1
 
@@ -132,14 +154,22 @@ for realization in ensemble:
       break
     percent = percent + dpercent
 
+# finish computing average
+xMSD = xMSD - xMSD[0] # subtract off bad first point (kludge)
+xMSD = xMSD / len(ensemble)
+yMSD = yMSD - yMSD[0] # subtract off bad first point (kludge)
+yMSD = yMSD / len(ensemble)
+zMSD = zMSD - zMSD[0] # subtract off bad first point (kludge)
+zMSD = zMSD / len(ensemble)
+
 # add an extra linebreak for better stdout
 print()
 
 # plot averaged velocities
 plt.plot(T,bb.part_mean(xMSD.transpose()[:]),label='xMSD')
-#plt.plot(T,V,label='V(t)')
-#plt.plot(T,W,label='W(t)')
-#plt.legend()
+plt.plot(T,bb.part_mean(yMSD.transpose()[:]),label='yMSD')
+plt.plot(T,bb.part_mean(zMSD.transpose()[:]),label='zMSD')
+plt.legend()
 plt.xlabel('time')
 plt.ylabel('mean square displacement')
 plt.show()

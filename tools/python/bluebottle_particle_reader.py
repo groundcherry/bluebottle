@@ -22,6 +22,7 @@
 
 import sys, os, glob
 import h5py as h5
+import numpy
 
 # Initialize the reader by passing the directory containing the CGNS files. This
 # returns a list containing the rounded time values available for reading.
@@ -85,13 +86,13 @@ def read_time():
 
 # Read the particle positions.
 def read_part_position():
-  x1 = f["/Base/Zone0/GridCoordinates/CoordinateX/ data"]
-  y1 = f["/Base/Zone0/GridCoordinates/CoordinateY/ data"]
-  z1 = f["/Base/Zone0/GridCoordinates/CoordinateZ/ data"]
+  x1 = numpy.array(f["/Base/Zone0/GridCoordinates/CoordinateX/ data"])
+  y1 = numpy.array(f["/Base/Zone0/GridCoordinates/CoordinateY/ data"])
+  z1 = numpy.array(f["/Base/Zone0/GridCoordinates/CoordinateZ/ data"])
   try:
-    x2 = g["/Base/Zone0/GridCoordinates/CoordinateX/ data"]
-    y2 = g["/Base/Zone0/GridCoordinates/CoordinateY/ data"]
-    z2 = g["/Base/Zone0/GridCoordinates/CoordinateZ/ data"]
+    x2 = numpy.array(g["/Base/Zone0/GridCoordinates/CoordinateX/ data"])
+    y2 = numpy.array(g["/Base/Zone0/GridCoordinates/CoordinateY/ data"])
+    z2 = numpy.array(g["/Base/Zone0/GridCoordinates/CoordinateZ/ data"])
   except NameError:
     return (x1,y1,z1)
   else:
@@ -99,13 +100,13 @@ def read_part_position():
 
 # Read the particle velocities.
 def read_part_velocity():
-  u1 = f["/Base/Zone0/Solution/VelocityX/ data"]
-  v1 = f["/Base/Zone0/Solution/VelocityY/ data"]
-  w1 = f["/Base/Zone0/Solution/VelocityZ/ data"]
+  u1 = numpy.array(f["/Base/Zone0/Solution/VelocityX/ data"])
+  v1 = numpy.array(f["/Base/Zone0/Solution/VelocityY/ data"])
+  w1 = numpy.array(f["/Base/Zone0/Solution/VelocityZ/ data"])
   try:
-    u2 = g["/Base/Zone0/Solution/VelocityX/ data"]
-    v2 = g["/Base/Zone0/Solution/VelocityY/ data"]
-    w2 = g["/Base/Zone0/Solution/VelocityZ/ data"]
+    u2 = numpy.array(g["/Base/Zone0/Solution/VelocityX/ data"])
+    v2 = numpy.array(g["/Base/Zone0/Solution/VelocityY/ data"])
+    w2 = numpy.array(g["/Base/Zone0/Solution/VelocityZ/ data"])
   except NameError:
     return (u1,v1,w1)
   else:
@@ -119,8 +120,28 @@ def part_mean(q):
   return m / len(q)
 
 # compute mean square displacement in each direction
-def msd(x1, y1, z1, x0, y0, z0):
-  dx = (x1 - x0) * (x1 - x0)
-  dy = (y1 - y0) * (y1 - y0)
-  dz = (z1 - z0) * (z1 - z0)
+def msd(x1, y1, z1, x0, y0, z0, px, py, pz):
+  dx = (x1 - x0 - px) * (x1 - x0 - px)
+  dy = (y1 - y0 - py) * (y1 - y0 - py)
+  dz = (z1 - z0 - pz) * (z1 - z0 - pz)
   return (dx, dy, dz)
+
+# do periodic counting
+def periodic_crossings(x1, y1, z1, x0, y0, z0, Lx, Ly, Lz, a):
+  np = len(x1)
+  dx = x1 - x0
+  ret_x = numpy.zeros(np)
+  ret_x[dx > (Lx-a)] = 1
+  ret_x[dx < -(Lx-a)] = -1
+  
+  dy = y1 - y0
+  ret_y = numpy.zeros(np)
+  ret_y[dy > (Ly-a)] = 1
+  ret_y[dy < -(Ly-a)] = -1
+
+  dz = z1 - z0
+  ret_z = numpy.zeros(np)
+  ret_z[dz > (Lz-a)] = 1
+  ret_z[dz < -(Lz-a)] = -1
+
+  return (ret_x, ret_y, ret_z)
