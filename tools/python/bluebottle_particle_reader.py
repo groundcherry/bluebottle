@@ -145,3 +145,9 @@ def periodic_crossings(x1, y1, z1, x0, y0, z0, Lx, Ly, Lz, a):
   ret_z[dz < -(Lz-a)] = -1
 
   return (ret_x, ret_y, ret_z)
+
+def cor(u, v, w, u0, v0, w0):
+  ret_u = numpy.multiply(u0,u)
+  ret_v = numpy.multiply(v0,v)
+  ret_w = numpy.multiply(w0,w)
+  return (ret_u, ret_v, ret_w)
