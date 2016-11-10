@@ -38,7 +38,8 @@ Ly = 12
 Lz = 12
 a = 1
 
-timestart = 20
+#timestart = 20
+timestart = 0
 DT_out = 0.01
 
 ############################################################
@@ -72,7 +73,7 @@ for realization in ensemble:
 # store particle position data at initial time t_init
 ####################################################################
 
-timeseries = bb.init(ensemble[-1] + "/output")[int(timestart/DT_out):]
+timeseries = bb.init(ensemble[0] + "/output")[int(timestart/DT_out):]
 bb.open(timeseries[0])  # using time step 0 for now
 (X_init, Y_init, Z_init) = bb.read_part_position()
 T_init = bb.read_time()
@@ -118,6 +119,8 @@ for realization in ensemble:
   timeseries = bb.init(realization + "/output")[int(timestart/DT_out):]
 
   bb.open(timeseries[0])
+  (X_init, Y_init, Z_init) = bb.read_part_position()
+  T_init = bb.read_time()
   [X0, Y0, Z0] = bb.read_part_position()
   bb.close()
 
@@ -167,11 +170,11 @@ for realization in ensemble:
     percent = percent + dpercent
 
 # finish computing average
-xMSD = xMSD - xMSD[0] # subtract off bad first point (kludge)
+#xMSD = xMSD - xMSD[0] # subtract off bad first point (kludge)
 xMSD = xMSD / len(ensemble)
-yMSD = yMSD - yMSD[0] # subtract off bad first point (kludge)
+#yMSD = yMSD - yMSD[0] # subtract off bad first point (kludge)
 yMSD = yMSD / len(ensemble)
-zMSD = zMSD - zMSD[0] # subtract off bad first point (kludge)
+#zMSD = zMSD - zMSD[0] # subtract off bad first point (kludge)
 zMSD = zMSD / len(ensemble)
 
 # add an extra linebreak for better stdout
