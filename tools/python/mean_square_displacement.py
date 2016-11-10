@@ -29,8 +29,8 @@ import matplotlib.pyplot as plt
 
 # get all base directories
 #ensemble = glob.glob("/home/asiera/bluebottle/cases/shear-laura/*")
-#ensemble = glob.glob("/home/asiera/bluebottle/tools/python/ensemble/*")
-ensemble = glob.glob("/scratch/users/asierak1@jhu.edu/shear-laura/*")
+ensemble = glob.glob("/home/asiera/bluebottle/tools/python/ensemble/*")
+#ensemble = glob.glob("/scratch/users/asierak1@jhu.edu/shear-laura/*")
 
 # input some domain info (TODO: automate this)
 Lx = 12
@@ -116,6 +116,10 @@ for realization in ensemble:
 
   rcount = rcount + 1
   timeseries = bb.init(realization + "/output")[int(timestart/DT_out):]
+
+  bb.open(timeseries[0])
+  [X0, Y0, Z0] = bb.read_part_position()
+  bb.close()
 
   tind = 0 # time index
   # read all time outputs in timeseries
