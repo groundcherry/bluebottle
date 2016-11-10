@@ -28,7 +28,8 @@ import numpy
 import matplotlib.pyplot as plt
 
 # get all base directories
-ensemble = glob.glob("/home/asiera/bluebottle/cases/shear-laura/*")
+ensemble = glob.glob("/scratch/users/asierak1@jhu.edu/shear-laura/*")
+#ensemble = glob.glob("/scratch/users/asierak1@jhu.edu/shear-laura-test/*")
 
 ############################################################
 # visit each realization to find minimum simulation duration
@@ -54,8 +55,8 @@ for realization in ensemble:
   bb.close()
 
 # overwrite number of time outputs to read (for testing)
-nt = 100
-t_end = 1.0
+#nt = 5000
+#t_end = 50.0
 
 ####################################################################
 # average particle velocity over all particles as a function of time
@@ -85,24 +86,27 @@ for realization in ensemble:
   # read all time outputs in timeseries
   for time in timeseries:
     # tell user where we are
-    print("\rrealization", rcount, "of", len(ensemble), ": time =", time, "of",
-      round(t_end, 2), "(" + str(round(percent)) + "%)    ", end='')
+    #print("\rrealization", rcount, "of", len(ensemble), ": time =", time, "of",
+    #  round(t_end, 2), "(" + str(round(percent)) + "%)    ", end='')
+    print("realization", rcount, "of", len(ensemble), ": time =", time, "of",
+      round(t_end, 2), "(" + str(round(percent)) + "%)    ")
     sys.stdout.flush()
 
     # open and process each time step in each realization
-    bb.open(time)
-    t = bb.read_time()
-    if t < t_end: # only read until reach end time of shortest simulation
-      [u, v, w] = bb.read_part_velocity()
-      U[tind] = U[tind] + bb.part_mean(u)
-      V[tind] = V[tind] + bb.part_mean(v)
-      W[tind] = W[tind] + bb.part_mean(w)
-      T[tind] = t
-      tind = tind + 1
-      bb.close()
-    else:
-      bb.close()
-      break
+    f = bb.open(time)
+    if f != None:
+      t = bb.read_time()
+      if t < t_end: # only read until reach end time of shortest simulation
+        [u, v, w] = bb.read_part_velocity()
+        U[tind] = U[tind] + bb.part_mean(u)
+        V[tind] = V[tind] + bb.part_mean(v)
+        W[tind] = W[tind] + bb.part_mean(w)
+        T[tind] = t
+        tind = tind + 1
+        bb.close()
+      else:
+        bb.close()
+        break
     percent = percent + dpercent
 
 # add an extra linebreak for better stdout
@@ -120,4 +124,6 @@ plt.plot(T,W,label='W(t)')
 plt.legend()
 plt.xlabel('time')
 plt.ylabel('particle velocity')
-plt.show()
+fig = plt.gcf()
+fig.set_size_inches(10,7.5)
+fig.savefig('mean_velocity.png')
