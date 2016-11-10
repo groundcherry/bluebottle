@@ -40,7 +40,6 @@ a = 1
 
 timestart = 200
 DT_out = 0.1
-
 ############################################################
 # visit each realization to find minimum simulation duration
 ############################################################
