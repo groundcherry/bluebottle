@@ -29,8 +29,8 @@ import matplotlib.pyplot as plt
 
 # get all base directories
 #ensemble = glob.glob("/home/asiera/bluebottle/cases/shear-laura/*")
-#ensemble = glob.glob("/home/asiera/bluebottle/tools/python/ensemble/*")
-ensemble = glob.glob("/scratch/users/asierak1@jhu.edu/shear-laura/*")
+ensemble = glob.glob("/home/asiera/bluebottle/tools/python/ensemble/*")
+#ensemble = glob.glob("/scratch/users/asierak1@jhu.edu/shear-laura/*")
 
 # input some domain info (TODO: automate this)
 Lx = 12
@@ -38,8 +38,8 @@ Ly = 12
 Lz = 12
 a = 1
 
-timestart = 200
-DT_out = 0.1
+timestart = 2000
+DT_out = 1
 ############################################################
 # visit each realization to find minimum simulation duration
 ############################################################
@@ -58,7 +58,7 @@ for realization in ensemble:
   t_tmp = bb.read_time()
   if t_tmp < t_end:
     t_end = t_tmp
-    nt = round(len(timeseries)/10) + 1
+    nt = round(len(timeseries)/100) + 1
 
   # close this output
   bb.close()
@@ -110,7 +110,7 @@ for realization in ensemble:
   timeseries = bb.init(realization + "/output")[int(timestart/DT_out):]
 
   # read all time outputs in timeseries
-  for time in timeseries[::10]:
+  for time in timeseries[::100]:
     # tell user where we are
     print("realization", rcount, "of", len(ensemble), ": time =", time, "of",
       round(t_end, 2), "(" + str(round(percent)) + "%)    ")
@@ -122,14 +122,14 @@ for realization in ensemble:
     T_init = bb.read_time()
     bb.close()
     if T_init < t_end:
-      for time2 in timeseries[::10]:
+      for time2 in timeseries[::100]:
         # open and process each time step in each realization
         bb.open(time2)
         t = bb.read_time()
         if t < t_end: # only read until reach end time of shortest simulation
           #dt = abs(t - T_init)
           dt = t - T_init
-          if dt > 0:
+          if dt >= 0:
             [U, V, W] = bb.read_part_velocity()
 
             [ucor, vcor, wcor] = bb.cor(U, V, W, U_init, V_init, W_init)
