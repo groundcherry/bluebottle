@@ -1971,3 +1971,37 @@ __global__ void PP_BC_p_T(real *A, int pitch, dom_struct *dom)
   }
 }
 */
+
+__global__ void coeffs_refine(dom_struct *dom, int pitch, real *values,
+  int *phase, int *offsets, real *rhs)
+{
+  int i, j;  // iterator
+  int C, CC, CCC;  // cell
+  int jId;  // column id of nonzero elements
+  int ii, jj, kk;
+
+  int tj = blockIdx.x * blockDim.x + threadIdx.x;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if(tj < dom->Gcc.jn && tk < dom->Gcc.kn) {
+        for(i = dom->Gcc.is-DOM_BUF; i < dom->Gcc.ie-DOM_BUF; i++) {
+            C = i + tj*dom->Gcc.s1 + tk*dom->Gcc.s2;
+            CC = (i+DOM_BUF) + (tj+DOM_BUF)*dom->Gcc.s1b + (tk+DOM_BUF)*dom->Gcc.s2b;
+            if(!(phase[CC] > -1)) {
+                for(j = 0; j < 13; j++) {
+                    jId = C + offsets[j];
+                    if(jId >= 0 && jId < dom->Gcc.s3 && offsets[j] != 0) {
+                        kk = jId / dom->Gcc.s2;
+                        jj = (jId % dom->Gcc.s2) / dom->Gcc.s1;
+                        ii = (jId % dom->Gcc.s2) % dom->Gcc.s1;
+                        CCC = (ii+DOM_BUF) + (jj+DOM_BUF)*dom->Gcc.s1b + (kk+DOM_BUF)*dom->Gcc.s2b;
+                        if(phase[CCC] > -1) {
+                            rhs[C] -= values[C + j*pitch]*rhs[jId];
+                            values[C + j*pitch] = 0.;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

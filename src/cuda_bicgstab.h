@@ -1577,4 +1577,7 @@ __global__ void PP_BC_p_T(real *A, int pitch, dom_struct *dom);
  ******
  */
 
+__global__ void coeffs_refine(dom_struct *dom, int pitch, real *values,
+  int *phase, int *offsets, real *rhs);
+
 #endif
