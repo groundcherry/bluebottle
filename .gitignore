@@ -1,0 +1,10 @@
+# Compiled files
+*.o
+sim/bluebottle
+
+# Output files
+*.cgns
+*.pvd
+*.pvtr
+*.vtr
+*.vtp

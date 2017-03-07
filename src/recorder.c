@@ -562,6 +562,8 @@ void cgns_flow_field(real dtout)
   }
   cg_field_write(fn, bn, zn, sn, RealDouble, "Pressure", pout, &fnpress);
 
+  // Interpolate velocities
+  // use the four points [i-1, i, i+1, i+2] to interpolate value at i+1/2
   real *uout = malloc(Dom.Gcc.s3 * sizeof(real));
   // cpumem += Dom.Gcc.s3 * sizeof(real);
   for(int k = Dom.Gfx.ks; k < Dom.Gfx.ke; k++) {
@@ -569,7 +571,7 @@ void cgns_flow_field(real dtout)
       for(int i = Dom.Gfx.is; i < Dom.Gfx.ie-1; i++) {
         int C = (i-DOM_BUF) + (j-DOM_BUF)*Dom.Gcc.s1 + (k-DOM_BUF)*Dom.Gcc.s2;
         int CC0 = (i-1) + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
-        int CC1 = i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
+        int CC1 = i +     j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
         int CC2 = (i+1) + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
         int CC3 = (i+2) + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
         uout[C] = -0.0625*u[CC0] + 0.5625*u[CC1] + 0.5625*u[CC2] - 0.0625*u[CC3];
@@ -1998,4 +2000,169 @@ void recorder_lamb(char *name, int iter)
 
   // close the file
   fclose(rec);
+}
+
+void cgns_grid_ghost(void)
+{
+  // create the file
+  char fname[FILE_NAME_SIZE] = "";
+  sprintf(fname, "%s/output/%s", ROOT_DIR, "grid-ghost.cgns");
+  int fn;
+  int bn;
+  int zn;
+  int gn;
+  int cn;
+  if (access(fname, F_OK) != -1) {
+    // file exists
+  } else {
+    // file does not exist
+    cg_open(fname, CG_MODE_WRITE, &fn);
+    cg_base_write(fn, "Base", 3, 3, &bn);
+    cgsize_t size[9];
+    size[0] = Dom.Gcc.inb + 1; // cells -> vertices
+    size[1] = Dom.Gcc.jnb + 1;
+    size[2] = Dom.Gcc.knb + 1;
+    size[3] = Dom.Gcc.inb;
+    size[4] = Dom.Gcc.jnb;
+    size[5] = Dom.Gcc.knb;
+    size[6] = 0;
+    size[7] = 0;
+    size[8] = 0;
+    cg_zone_write(fn, bn, "Zone0", size, Structured, &zn);
+    cg_grid_write(fn, bn, zn, "GridCoordinates", &gn);
+
+    // something funky with this stuff
+    int ncells = (Dom.Gcc.inb+1)*(Dom.Gcc.jnb+1)*(Dom.Gcc.knb+1);
+    real *x = malloc(ncells*sizeof(real));
+    real *y = malloc(ncells*sizeof(real));
+    real *z = malloc(ncells*sizeof(real));
+    for(int k = Dom.Gcc.ksb; k < (Dom.Gcc.keb + 1); k++) {
+      for(int j = Dom.Gcc.jsb; j < (Dom.Gcc.jeb + 1); j++) {
+        for(int i = Dom.Gcc.isb; i < (Dom.Gcc.ieb + 1); i++) {
+          int C = i + j*(Dom.Gcc.inb + 1) + k*(Dom.Gcc.inb +1)*(Dom.Gcc.jnb +1);
+          x[C] = Dom.xs + (i-1)*Dom.dx;
+          y[C] = Dom.ys + (j-1)*Dom.dy;
+          z[C] = Dom.zs + (k-1)*Dom.dz;
+        }
+      }
+    }
+    cg_coord_write(fn, bn, zn, RealDouble, "CoordinateX", x, &cn);
+    cg_coord_write(fn, bn, zn, RealDouble, "CoordinateY", y, &cn);
+    cg_coord_write(fn, bn, zn, RealDouble, "CoordinateZ", z, &cn);
+
+    free(x);
+    free(y);
+    free(z);
+
+    cg_close(fn);
+  }
+}
+
+void cgns_flow_field_ghost(real dtout)
+{
+  // create the solution file
+  char fname[FILE_NAME_SIZE] = "";
+  char fname2[FILE_NAME_SIZE] = "";
+  char fnameall[FILE_NAME_SIZE] = "";
+  char fnameall2[FILE_NAME_SIZE] = "";
+  char gname[FILE_NAME_SIZE] = "";
+  char gnameall[FILE_NAME_SIZE] = "";
+  real tout = ttime; //  = rec_flow_field_stepnum_out * dtout;
+  char format[CHAR_BUF_SIZE] = "";
+  char snodename[CHAR_BUF_SIZE] = "";
+  char snodenameall[CHAR_BUF_SIZE] = "";
+  int sigfigs = ceil(log10(1. / dtout));
+  if(sigfigs < 1) sigfigs = 1;
+  sprintf(format, "%%.%df", sigfigs);
+  sprintf(fname2, "flow-ghost-%s.cgns", format);
+  sprintf(fnameall2, "%s/output/flow-ghost-%s.cgns", ROOT_DIR, format);
+  sprintf(snodename, "Solution-");
+  sprintf(snodenameall, "/Base/Zone0/Solution-");
+  sprintf(snodename, "%s%s", snodename, format);
+  sprintf(snodenameall, "%s%s", snodenameall, format);
+  sprintf(fname, fname2, tout);
+  sprintf(fnameall, fnameall2, tout);
+  sprintf(snodename, snodename, tout);
+  sprintf(snodenameall, snodenameall, tout);
+  sprintf(gname, "grid-ghost.cgns");
+  sprintf(gnameall, "%s/output/%s", ROOT_DIR, "grid-ghost.cgns");
+  int fn;
+  int bn;
+  int zn;
+  int sn;
+  int fnpress;
+  int fnphase;
+  int fnu;
+  int fnv;
+  int fnw;
+  cg_open(fnameall, CG_MODE_WRITE, &fn);
+  cg_base_write(fn, "Base", 3, 3, &bn);
+  cgsize_t size[9];
+  size[0] = Dom.Gcc.inb + 1; // cells -> vertices
+  size[1] = Dom.Gcc.jnb + 1;
+  size[2] = Dom.Gcc.knb + 1;
+  size[3] = Dom.Gcc.inb;
+  size[4] = Dom.Gcc.jnb;
+  size[5] = Dom.Gcc.knb;
+  size[6] = 0;
+  size[7] = 0;
+  size[8] = 0;
+  cg_zone_write(fn, bn, "Zone0", size, Structured, &zn);
+  cg_goto(fn, bn, "Zone_t", zn, "end");
+  // check that grid.cgns exists
+  /*int fng;
+  if(cg_open(gnameall, CG_MODE_READ, &fng) != 0) {
+    fprintf(stderr, "CGNS flow field write failure: no grid.cgns\n");
+    exit(EXIT_FAILURE);
+  } else {
+    cg_close(fng);
+  }
+    cg_close(fng);
+*/
+  
+  cg_link_write("GridCoordinates", gname, "Base/Zone0/GridCoordinates");
+
+  cg_sol_write(fn, bn, zn, "Solution", CellCenter, &sn);
+
+  cg_field_write(fn, bn, zn, sn, RealDouble, "Pressure", p, &fnpress);
+
+  // We can't use four centered points to interpolate the velocities in the
+  // ghost cells, so use two points.
+  // WARNING: This is lower accuracy!!
+  real *uout = malloc(Dom.Gcc.s3b * sizeof(real));
+  real *vout = malloc(Dom.Gcc.s3b * sizeof(real));
+  real *wout = malloc(Dom.Gcc.s3b * sizeof(real));
+  for(int k = Dom.Gcc.ksb; k < Dom.Gcc.keb; k++) {
+    for(int j = Dom.Gcc.jsb; j < Dom.Gcc.jeb; j++) {
+      for(int i = Dom.Gcc.isb; i < Dom.Gcc.ieb; i++) {
+        int C = i + j*Dom.Gcc.s1b + k*Dom.Gcc.s2b;
+        int Cx = i + j*Dom.Gfx.s1b + k*Dom.Gfx.s2b;
+        int Cy = i + j*Dom.Gfy.s1b + k*Dom.Gfy.s2b;
+        int Cz = i + j*Dom.Gfz.s1b + k*Dom.Gfz.s2b;
+
+        uout[C] = 0.5 * (u[Cx] + u[Cx + 1]);
+        vout[C] = 0.5 * (w[Cy] + u[Cy + Dom.Gfy.s1b]);
+        wout[C] = 0.5 * (w[Cz] + u[Cz + Dom.Gfz.s2b]);
+      }
+    }
+  }
+  cg_field_write(fn, bn, zn, sn, RealDouble, "VelocityX", uout, &fnu);
+  cg_field_write(fn, bn, zn, sn, RealDouble, "VelocityY", vout, &fnv);
+  cg_field_write(fn, bn, zn, sn, RealDouble, "VelocityZ", wout, &fnw);
+  cg_field_write(fn, bn, zn, sn, Integer, "Phase", phase, &fnphase);
+
+  cg_user_data_write("Etc");
+  cg_goto(fn, bn, "Zone_t", zn, "Etc", 0, "end");
+  cgsize_t *N = malloc(sizeof(cgsize_t));
+  N[0] = 1;
+  cg_array_write("Time", RealDouble, 1, N, &ttime);
+  cg_array_write("Density", RealDouble, 1, N, &rho_f);
+  cg_array_write("KinematicViscosity", RealDouble, 1, N, &nu);
+  free(N);
+
+  cg_close(fn);
+  free(uout);
+  free(vout);
+  free(wout);
+
 }

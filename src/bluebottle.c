@@ -439,6 +439,7 @@ int main(int argc, char *argv[]) {
       if(runrestart != 1) {
         #ifdef DDEBUG
           init_VTK_ghost();
+          cgns_grid_ghost();
         #else
           if(rec_paraview_dt > 0) {
             init_VTK();
@@ -548,13 +549,22 @@ int main(int argc, char *argv[]) {
           cuda_part_pull();
 
         #ifdef DDEBUG
-            printf("Writing ParaView file %d (t = %e)...",
-            rec_paraview_stepnum_out, ttime);
+            // Paraview
+            printf("Writing ParaView file %d (t = %e)...", 
+                    rec_paraview_stepnum_out, ttime);
             fflush(stdout);
             out_VTK_ghost();
             rec_paraview_stepnum_out++;
             printf("done.               \n");
             fflush(stdout);
+
+            // CGNS
+            printf("Writing flow field file t = %e...", ttime);
+            fflush(stdout);
+            cgns_grid_ghost();
+            cgns_flow_field_ghost(rec_flow_field_dt);
+            rec_flow_field_stepnum_out++;
+            printf("done.               \n");
         #else
           if(rec_flow_field_dt > 0) {
             printf("Writing flow field file t = %e...", ttime);
@@ -721,7 +731,11 @@ int main(int argc, char *argv[]) {
                   ttime);
                 fflush(stdout);
               #endif
-              cgns_flow_field(rec_flow_field_dt);
+              #ifdef DDEBUG
+                cgns_flow_field_ghost(rec_flow_field_dt);
+              #else
+                cgns_flow_field(rec_flow_field_dt);
+              #endif
               printf("  Writing flow field file t = %e...done.\n", ttime);
               fflush(stdout);
               rec_flow_field_ttime_out = rec_flow_field_ttime_out
