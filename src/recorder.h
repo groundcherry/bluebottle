@@ -71,6 +71,18 @@ void cgns_turb_grid(void);
  ******
  */
 
+/****f* recorder/cgns_grid_ghost()
+ * NAME
+ *  cgns_grid_ghost()
+ * TYPE
+ */
+void cgns_grid_ghost(void);
+/*
+ * FUNCTION
+ *  Write the CGNS grid ghost output file.
+ ******
+ */
+
 /****f* recorder/cgns_flow_field()
  * NAME
  *  cgns_flow_field()
@@ -94,6 +106,20 @@ void cgns_turb_flow_field(real dtout);
 /*
  * FUNCTION
  *  Write the CGNS flow_field output file.
+ * ARGUMENTS
+ *  * dtout -- the output timestep size
+ ******
+ */
+
+/****f* recorder/cgns_flow_field_ghost()
+ * NAME
+ *  cgns_flow_field_ghost()
+ * TYPE
+ */
+void cgns_flow_field_ghost(real dtout);
+/*
+ * FUNCTION
+ *  Write the CGNS flow_field ghost output file.
  * ARGUMENTS
  *  * dtout -- the output timestep size
  ******
