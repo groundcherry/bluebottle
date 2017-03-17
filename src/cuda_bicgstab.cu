@@ -992,6 +992,12 @@ printf("_pp\n");
 cusp::print(*_pp);
 */
 
+    // put the decoupled values to the right hand side, making the matrix symmetric
+    coeffs_refine<<<numBlocks_x, dimBlocks_x>>>(_dom[dev], _A_p->values.pitch,
+      thrust::raw_pointer_cast(&_A_p->values.values[0]), _phase[dev],
+      thrust::raw_pointer_cast(&_A_p->diagonal_offsets[0]),
+      thrust::raw_pointer_cast(_pp->data()));
+
     // normalize the problem by the right-hand side before sending to CUSP
     real norm = cusp::blas::nrm2(*_pp);
     //printf("norm = %e\n", norm/dom[dev].Gcc.s3);
@@ -1017,24 +1023,25 @@ cusp::print(*_pp);
   printf("PPSUM_1 = %e\n", ppsum*norm*dt/rho_f);
   */
 
-      // call BiCGSTAB to solve for p_sol
-      cusp::monitor<real> monitor(*_pp, pp_max_iter, pp_residual);
-      cusp::precond::diagonal<real, cusp::device_memory> M(*_A_p);
-      cusp::krylov::bicgstab(*_A_p, *_p_sol, *_pp, monitor, M);
-      // write convergence data to file
-      if(rank == 0) {
-        char nam[FILE_NAME_SIZE] = "solver_expd.rec";
-        recorder_bicgstab(nam, monitor.iteration_count(),
-          monitor.residual_norm());
-      } else {
-        char nam[FILE_NAME_SIZE] = "solver_prec.rec";
-        recorder_bicgstab(nam, monitor.iteration_count(),
-          monitor.residual_norm());
-      }
-      if(!monitor.converged()) {
-        printf("The pressure-Poisson equation did not converge.              \n");
-        exit(EXIT_FAILURE);
-      }
+    // call cg to solve for p_sol
+    cusp::monitor<real> monitor(*_pp, pp_max_iter, pp_residual);
+    cusp::precond::diagonal<real, cusp::device_memory> M(*_A_p);
+    //cusp::krylov::bicgstab(*_A_p, *_p_sol, *_pp, monitor, M);
+    cusp::krylov::cg(*_A_p, *_p_sol, *_pp, monitor, M);
+    // write convergence data to file
+    if(rank == 0) {
+      char nam[FILE_NAME_SIZE] = "solver_expd.rec";
+      recorder_bicgstab(nam, monitor.iteration_count(),
+        monitor.residual_norm());
+    } else {
+      char nam[FILE_NAME_SIZE] = "solver_prec.rec";
+      recorder_bicgstab(nam, monitor.iteration_count(),
+        monitor.residual_norm());
+    }
+    if(!monitor.converged()) {
+      printf("The pressure-Poisson equation did not converge.              \n");
+      exit(EXIT_FAILURE);
+    }
 
       // unnormalize the solution
       cusp::blas::scal(*_p_sol, norm);
