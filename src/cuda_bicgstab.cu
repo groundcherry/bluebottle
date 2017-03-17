@@ -1002,23 +1002,28 @@ cusp::print(*_pp);
     real norm = cusp::blas::nrm2(*_pp);
     //printf("norm = %e\n", norm/dom[dev].Gcc.s3);
     //if(norm > 100.*pp_residual) {//== 0)
-    if(norm == 0)
-      norm = 1.;
+    /**
+      * This is a thus far failed attempt at fixing the problem of the solver
+      * failing to converge when things stop changing very much between time
+      * steps.
+    **/
+      if(norm == 0)
+        norm = 1.;
 
-    cusp::blas::scal(*_pp, 1. / norm);
-    cusp::blas::scal(*_p_sol, 1. / norm);
+      cusp::blas::scal(*_pp, 1. / norm);
+      cusp::blas::scal(*_p_sol, 1. / norm);
 
-/*cusp::array1d<real, cusp::host_memory> PP = *_pp;
-cusp::blas::scal(PP, norm);
-//cusp::print(PP);
-real ppsum = 0.;
-for(int s = 0; s < dom[dev].Gcc.s3; s++) {
-  ppsum += PP[s]*dom[dev].dx*dom[dev].dy*dom[dev].dz;
-}
-printf("PPSUM_1 = %e\n", ppsum*norm*dt/rho_f);
-*/
+  /*cusp::array1d<real, cusp::host_memory> PP = *_pp;
+  cusp::blas::scal(PP, norm);
+  //cusp::print(PP);
+  real ppsum = 0.;
+  for(int s = 0; s < dom[dev].Gcc.s3; s++) {
+    ppsum += PP[s]*dom[dev].dx*dom[dev].dy*dom[dev].dz;
+  }
+  printf("PPSUM_1 = %e\n", ppsum*norm*dt/rho_f);
+  */
 
-    // call BiCGSTAB to solve for p_sol
+    // call cg to solve for p_sol
     cusp::monitor<real> monitor(*_pp, pp_max_iter, pp_residual);
     cusp::precond::diagonal<real, cusp::device_memory> M(*_A_p);
     //cusp::krylov::bicgstab(*_A_p, *_p_sol, *_pp, monitor, M);
@@ -1038,18 +1043,18 @@ printf("PPSUM_1 = %e\n", ppsum*norm*dt/rho_f);
       exit(EXIT_FAILURE);
     }
 
-    // unnormalize the solution
-    cusp::blas::scal(*_p_sol, norm);
+      // unnormalize the solution
+      cusp::blas::scal(*_p_sol, norm);
 
-    // calculate average pressure
-    //real p_avg = avg_entries(dom[dev].Gcc.s3,
-    //  thrust::raw_pointer_cast(_p_sol->data()));
-    real p_avg = thrust::reduce(_p_sol->begin(), _p_sol->end(), (real) 0.,
-      thrust::plus<real>()) / dom[dev].Gcc.s3;
+      // calculate average pressure
+      //real p_avg = avg_entries(dom[dev].Gcc.s3,
+      //  thrust::raw_pointer_cast(_p_sol->data()));
+      real p_avg = thrust::reduce(_p_sol->begin(), _p_sol->end(), (real) 0.,
+        thrust::plus<real>()) / dom[dev].Gcc.s3;
 
-    // subtract average value from pressure
-    cusp::array1d<real, cusp::device_memory> ones(dom[dev].Gcc.s3, 1.);
-    cusp::blas::axpy(ones, *_p_sol, -p_avg);
+      // subtract average value from pressure
+      cusp::array1d<real, cusp::device_memory> ones(dom[dev].Gcc.s3, 1.);
+      cusp::blas::axpy(ones, *_p_sol, -p_avg);
 
   /*
   printf("_p_sol_out\n");
@@ -1059,16 +1064,17 @@ printf("PPSUM_1 = %e\n", ppsum*norm*dt/rho_f);
       // copy solution back to pressure field
       copy_p_ghost<<<numBlocks_x, dimBlocks_x>>>(_phi[dev],
         thrust::raw_pointer_cast(_p_sol->data()), _dom[dev]);
-//  } else {
-//      // write convergence data to file (solver did not run)
-//      if(rank == 0) {
-//        char nam[FILE_NAME_SIZE] = "solver_expd.rec";
-//        recorder_bicgstab(nam, 0.,0.);
-//      } else {
-//        char nam[FILE_NAME_SIZE] = "solver_prec.rec";
-//        recorder_bicgstab(nam, 0.,0.);
-//      }
-//  }
+  /*} else {
+      // write convergence data to file (solver did not run)
+      if(rank == 0) {
+        char nam[FILE_NAME_SIZE] = "solver_expd.rec";
+        recorder_bicgstab(nam, 0.,0.);
+      } else {
+        char nam[FILE_NAME_SIZE] = "solver_prec.rec";
+        recorder_bicgstab(nam, 0.,0.);
+      }
+  }
+*/
 
 
     // clean up

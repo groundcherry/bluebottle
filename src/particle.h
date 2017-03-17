@@ -321,6 +321,8 @@ typedef struct part_struct {
   int bin;
   real St[MAX_NEIGHBORS];
   int iSt[MAX_NEIGHBORS];
+  //real ty;
+  //real tz;
   real e_dry;
   real coeff_fric;
 } part_struct;

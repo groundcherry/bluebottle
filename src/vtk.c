@@ -108,11 +108,11 @@ void dom_out_VTK(void)
   fprintf(outfile, "\"0 %d 0 %d 0 %d\" GhostLevel=\"0\">\n",
     Dom.xn, Dom.yn, Dom.zn);
   //fprintf(outfile, "<PCellData Scalars=\"p divU phase phase_shell\" Vectors=\"vel flag\">\n");
-  fprintf(outfile, "<PCellData Scalars=\"p phase\" Vectors=\"vel\">\n");
+  fprintf(outfile, "<PCellData Scalars=\"p phase phase_shell\" Vectors=\"vel\">\n");
   fprintf(outfile, "<PDataArray type=\"Float32\" Name=\"p\"/>\n");
   //fprintf(outfile, "<PDataArray type=\"Float32\" Name=\"divU\"/>\n");
   fprintf(outfile, "<PDataArray type=\"Int32\" Name=\"phase\"/>\n");
-  //fprintf(outfile, "<PDataArray type=\"Int32\" Name=\"phase_shell\"/>\n");
+  fprintf(outfile, "<PDataArray type=\"Int32\" Name=\"phase_shell\"/>\n");
   fprintf(outfile, "<PDataArray type=\"Float32\" Name=\"vel\"");
   fprintf(outfile, " NumberOfComponents=\"3\"/>\n");
   //fprintf(outfile, "<PDataArray type=\"Float32\" Name=\"flag\"");
@@ -207,7 +207,7 @@ void dom_out_VTK(void)
     fprintf(outfile, "%d %d ", ncy_s, ncy_e);
     fprintf(outfile, "%d %d\">\n", ncz_s, ncz_e);
     //fprintf(outfile, "<CellData Scalars=\"p divU phase phase_shell\" Vectors=\"vel flag\">\n");
-    fprintf(outfile, "<CellData Scalars=\"p phase\" Vectors=\"vel\">\n");
+    fprintf(outfile, "<CellData Scalars=\"p phase phase_shell\" Vectors=\"vel\">\n");
     fprintf(outfile, "<DataArray type=\"Float32\" Name=\"p\">\n");
     // write pressure for this subdomain
     for(k = ncz_s + Dom.Gcc.ks; k < ncz_e + Dom.Gcc.ks; k++) {
@@ -245,7 +245,7 @@ void dom_out_VTK(void)
     }
     fprintf(outfile, "\n");
     fprintf(outfile, "</DataArray>\n");
-    /*fprintf(outfile, "<DataArray type=\"Int32\" Name=\"phase_shell\">\n");
+    fprintf(outfile, "<DataArray type=\"Int32\" Name=\"phase_shell\">\n");
     // write phase for this subdomain
     for(k = ncz_s + Dom.Gcc.ks; k < ncz_e + Dom.Gcc.ks; k++) {
       for(j = ncy_s + Dom.Gcc.js; j < ncy_e + Dom.Gcc.js; j++) {
@@ -257,7 +257,6 @@ void dom_out_VTK(void)
     }
     fprintf(outfile, "\n");
     fprintf(outfile, "</DataArray>\n");
-*/
 
     // write velocity vector
     fprintf(outfile, "<DataArray type=\"Float32\" Name=\"vel\"");
@@ -2217,7 +2216,7 @@ void part_out_VTK(void)
 
   // write the locations of the particle centers
   for(i = 0; i < nparts_plot; i++) {
-    fprintf(outfile, "%f %f %f ", parts_virt[i].x, parts_virt[i].y,
+    fprintf(outfile, "%e %e %e ", parts_virt[i].x, parts_virt[i].y,
       parts_virt[i].z);
   }
 
@@ -2239,7 +2238,7 @@ void part_out_VTK(void)
 
   // write radius of each particle
   for(i = 0; i < nparts_plot; i++) {
-    fprintf(outfile, "%f ", parts_virt[i].r);
+    fprintf(outfile, "%e ", parts_virt[i].r);
   }
 
   fprintf(outfile, "\n</DataArray>\n");
@@ -2248,7 +2247,7 @@ void part_out_VTK(void)
 
   // write velocity of each particle
   for(i = 0; i < nparts_plot; i++) {
-    fprintf(outfile, "%f %f %f ", parts_virt[i].u, parts_virt[i].v,
+    fprintf(outfile, "%e %e %e ", parts_virt[i].u, parts_virt[i].v,
       parts_virt[i].w);
   }
 
@@ -2258,7 +2257,7 @@ void part_out_VTK(void)
 
   // write acceleration of each particle
   for(i = 0; i < nparts_plot; i++) {
-    fprintf(outfile, "%f %f %f ", parts_virt[i].udot, parts_virt[i].vdot,
+    fprintf(outfile, "%e %e %e ", parts_virt[i].udot, parts_virt[i].vdot,
       parts_virt[i].wdot);
   }
 
@@ -2268,7 +2267,7 @@ void part_out_VTK(void)
 
   // write angular position of each particle
   for(i = 0; i < nparts_plot; i++) {
-    fprintf(outfile, "%f %f %f ", parts_virt[i].axx, parts_virt[i].axy,
+    fprintf(outfile, "%e %e %e ", parts_virt[i].axx, parts_virt[i].axy,
       parts_virt[i].axz);
   }
 
@@ -2278,7 +2277,7 @@ void part_out_VTK(void)
 
   // write angular position of each particle
   for(i = 0; i < nparts_plot; i++) {
-    fprintf(outfile, "%f %f %f ", parts_virt[i].ayx, parts_virt[i].ayy,
+    fprintf(outfile, "%e %e %e ", parts_virt[i].ayx, parts_virt[i].ayy,
       parts_virt[i].ayz);
   }
 
@@ -2288,7 +2287,7 @@ void part_out_VTK(void)
 
   // write angular position of each particle
   for(i = 0; i < nparts_plot; i++) {
-    fprintf(outfile, "%f %f %f ", parts_virt[i].azx, parts_virt[i].azy,
+    fprintf(outfile, "%e %e %e ", parts_virt[i].azx, parts_virt[i].azy,
       parts_virt[i].azz);
   }
 
@@ -2298,7 +2297,7 @@ void part_out_VTK(void)
 
   // write angular velocity of each particle
   for(i = 0; i < nparts_plot; i++) {
-    fprintf(outfile, "%f %f %f ", parts_virt[i].ox, parts_virt[i].oy,
+    fprintf(outfile, "%e %e %e ", parts_virt[i].ox, parts_virt[i].oy,
       parts_virt[i].oz);
   }
 
@@ -2308,7 +2307,7 @@ void part_out_VTK(void)
 
   // write angular acceleration of each particle
   for(i = 0; i < nparts_plot; i++) {
-    fprintf(outfile, "%f %f %f ", parts_virt[i].oxdot, parts_virt[i].oydot,
+    fprintf(outfile, "%e %e %e ", parts_virt[i].oxdot, parts_virt[i].oydot,
       parts_virt[i].ozdot);
   }
 
@@ -2320,7 +2319,7 @@ void part_out_VTK(void)
   for(i = 0; i < nparts_plot; i++) {
     real mass = 4./3.*PI*(parts_virt[i].rho-rho_f)
       *parts_virt[i].r*parts_virt[i].r*parts_virt[i].r;
-    fprintf(outfile, "%f %f %f ",
+    fprintf(outfile, "%e %e %e ",
       parts_virt[i].Fx + parts_virt[i].iFx + parts_virt[i].kFx + mass*g.x,
       parts_virt[i].Fy + parts_virt[i].iFy + parts_virt[i].kFy + mass*g.y,
       parts_virt[i].Fz + parts_virt[i].iFz + parts_virt[i].kFz + mass*g.z);
@@ -2332,7 +2331,7 @@ void part_out_VTK(void)
 
   // write angular moment on each particle
   for(i = 0; i < nparts_plot; i++) {
-    fprintf(outfile, "%f %f %f ",
+    fprintf(outfile, "%e %e %e ",
       parts_virt[i].Lx + parts_virt[i].iLx,
       parts_virt[i].Ly + parts_virt[i].iLy,
       parts_virt[i].Lz + parts_virt[i].iLz);
@@ -2344,7 +2343,7 @@ void part_out_VTK(void)
 
   // write linear force on each particle
   for(i = 0; i < nparts_plot; i++) {
-    fprintf(outfile, "%f %f %f ",
+    fprintf(outfile, "%e %e %e ",
       parts_virt[i].Fx,
       parts_virt[i].Fy,
       parts_virt[i].Fz);
@@ -2356,7 +2355,7 @@ void part_out_VTK(void)
 
   // write linear force on each particle
   for(i = 0; i < nparts_plot; i++) {
-    fprintf(outfile, "%f %f %f ",
+    fprintf(outfile, "%e %e %e ",
       parts_virt[i].kFx,
       parts_virt[i].kFy,
       parts_virt[i].kFz);
@@ -2368,7 +2367,7 @@ void part_out_VTK(void)
 
   // write linear force on each particle
   for(i = 0; i < nparts_plot; i++) {
-    fprintf(outfile, "%f %f %f ",
+    fprintf(outfile, "%e %e %e ",
       parts_virt[i].iFx,
       parts_virt[i].iFy,
       parts_virt[i].iFz);
@@ -3547,7 +3546,7 @@ void quadnodes_out_VTK(void)
       else if(Z > dom->xe) Z = Z - dom->zl;
       
       // write to file
-      fprintf(outfile, "%f %f %f ", X, Y, Z);
+      fprintf(outfile, "%e %e %e ", X, Y, Z);
     }
   }
 

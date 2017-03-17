@@ -1332,7 +1332,11 @@ __global__ void update_p(real *Lp, real *p0, real *p, real *phi,
   if(tj < dom->Gcc._je && tk < dom->Gcc._ke) {
     for(int i = dom->Gcc._is; i < dom->Gcc._ie; i++) {
       int C = i + tj*dom->Gcc._s1b + tk*dom->Gcc._s2b;
+#ifdef NOPRESSURECORRECTION
+      p[C] = (phase[C] < 0) * (phi[C]);// - 0.5*nu*dt*Lp[C]);
+#else
       p[C] = (phase[C] < 0) * (p0[C] + phi[C]);// - 0.5*nu*dt*Lp[C]);
+#endif
     }
   }
 }
@@ -1571,9 +1575,13 @@ __global__ void u_star_2(real rho_f, real nu,
     if((tj > 0 && tj < blockDim.x-1) && (tk > 0 && tk < blockDim.y-1)
       && j < dom->Gfx.jeb && k < dom->Gfx.keb) {
       // pressure gradient
+#ifdef NOPRESSURECORRECTION
+      s_u_star[tj + tk*blockDim.x] = 0;
+#else
       s_u_star[tj + tk*blockDim.x] =
         (p[(i-1) + j*dom->Gcc._s1b + k*dom->Gcc._s2b]
         - p[i + j*dom->Gcc._s1b + k*dom->Gcc._s2b]) * ddx / rho_f;
+#endif
 
       // grab the required data points for calculations
       real u011 = s_u0[tj + tk*blockDim.x];
@@ -1738,9 +1746,13 @@ __global__ void v_star_2(real rho_f, real nu,
     if((tk > 0 && tk < blockDim.x-1) && (ti > 0 && ti < blockDim.y-1)
       && k < dom->Gfy.keb && i < dom->Gfy.ieb) {
       // pressure gradient
+#ifdef NOPRESSURECORRECTION
+      s_v_star[tk + ti*blockDim.x] = 0;
+#else
       s_v_star[tk + ti*blockDim.x] =
         (p[i + (j-1)*dom->Gcc._s1b + k*dom->Gcc._s2b]
         - p[i + j*dom->Gcc._s1b + k*dom->Gcc._s2b]) * ddy / rho_f;
+#endif
 
       // grab the required data points for calculations
       real v101 = s_v0[tk + ti*blockDim.x];
@@ -1905,9 +1917,13 @@ __global__ void w_star_2(real rho_f, real nu,
     if((ti > 0 && ti < blockDim.x-1) && (tj > 0 && tj < blockDim.y-1)
       && i < dom->Gfz.ieb && j < dom->Gfz.jeb) {
       // pressure gradient
+#ifdef NOPRESSURECORRECTION
+      s_w_star[ti + tj*blockDim.x] = 0;
+#else
       s_w_star[ti + tj*blockDim.x] =
         (p[i + j*dom->Gcc._s1b + (k-1)*dom->Gcc._s2b]
         - p[i + j*dom->Gcc._s1b + k*dom->Gcc._s2b]) * ddz / rho_f;
+#endif
 
       // grab the required data points for calculations
       real w110 = s_w0[ti + tj*blockDim.x];
@@ -2334,6 +2350,9 @@ __global__ void move_parts_b(dom_struct *dom, part_struct *parts, int nparts,
       parts[pp].udot0 = parts[pp].udot;
       parts[pp].vdot0 = parts[pp].vdot;
       parts[pp].wdot0 = parts[pp].wdot;
+
+      //parts[pp].ty = parts[pp].iFy;
+      //parts[pp].tz = parts[pp].iFz;
     }
     if(parts[pp].rotating) {
       // update angular accelerations
@@ -2973,6 +2992,7 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
       real Vy = Uty - (ai + 0.5*h)*omz;
       real Vz = Utz + (ai + 0.5*h)*omx;
 
+      // Mindlin's theory for tangential stiffness
       real Hi = 0.5*parts[i].E/(1.+parts[i].sigma);
       real kt = 8./((1.-parts[i].sigma*parts[i].sigma)/Hi
         +(1.-parts[i].sigma*parts[i].sigma)/Hi)/sqrt(1./ai)*sqrt(-h);
@@ -2994,8 +3014,10 @@ __global__ void collision_walls(dom_struct *dom, part_struct *parts,
 
       // use the same coeff_fric for particle and wall
       real coeff_fric = parts[i].coeff_fric;
-      real Fty = -kt * sy;
-      real Ftz = -kt * sz;
+      //real Fty = parts[i].ty - k * sy;
+      //real Ftz = parts[i].tz - k * sz;
+      real Fty = - k * sy;
+      real Ftz = - k * sz;
       real Ft = sqrt(Fty*Fty + Ftz*Ftz);
       if(Ft > fabs(coeff_fric * (sqrt(-h*h*h)*k - eta*Un))) {
         Fty = coeff_fric * (sqrt(-h*h*h)*k - eta*Un) * Fty / Ft;
@@ -4014,6 +4036,39 @@ __global__ void internal_w(real *w, part_struct *parts, dom_struct *dom,
 
       w[C] = (pb == -1 || pt == -1 || f == -1) * w[C]
         + (pb > -1 && pt > -1 && f != -1) * (ocrossr_z + parts[p].w);
+    }
+  }
+}
+
+__global__ void average_solo(dom_struct *dom, int *phase, real *p)
+{
+  int tj = blockIdx.x * blockDim.x + threadIdx.x + DOM_BUF;
+  int tk = blockIdx.y * blockDim.y + threadIdx.y + DOM_BUF;
+
+  int C, W, E, S, N, B, T;
+
+  int neighbor_sum;
+  real average = 0;
+
+  for(int i = dom->Gcc._isb; i < dom->Gcc._ieb; i++) {
+    if(tj < dom->Gcc._jnb && tk < dom->Gcc._knb) {
+      C = i + tj*dom->Gcc.s1b + tk*dom->Gcc.s2b;
+      W = (i-1) + tj*dom->Gcc.s1b + tk*dom->Gcc.s2b;
+      E = (i+1) + tj*dom->Gcc.s1b + tk*dom->Gcc.s2b;
+      S = i + (tj-1)*dom->Gcc.s1b + tk*dom->Gcc.s2b;
+      N = i + (tj+1)*dom->Gcc.s1b + tk*dom->Gcc.s2b;
+      B = i + tj*dom->Gcc.s1b + (tk-1)*dom->Gcc.s2b;
+      T = i + tj*dom->Gcc.s1b + (tk+1)*dom->Gcc.s2b;
+
+      neighbor_sum = (phase[W] == -1) + (phase[E] == -1) + (phase[S] == -1)
+                   + (phase[N] == -1) + (phase[B] == -1) + (phase[T] == -1);
+
+      average = (p[W] + p[E] + p[S] + p[N] + p[B] + p[T]) / 6.;
+
+      // don't write to p until all reads have completed
+      __syncthreads();
+
+      p[C] = (neighbor_sum > 0) * p[C] + (1 - (neighbor_sum > 0)) * average;
     }
   }
 }

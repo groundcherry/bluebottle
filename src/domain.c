@@ -2222,7 +2222,7 @@ int domain_init(void)
           real z = ((k-0.5) * Dom.dz) + Dom.zs;
           int C = i+j*Dom.Gfy.s1b+k*Dom.Gfy.s2b;
           v[C] = (bc.vEDm-bc.vWDm)*(x-Dom.xs)/Dom.xl + bc.vWDm;
-          v[C] += (bc.vTDm-bc.vBDm)*(z-Dom.zs)/Dom.ze + bc.vBDm;
+          v[C] += (bc.vTDm-bc.vBDm)*(z-Dom.zs)/Dom.zl + bc.vBDm;
           v0[C] = v[C];
         }
       }
